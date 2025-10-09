@@ -5,6 +5,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,6 +20,7 @@ import java.util.prefs.Preferences;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -87,6 +92,8 @@ class MotorInformationPanel extends JPanel {
 	private static Color gridColor;
 	private static Color infoColor;
 
+	private static ImageIcon[] colorChips;
+	
 	// Motors in set
 	private ThrustCurveMotorSet selectedMotorSet;
 	// Selected motor
@@ -132,6 +139,7 @@ class MotorInformationPanel extends JPanel {
 
 	static {
 		initColors();
+		initColorChips();
 	}
 
 	public MotorInformationPanel() {
@@ -201,7 +209,6 @@ class MotorInformationPanel extends JPanel {
 				public void actionPerformed(ActionEvent e) {
 					MotorHolder value = (MotorHolder)curveSelectionBox.getSelectedItem();
 					if (value != null) {
-						curveSelectionBox.setForeground(getColor(value.getIndex()));
 						setMotor(selectedMotorSet, value.getMotor(), selectedDelay);
 					}
 					updateData();
@@ -391,7 +398,21 @@ class MotorInformationPanel extends JPanel {
 		gridColor = GUIUtil.getUITheme().getFinPointGridMajorLineColor();
 		infoColor = GUIUtil.getUITheme().getCGColor();
 	}
-	
+
+	public static void updateColorChips() {
+		final SwingPreferences prefs = (SwingPreferences) Application.getPreferences();
+		final int size = (int) prefs.getUIFontSize();
+
+		for (int i = 0; i < Util.getPlotColors().length; i++) {
+			BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g2d = image.createGraphics();
+			g2d.setColor(getColor(i));
+			g2d.fillRect(0, 0, size, size);
+			colorChips[i] = new ImageIcon(image);
+			g2d.dispose();
+		}
+	}
+										   
 	public void clearData() {
 		selectedMotor = null;
 		selectedMotorSet = null;
@@ -633,7 +654,7 @@ class MotorInformationPanel extends JPanel {
 		return selectedDelay;
 	}
 
-	private class CurveSelectionRenderer implements ListCellRenderer<MotorHolder> {
+	public class CurveSelectionRenderer implements ListCellRenderer<MotorHolder> {
 
 		private final ListCellRenderer<MotorHolder> renderer;
 
@@ -646,17 +667,13 @@ class MotorInformationPanel extends JPanel {
 				boolean isSelected, boolean cellHasFocus) {
 
 			JLabel label = (JLabel) renderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			label.setIcon(colorChips[value.getIndex()]);
 			if (value != null) {
 				Color color = getColor(value.getIndex());
 				if (isSelected || cellHasFocus) {
 					label.setBackground(color);
-					label.setOpaque(true);
-					Color fg = list.getBackground();
-					fg = new Color(fg.getRed(), fg.getGreen(), fg.getBlue());		// List background changes for some reason, so clone the color
-					label.setForeground(fg);
 				} else {
 					label.setBackground(list.getBackground());
-					label.setForeground(color);
 				}
 			}
 
@@ -664,6 +681,13 @@ class MotorInformationPanel extends JPanel {
 		}
 	}
 
+	private static void initColorChips() {
+		colorChips = new ImageIcon[Util.getPlotColors().length];
+		updateColorChips();
+		UITheme.Theme.addUIThemeChangeListener(MotorInformationPanel::updateColorChips);
+	}
+
+	
 	public static Color getColor(int index) {
 		Color color = Util.getPlotColor(index);
 		if (UITheme.isLightTheme(GUIUtil.getUITheme())) {
