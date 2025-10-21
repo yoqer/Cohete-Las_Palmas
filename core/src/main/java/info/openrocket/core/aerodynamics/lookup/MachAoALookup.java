@@ -64,6 +64,18 @@ public final class MachAoALookup {
 		return maxAoA;
 	}
 
+	public double getMinMach() {
+		return minMach;
+	}
+
+	public double getMaxMach() {
+		return maxMach;
+	}
+
+	public Set<String> getValueColumns() {
+		return valueColumns;
+	}
+
 	public double interpolate(double mach, double aoaDegrees, String column) {
 		String normalizedColumn = normalize(column);
 		if (!valueColumns.contains(normalizedColumn)) {

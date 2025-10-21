@@ -389,6 +389,12 @@ public class OpenRocketSaver extends RocketSaver {
 		
 		writeElement("timestep", cond.getTimeStep());
 		writeElement("maxtime", cond.getMaxSimulationTime());
+		if (cond.getDragLookupCsvPath() != null) {
+			writeElement("draglookupcsv", cond.getDragLookupCsvPath().toString());
+		}
+		if (cond.getStabilityLookupCsvPath() != null) {
+			writeElement("stabilitylookupcsv", cond.getStabilityLookupCsvPath().toString());
+		}
 		
 		indent--;
 		writeln("</conditions>");

@@ -1,5 +1,6 @@
 package info.openrocket.core.file.openrocket.importt;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 
 import info.openrocket.core.logging.WarningSet;
@@ -162,6 +163,26 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 					warnings.add("Illegal max simulation time defined, ignoring.");
 				} else {
 					options.setMaxSimulationTime(d);
+				}
+			}
+			case "draglookupcsv" -> {
+				String trimmed = content.trim();
+				if (!trimmed.isEmpty()) {
+					try {
+						options.setDragLookupCsvPath(Path.of(trimmed));
+					} catch (RuntimeException ex) {
+						warnings.add("Failed to load drag lookup CSV '" + trimmed + "', ignoring. Reason: " + ex.getMessage());
+					}
+				}
+			}
+			case "stabilitylookupcsv" -> {
+				String trimmed = content.trim();
+				if (!trimmed.isEmpty()) {
+					try {
+						options.setStabilityLookupCsvPath(Path.of(trimmed));
+					} catch (RuntimeException ex) {
+						warnings.add("Failed to load stability lookup CSV '" + trimmed + "', ignoring. Reason: " + ex.getMessage());
+					}
 				}
 			}
 		}
