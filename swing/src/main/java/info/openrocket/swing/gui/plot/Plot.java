@@ -431,6 +431,10 @@ public abstract class Plot<T extends DataType, B extends DataBranch<T>, C extend
 		}
 	}
 
+    public void setShowEvents(boolean showEvents) {
+        // Default implementation does nothing
+    }
+
 	/**
 	 * A modification to the standard renderer that renders the domain marker
 	 * labels vertically instead of horizontally.

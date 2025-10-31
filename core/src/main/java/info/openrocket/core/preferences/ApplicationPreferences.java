@@ -70,6 +70,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String DEFAULT_DIRECTORY = "defaultDirectory";
 
 	public static final String PLOT_SHOW_POINTS = "ShowPlotPoints";
+    public static final String PLOT_SHOW_EVENTS = "ShowPlotEvents";
 
 	private static final String IGNORE_WELCOME = "IgnoreWelcome";
 

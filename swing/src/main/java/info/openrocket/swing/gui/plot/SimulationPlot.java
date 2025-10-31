@@ -341,6 +341,18 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 		}
 	}
 
+    @Override
+    public void setShowEvents(boolean showEvents) {
+        if (showEvents) {
+            drawDomainMarkers(-1); // show all added events
+        } else {
+            // Clean up the plot of its events
+            XYPlot plot = chart.getXYPlot();
+            plot.clearDomainMarkers();
+            plot.clearAnnotations();
+        }
+    }
+
 	private List<EventDisplayInfo> buildEventInfo() {
 		ArrayList<EventDisplayInfo> eventList = new ArrayList<>();
 

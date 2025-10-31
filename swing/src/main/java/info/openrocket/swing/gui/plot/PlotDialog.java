@@ -71,8 +71,21 @@ public abstract class PlotDialog<T extends DataType, B extends DataBranch<T>, C 
 		});
 		panel.add(checkData, "split, left");
 
-		// Show errors checkbox
-		showErrorsCheckbox(panel, plot);
+        //// Show events
+        final JCheckBox checkEvents = new JCheckBox(trans.get("PlotDialog.CheckBox.ShowEvents"));
+        checkEvents.setSelected(initialShowPoints);
+        checkEvents.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean show = checkEvents.isSelected();
+                Application.getPreferences().putBoolean(ApplicationPreferences.PLOT_SHOW_EVENTS, show);
+                plot.setShowEvents(show);
+            }
+        });
+        panel.add(checkEvents, "split, left");
+
+        // Show errors checkbox
+        showErrorsCheckbox(panel, plot);
 
 		// Add series selection box
 		addSeriesSelectionBox(panel, plot, allBranches);
