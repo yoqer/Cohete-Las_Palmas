@@ -33,7 +33,7 @@ public abstract class PlotDialog<T extends DataType, B extends DataBranch<T>, C 
 		P extends Plot<T, B, C>> extends JDialog {
 	protected static final Translator trans = Application.getTranslator();
 
-	public PlotDialog(Window parent, String name, P plot, C config, List<B> allBranches, boolean initialShowPoints) {
+	public PlotDialog(Window parent, String name, P plot, C config, List<B> allBranches, boolean initialShowPoints, boolean initialShowEvents) {
 		super(parent, name);
 		this.setModalityType(ModalityType.DOCUMENT_MODAL);
 
@@ -73,7 +73,8 @@ public abstract class PlotDialog<T extends DataType, B extends DataBranch<T>, C 
 
         //// Show events
         final JCheckBox checkEvents = new JCheckBox(trans.get("PlotDialog.CheckBox.ShowEvents"));
-        checkEvents.setSelected(initialShowPoints);
+        checkEvents.setSelected(initialShowEvents);
+        plot.setShowEvents(initialShowEvents); // Initialize the show state of events
         checkEvents.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

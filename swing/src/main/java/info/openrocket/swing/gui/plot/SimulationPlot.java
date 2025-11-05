@@ -57,9 +57,6 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 		// Create list of events to show (combine event too close to each other)
 		this.eventList = buildEventInfo();
 
-		// Create the event markers
-		drawDomainMarkers(-1);
-
 		errorAnnotations = new ErrorAnnotationSet(branchCount);
 	}
 
