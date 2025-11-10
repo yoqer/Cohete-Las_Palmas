@@ -60,7 +60,7 @@ public abstract class ExportDecalAction {
 		handleApproval(parent, chooser, selectedDecals);
 	}
 	
-	private static int openChooserDialog(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
+	static int openChooserDialog(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
 		File dir = ((SwingPreferences) Application.getPreferences()).getDefaultDirectory();
 		if (selectedDecals.size() == 1) {
 			chooser.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -77,7 +77,7 @@ public abstract class ExportDecalAction {
 		}
 	}
 	
-	private static boolean handleApproval(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
+	static boolean handleApproval(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
 		File selectedFile = chooser.getSelectedFile();
 		if (selectedDecals.size() == 1) {
 			DecalImage decal = selectedDecals.get(0);
@@ -101,7 +101,7 @@ public abstract class ExportDecalAction {
 		return false;
 	}
 	
-	private static boolean ensureDirectory(Window parent, File directory) {
+	static boolean ensureDirectory(Window parent, File directory) {
 		if (directory == null) {
 			JOptionPane.showMessageDialog(parent, trans.get("ExportDecalDialog.directory.required"));
 			return false;
@@ -117,7 +117,7 @@ public abstract class ExportDecalAction {
 		return true;
 	}
 	
-	private static boolean export(Window parent, DecalImage decal, File selectedFile) {
+	static boolean export(Window parent, DecalImage decal, File selectedFile) {
 		
 		if (selectedFile == null) {
 			return false;
@@ -139,7 +139,7 @@ public abstract class ExportDecalAction {
 		return false;
 	}
 	
-	private static boolean exportMultiple(Window parent, List<DecalImage> decals, File targetDirectory) {
+	static boolean exportMultiple(Window parent, List<DecalImage> decals, File targetDirectory) {
 		boolean exported = false;
 		for (DecalImage decal : decals) {
 			File sourceName = new File(decal.getName());
