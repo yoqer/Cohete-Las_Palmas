@@ -4,8 +4,11 @@ import info.openrocket.core.appearance.DecalImage;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.util.DecalNotFoundException;
 import info.openrocket.core.util.StateChangeListener;
+import info.openrocket.swing.gui.util.OverwritePrompter;
 import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.widgets.SaveFileChooser;
 import info.openrocket.swing.util.BaseTestCase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,14 +16,18 @@ import org.junit.jupiter.api.io.TempDir;
 import javax.swing.JFileChooser;
 import java.awt.Component;
 import java.awt.HeadlessException;
+import java.awt.Window;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,11 +37,19 @@ class ExportDecalActionTest extends BaseTestCase {
 	Path tempDir;
 
 	private SwingPreferences preferences;
+	private OverwritePromptController promptController;
 
 	@BeforeEach
 	void setUpPrefs() {
 		preferences = (SwingPreferences) Application.getPreferences();
 		preferences.setDefaultDirectory(tempDir.toFile());
+		promptController = new OverwritePromptController();
+		ExportDecalAction.setOverwritePrompt(promptController);
+	}
+
+	@AfterEach
+	void resetPrompt() {
+		ExportDecalAction.setOverwritePrompt(null);
 	}
 
 	@Test
@@ -76,8 +91,13 @@ class ExportDecalActionTest extends BaseTestCase {
 		chooser.setSelectedFile(selected);
 
 		RecordingDecal decal = new RecordingDecal("decals/source.png");
+		List<DecalImage> decals = List.of(decal);
+		chooser.forceSelection(selected);
+		ExportDecalAction.openChooserDialog(null, chooser, decals);
+		chooser.setCurrentDirectory(tempDir.toFile());
+		chooser.setSelectedFile(selected);
 
-		boolean exported = ExportDecalAction.handleApproval(null, chooser, List.of(decal));
+		boolean exported = ExportDecalAction.handleApproval(null, chooser, decals);
 
 		assertThat(exported).isTrue();
 		assertThat(decal.getExportTargets()).containsExactly(selected);
@@ -90,12 +110,18 @@ class ExportDecalActionTest extends BaseTestCase {
 		TestFileChooser chooser = new TestFileChooser(JFileChooser.APPROVE_OPTION);
 		File exportDir = tempDir.resolve("exports").toFile();
 		assertThat(exportDir.mkdir()).isTrue();
-		chooser.setSelectedFile(exportDir);
+		List<DecalImage> decals = List.of(new RecordingDecal("tex/first.png"),
+				new RecordingDecal("tex/second.png"));
+		chooser.forceSelection(exportDir);
+		ExportDecalAction.openChooserDialog(null, chooser, decals);
 		chooser.setCurrentDirectory(tempDir.toFile());
+		chooser.setSelectedFile(exportDir);
+		createFile(exportDir, "first.png");
+		createFile(exportDir, "second.png");
+		promptController.setResponses(OverwritePrompter.Choice.OVERWRITE_ALL);
 
-		RecordingDecal first = new RecordingDecal("tex/first.png");
-		RecordingDecal second = new RecordingDecal("tex/second.png");
-		List<DecalImage> decals = List.of(first, second);
+		RecordingDecal first = (RecordingDecal) decals.get(0);
+		RecordingDecal second = (RecordingDecal) decals.get(1);
 
 		boolean exported = ExportDecalAction.handleApproval(null, chooser, decals);
 
@@ -107,23 +133,85 @@ class ExportDecalActionTest extends BaseTestCase {
 		assertThat(new File(exportDir, "second.png")).exists();
 	}
 
-	private static final class TestFileChooser extends JFileChooser {
+	@Test
+	void handleApprovalMultipleDecalsStopsWhenUserCancelsOverwrite() throws Exception {
+		TestFileChooser chooser = new TestFileChooser(JFileChooser.APPROVE_OPTION);
+		File exportDir = tempDir.resolve("exports").toFile();
+		assertThat(exportDir.mkdir()).isTrue();
+		RecordingDecal first = new RecordingDecal("tex/first.png");
+		List<DecalImage> decals = List.of(first);
+		chooser.forceSelection(exportDir);
+		ExportDecalAction.openChooserDialog(null, chooser, decals);
+		chooser.setCurrentDirectory(tempDir.toFile());
+		chooser.setSelectedFile(exportDir);
+		createFile(exportDir, "first.png");
+		promptController.setResponses(OverwritePrompter.Choice.CANCEL);
+
+		boolean exported = ExportDecalAction.handleApproval(null, chooser, decals);
+
+		assertThat(exported).isFalse();
+		assertThat(preferences.getDefaultDirectory()).isEqualTo(tempDir.toFile());
+	}
+
+	@Test
+	void overwriteSingleFileDoesNotAffectSubsequentNonConflictingExports() throws Exception {
+		TestFileChooser chooser = new TestFileChooser(JFileChooser.APPROVE_OPTION);
+		File exportDir = tempDir.resolve("exports").toFile();
+		assertThat(exportDir.mkdir()).isTrue();
+		List<DecalImage> decals = List.of(new RecordingDecal("tex/first.png"),
+				new RecordingDecal("tex/second.png"));
+		chooser.forceSelection(exportDir);
+		ExportDecalAction.openChooserDialog(null, chooser, decals);
+		chooser.setCurrentDirectory(tempDir.toFile());
+		chooser.setSelectedFile(exportDir);
+		createFile(exportDir, "first.png");
+		promptController.setResponses(OverwritePrompter.Choice.OVERWRITE);
+
+		RecordingDecal first = (RecordingDecal) decals.get(0);
+		RecordingDecal second = (RecordingDecal) decals.get(1);
+
+		boolean exported = ExportDecalAction.handleApproval(null, chooser, decals);
+
+		assertThat(exported).isTrue();
+		assertThat(first.getExportTargets()).containsExactly(new File(exportDir, "first.png"));
+		assertThat(second.getExportTargets()).containsExactly(new File(exportDir, "second.png"));
+	}
+
+	private void createFile(File directory, String name) throws IOException {
+		File target = new File(directory, name);
+		try (FileOutputStream stream = new FileOutputStream(target)) {
+			stream.write(new byte[] { 0x1 });
+		}
+	}
+
+	private static final class TestFileChooser extends SaveFileChooser {
 		private final int returnValue;
 		private int saveDialogCalls;
 		private int openDialogCalls;
+		private File forcedSelection;
 
 		private TestFileChooser(int returnValue) {
 			this.returnValue = returnValue;
 		}
+		
+		void forceSelection(File file) {
+			this.forcedSelection = file;
+		}
 
 		@Override
 		public int showSaveDialog(Component parent) throws HeadlessException {
+			if (forcedSelection != null) {
+				super.setSelectedFile(forcedSelection);
+			}
 			saveDialogCalls++;
 			return returnValue;
 		}
 
 		@Override
 		public int showOpenDialog(Component parent) throws HeadlessException {
+			if (forcedSelection != null) {
+				super.setSelectedFile(forcedSelection);
+			}
 			openDialogCalls++;
 			return returnValue;
 		}
@@ -196,6 +284,22 @@ class ExportDecalActionTest extends BaseTestCase {
 		}
 		List<File> getExportTargets() {
 			return exportTargets;
+		}
+	}
+
+	private static final class OverwritePromptController implements OverwritePrompter.Prompt {
+		private Queue<OverwritePrompter.Choice> responses = new ArrayDeque<>();
+
+		void setResponses(OverwritePrompter.Choice... choices) {
+			this.responses = new ArrayDeque<>(Arrays.asList(choices));
+		}
+
+		@Override
+		public OverwritePrompter.Choice request(Window parent, File target) {
+			if (responses.isEmpty()) {
+				throw new AssertionError("Unexpected overwrite prompt for file " + target);
+			}
+			return responses.remove();
 		}
 	}
 }

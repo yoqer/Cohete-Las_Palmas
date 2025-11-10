@@ -18,15 +18,18 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.util.DecalNotFoundException;
 
 import info.openrocket.swing.gui.dialogs.DecalNotFoundDialog;
-import info.openrocket.swing.gui.util.FileHelper;
+import info.openrocket.swing.gui.util.OverwritePrompter;
 import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.widgets.SaveFileChooser;
 
 public abstract class ExportDecalAction {
 	
 	private final static Translator trans = Application.getTranslator();
+	
+	static OverwritePrompter.Prompt overwritePrompt = OverwritePrompter.defaultPrompt();
 
 	public static void export(Window parent, OpenRocketDocument doc) {
-		final JFileChooser chooser = new JFileChooser();
+		final SaveFileChooser chooser = new SaveFileChooser();
 		final List<DecalImage> selectedDecals;
 		
 		Collection<DecalImage> exportableDecals = doc.getDecalList();
@@ -60,24 +63,21 @@ public abstract class ExportDecalAction {
 		handleApproval(parent, chooser, selectedDecals);
 	}
 	
-	static int openChooserDialog(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
+	static int openChooserDialog(Window parent, SaveFileChooser chooser, List<DecalImage> selectedDecals) {
 		File dir = ((SwingPreferences) Application.getPreferences()).getDefaultDirectory();
-		if (selectedDecals.size() == 1) {
-			chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-			chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			File fullName = new File(selectedDecals.get(0).getName());
-			chooser.setCurrentDirectory(dir);
-			chooser.setSelectedFile(new File(dir, fullName.getName()));
-			return chooser.showSaveDialog(parent);
-		} else {
-			chooser.setDialogType(JFileChooser.OPEN_DIALOG);
-			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			chooser.setCurrentDirectory(dir);
-			return chooser.showOpenDialog(parent);
+		List<String> names = new ArrayList<>();
+		for (DecalImage decal : selectedDecals) {
+			names.add(new File(decal.getName()).getName());
 		}
+		SaveFileChooser.SelectionMode mode = chooser.configureForTargets(names, dir);
+		if (mode == SaveFileChooser.SelectionMode.SINGLE_FILE) {
+			return chooser.showSaveDialog(parent);
+		}
+		return chooser.showOpenDialog(parent);
 	}
 	
 	static boolean handleApproval(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
+		OverwritePrompter prompter = new OverwritePrompter(overwritePrompt);
 		File selectedFile = chooser.getSelectedFile();
 		if (selectedDecals.size() == 1) {
 			DecalImage decal = selectedDecals.get(0);
@@ -86,6 +86,9 @@ public abstract class ExportDecalAction {
 				file = new File(chooser.getCurrentDirectory(), new File(decal.getName()).getName());
 			}
 			((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+			if (!prompter.canOverwrite(parent, file)) {
+				return false;
+			}
 			return export(parent, decal, file);
 		} else {
 			File targetDirectory = selectedFile;
@@ -94,7 +97,7 @@ public abstract class ExportDecalAction {
 			}
 			if (ensureDirectory(parent, targetDirectory)) {
 				((SwingPreferences) Application.getPreferences()).setDefaultDirectory(targetDirectory);
-				return exportMultiple(parent, selectedDecals, targetDirectory);
+				return exportMultiple(parent, selectedDecals, targetDirectory, prompter);
 			}
 		}
 
@@ -118,15 +121,9 @@ public abstract class ExportDecalAction {
 	}
 	
 	static boolean export(Window parent, DecalImage decal, File selectedFile) {
-		
 		if (selectedFile == null) {
 			return false;
 		}
-		
-		if (!FileHelper.confirmWrite(selectedFile, parent)) {
-			return false;
-		}
-		
 		try {
 			decal.exportImage(selectedFile);
 			return true;
@@ -139,16 +136,24 @@ public abstract class ExportDecalAction {
 		return false;
 	}
 	
-	static boolean exportMultiple(Window parent, List<DecalImage> decals, File targetDirectory) {
+	static boolean exportMultiple(Window parent, List<DecalImage> decals, File targetDirectory,
+			OverwritePrompter prompter) {
 		boolean exported = false;
 		for (DecalImage decal : decals) {
 			File sourceName = new File(decal.getName());
 			File exportTarget = new File(targetDirectory, sourceName.getName());
+			if (!prompter.canOverwrite(parent, exportTarget)) {
+				return false;
+			}
 			if (!export(parent, decal, exportTarget)) {
 				return false;
 			}
 			exported = true;
 		}
 		return exported;
+	}
+	
+	static void setOverwritePrompt(OverwritePrompter.Prompt prompt) {
+		overwritePrompt = prompt != null ? prompt : OverwritePrompter.defaultPrompt();
 	}
 }
