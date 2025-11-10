@@ -154,6 +154,7 @@ public class EditDecalDialog extends JDialog {
 		
 		this.add(panel);
 
+		GUIUtil.installEscapeCloseButtonOperation(this, cancelButton);
 		GUIUtil.setDisposableDialogOptions(this, okButton);
 		GUIUtil.rememberWindowSize(this);
 		this.setLocationByPlatform(true);
