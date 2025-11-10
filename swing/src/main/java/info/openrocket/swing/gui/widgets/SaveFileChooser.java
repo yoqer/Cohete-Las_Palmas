@@ -4,8 +4,12 @@ import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.util.FileUtils;
 
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -20,10 +24,21 @@ public class SaveFileChooser extends JFileChooser {
         DIRECTORY
     }
 
+    public enum ViewType {
+        LIST,
+        DETAILS
+    }
+
     private File cwd = null;
     private File currentFile = null;
     private String fileName = null;
+    private ViewType viewType = ViewType.DETAILS;
 
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        SwingUtilities.invokeLater(this::applyViewType);
+    }
 
     @Override
     public void setSelectedFile(File file) {
@@ -79,6 +94,23 @@ public class SaveFileChooser extends JFileChooser {
             setSelectedFile(defaultDirectory);
         }
         return SelectionMode.DIRECTORY;
+    }
+
+    public void setInitialViewType(ViewType viewType) {
+        this.viewType = viewType != null ? viewType : ViewType.DETAILS;
+        applyViewType();
+    }
+
+    private void applyViewType() {
+        ActionMap actionMap = getActionMap();
+        if (actionMap == null) {
+            return;
+        }
+        String key = viewType == ViewType.LIST ? "viewTypeList" : "viewTypeDetails";
+        Action action = actionMap.get(key);
+        if (action != null) {
+            action.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, key));
+        }
     }
 
     @Override
