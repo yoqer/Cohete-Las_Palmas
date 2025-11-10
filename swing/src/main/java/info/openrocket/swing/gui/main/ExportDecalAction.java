@@ -18,6 +18,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.util.DecalNotFoundException;
 
 import info.openrocket.swing.gui.dialogs.DecalNotFoundDialog;
+import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.OverwritePrompter;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.widgets.SaveFileChooser;
@@ -77,7 +78,6 @@ public abstract class ExportDecalAction {
 	}
 	
 	static boolean handleApproval(Window parent, JFileChooser chooser, List<DecalImage> selectedDecals) {
-		OverwritePrompter prompter = new OverwritePrompter(overwritePrompt);
 		File selectedFile = chooser.getSelectedFile();
 		if (selectedDecals.size() == 1) {
 			DecalImage decal = selectedDecals.get(0);
@@ -86,11 +86,12 @@ public abstract class ExportDecalAction {
 				file = new File(chooser.getCurrentDirectory(), new File(decal.getName()).getName());
 			}
 			((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
-			if (!prompter.canOverwrite(parent, file)) {
+			if (!FileHelper.confirmWrite(file, parent)) {
 				return false;
 			}
 			return export(parent, decal, file);
 		} else {
+			OverwritePrompter prompter = new OverwritePrompter(overwritePrompt);
 			File targetDirectory = selectedFile;
 			if (targetDirectory == null) {
 				targetDirectory = chooser.getCurrentDirectory();
