@@ -186,6 +186,7 @@ public class EditDecalHelper {
 		
 		try {
 			decal.exportImage(tmpFile);
+			decal.setDecalFile(tmpFile);
 			watchService.register(new FileWatcher(tmpFile) {
 				
 				@Override
