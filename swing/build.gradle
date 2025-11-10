@@ -92,6 +92,7 @@ dependencies {
     implementation 'org.jogamp.jogl:jogl-all-main:2.6.0'
 
     testImplementation 'ch.qos.logback:logback-classic:1.5.20'
+    testImplementation 'org.assertj:assertj-core:3.26.3'
 }
 
 jacocoTestCoverageVerification {
