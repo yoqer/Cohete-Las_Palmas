@@ -537,6 +537,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		register(mDefault);
 
 		DecalModel decalModel = new DecalModel(panel, document, builder);
+		cleanupTasks.add(decalModel::dispose);
 		TextureComboBox textureDropDown = new TextureComboBox(decalModel);
 
 		final ColorChooserButton colorButton = new ColorChooserButton(ColorConversion.toAwtColor(builder.getPaint()), paintColorChooser);
