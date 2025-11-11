@@ -26,8 +26,6 @@ public class DecalModel extends AbstractListModel<DecalImage> implements ComboBo
 	
 	private static final ResourceDecalImage NONE_SELECTED = new ResourceDecalImage(trans.get("lbl.select"));
 	
-	private static final ResourceDecalImage SELECT_FILE = new ResourceDecalImage(trans.get("lbl.choose"));
-	
 	private final OpenRocketDocument document;
 	private final Component parent;
 	private final AppearanceBuilder ab;
@@ -45,16 +43,13 @@ public class DecalModel extends AbstractListModel<DecalImage> implements ComboBo
 	
 	@Override
 	public int getSize() {
-		return decals.length + 2;
+		return decals.length + 1;
 	}
 	
 	@Override
 	public DecalImage getElementAt(int index) {
 		if (index <= 0) {
 			return NONE_SELECTED;
-		}
-		if (index == getSize() - 1) {
-			return SELECT_FILE;
 		}
 		return decals[index - 1];
 	}
@@ -64,28 +59,30 @@ public class DecalModel extends AbstractListModel<DecalImage> implements ComboBo
 		
 		if (item == null || item.equals(NONE_SELECTED)) {
 			ab.setImage(null);
-		} else if (item.equals(SELECT_FILE)) {
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					File current = lastImageDir;
-					lastImageDir = current;
-					
-					JFileChooser fc = new JFileChooser(current);
-					fc.setFileFilter(FileHelper.getImageFileFilter());
-					fc.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
-					int action = fc.showOpenDialog(SwingUtilities.getWindowAncestor(parent));
-					if (action == JFileChooser.APPROVE_OPTION) {
-						((SwingPreferences) Application.getPreferences()).setDefaultDirectory(fc.getCurrentDirectory());
-						File file = fc.getSelectedFile();
-						Attachment a = (new FileSystemAttachmentFactory().getAttachment(file));
-						setSelectedItem(document.getDecalImage(a));
-					}
-				}
-			});
 		} else {
 			ab.setImage((DecalImage) item);
 		}
+	}
+
+	public void promptForFileSelection() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				File current = lastImageDir;
+
+				JFileChooser fc = new JFileChooser(current);
+				fc.setFileFilter(FileHelper.getImageFileFilter());
+				fc.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+				int action = fc.showOpenDialog(SwingUtilities.getWindowAncestor(parent));
+				if (action == JFileChooser.APPROVE_OPTION) {
+					((SwingPreferences) Application.getPreferences()).setDefaultDirectory(fc.getCurrentDirectory());
+					File file = fc.getSelectedFile();
+					lastImageDir = file.getParentFile();
+					Attachment a = (new FileSystemAttachmentFactory().getAttachment(file));
+					setSelectedItem(document.getDecalImage(a));
+				}
+			}
+		});
 	}
 	
 	@Override

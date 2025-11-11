@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JComboBox;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -66,6 +66,7 @@ import info.openrocket.swing.gui.components.ColorIcon;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
 import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.TextureComboBox;
 import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.EditDecalHelper;
 import info.openrocket.swing.gui.util.EditDecalHelper.EditDecalHelperException;
@@ -536,23 +537,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		register(mDefault);
 
 		DecalModel decalModel = new DecalModel(panel, document, builder);
-		JComboBox<DecalImage> textureDropDown = new JComboBox<>(decalModel);
-		textureDropDown.setMaximumRowCount(20);
-
-		// We need to add this action listener that triggers a decalModel update when the same item is selected, because
-		// for multi-comp edits, the listeners' decals may not be updated otherwise
-		textureDropDown.addActionListener(new ActionListener() {
-			private DecalImage previousSelection = (DecalImage) decalModel.getSelectedItem();
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				DecalImage decal = (DecalImage) textureDropDown.getSelectedItem();
-				if (decal == previousSelection) {
-					decalModel.setSelectedItem(decal);
-				}
-				previousSelection = decal;
-			}
-		});
+		TextureComboBox textureDropDown = new TextureComboBox(decalModel);
 
 		final ColorChooserButton colorButton = new ColorChooserButton(ColorConversion.toAwtColor(builder.getPaint()), paintColorChooser);
 		PlaceholderTextField colorHexField = new PlaceholderTextField(7);
@@ -621,11 +606,16 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 		// Texture File
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.Texture")));
-		JPanel p = new JPanel(new MigLayout("fill, ins 0", "[grow][]"));
+		JPanel p = new JPanel(new MigLayout("fill, ins 0", "[grow][][]"));
 		mDefault.addEnableComponent(textureDropDown, false);
 		p.add(textureDropDown, "grow");
+		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
+		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
+		mDefault.addEnableComponent(chooseTextureBtn, false);
+		p.add(chooseTextureBtn);
 		panel.add(p, "spanx 3, growx, wrap");
 		order.add(textureDropDown);
+		order.add(chooseTextureBtn);
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
