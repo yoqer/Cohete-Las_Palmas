@@ -606,17 +606,24 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		order.add(materialDefault);
 
 		// Texture File
-		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.Texture")));
-		JPanel p = new JPanel(new MigLayout("fill, ins 0", "[grow][][]"));
+		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.Texture")), "top");
+		JPanel p = new JPanel(new MigLayout("fill, ins 0", "[grow][][pref!]"));
 		mDefault.addEnableComponent(textureDropDown, false);
-		p.add(textureDropDown, "grow");
+		p.add(textureDropDown, "growx, top");
+
+		//// Select file button
 		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
-		p.add(chooseTextureBtn);
+		p.add(chooseTextureBtn, "top");
+
+		JPanel actionPanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
+		p.add(actionPanel, "top");
 		panel.add(p, "spanx 3, growx, wrap");
 		order.add(textureDropDown);
 		order.add(chooseTextureBtn);
+
+		JPanel editDeletePanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
@@ -653,8 +660,21 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 					}
 				}
 			});
-			p.add(editBtn);
+			editDeletePanel.add(editBtn, "growx, wrap");
+			order.add(editBtn);
 		}
+
+		//// Delete button
+		JButton deleteTextureBtn = new JButton(trans.get("DecalModel.but.delete"));
+		Runnable refreshDeleteButtonState = () -> deleteTextureBtn.setEnabled(decalModel.getActiveDecal() != null);
+		deleteTextureBtn.addActionListener(e -> handleDeleteTexture(panel, decalModel, refreshDeleteButtonState));
+		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
+		refreshDeleteButtonState.run();
+		mDefault.addEnableComponent(deleteTextureBtn, false);
+		editDeletePanel.add(deleteTextureBtn, "growx");
+		order.add(deleteTextureBtn);
+
+		actionPanel.add(editDeletePanel, "growx");
 
 		// TODO: move the separate columns in two separate panels instead of adding them in a zig-zag way
 		// Color
@@ -811,6 +831,33 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 				decalModel.refresh();
 			}
 		});
+	}
+
+	private void handleDeleteTexture(Component parent, DecalModel decalModel, Runnable onUpdateState) {
+		DecalImage selected = decalModel.getActiveDecal();
+		if (selected == null) {
+			JOptionPane.showMessageDialog(parent,
+					trans.get("DecalModel.msg.noSelection"),
+					trans.get("DecalModel.msg.deleteTitle"),
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		int decision = JOptionPane.showConfirmDialog(parent,
+				trans.get("DecalModel.msg.deleteConfirm", selected.getName()),
+				trans.get("DecalModel.msg.deleteTitle"),
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.WARNING_MESSAGE);
+		if (decision == JOptionPane.OK_OPTION) {
+			boolean removed = decalModel.deleteDecal(selected);
+			if (!removed) {
+				JOptionPane.showMessageDialog(parent,
+						trans.get("DecalModel.msg.deleteFailed"),
+						trans.get("DecalModel.msg.deleteTitle"),
+						JOptionPane.ERROR_MESSAGE);
+			} else if (onUpdateState != null) {
+				onUpdateState.run();
+			}
+		}
 	}
 
 	@Override

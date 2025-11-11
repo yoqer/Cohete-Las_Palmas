@@ -142,6 +142,27 @@ public class DecalModel extends AbstractListModel<DecalImage> implements ComboBo
 		fireContentsChanged(this, 0, decals.length);
 	}
 
+	public DecalImage getActiveDecal() {
+		Object selected = getSelectedItem();
+		return (selected instanceof DecalImage && isDeletable((DecalImage) selected)) ? (DecalImage) selected : null;
+	}
+
+	public boolean isDeletable(DecalImage decal) {
+		return decal != null && !decal.equals(NONE_SELECTED);
+	}
+
+	public boolean deleteDecal(DecalImage decal) {
+		if (!isDeletable(decal)) {
+			return false;
+		}
+		boolean removed = document.removeDecal(decal);
+		if (removed) {
+			setSelectedItem(NONE_SELECTED);
+			refresh();
+		}
+		return removed;
+	}
+
 	public void dispose() {
 		document.removeDocumentChangeListener(documentChangeListener);
 		clearCaches();
