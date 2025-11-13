@@ -32,6 +32,7 @@ import javax.swing.event.ChangeListener;
 
 import info.openrocket.core.util.Invalidatable;
 import info.openrocket.swing.gui.components.ColorChooserButton;
+import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.widgets.PlaceholderTextField;
 import net.miginfocom.swing.MigLayout;
 import info.openrocket.core.appearance.Appearance;
@@ -613,6 +614,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 		//// Select file button
 		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
+		chooseTextureBtn.setIcon(Icons.FILE_OPEN);
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
 		p.add(chooseTextureBtn, "top");
@@ -629,6 +631,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
 			JButton editBtn = new JButton(
 					trans.get("AppearanceCfg.but.edit"));
+			editBtn.setIcon(Icons.EDIT_EDIT);
 			// Enable the editBtn only when the appearance builder has an Image
 			// assigned to it.
 			editBtn.setEnabled(!materialDefault.isSelected() && builder.getImage() != null);
@@ -666,6 +669,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 		//// Delete button
 		JButton deleteTextureBtn = new JButton(trans.get("DecalModel.but.delete"));
+		deleteTextureBtn.setIcon(Icons.EDIT_DELETE);
 		Runnable refreshDeleteButtonState = () -> deleteTextureBtn.setEnabled(decalModel.getActiveDecal() != null);
 		deleteTextureBtn.addActionListener(e -> handleDeleteTexture(panel, decalModel, refreshDeleteButtonState));
 		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
