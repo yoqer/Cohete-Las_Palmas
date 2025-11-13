@@ -725,13 +725,13 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 
 		spin.setEditor(new SpinnerEditor(spin));
 		bm.addEnableComponent(spin, true);
-		panel.add(spin, "top, growx 1");
+		panel.add(spin, "growx 1");
 		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
 		
 		
 		bs = new BasicSlider(m.getSliderModel(-1.0, 1.0));
 		bm.addEnableComponent(bs);
-		panel.add(bs, "top, skip, wrap");
+		panel.add(bs, "skip, wrap");
 
 		if (component.getCDOverriddenBy() != null) {
 			check.setEnabled(false);
