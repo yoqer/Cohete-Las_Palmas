@@ -276,7 +276,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			this.remove(buttonPanel);
 		}
 
-		buttonPanel = new JPanel(new MigLayout("fill, ins 0"));
+		buttonPanel = new JPanel(new MigLayout("fill, ins 0, hidemode 3"));
 
 		//// Component info
 		addComponentInfo(buttonPanel);
@@ -764,7 +764,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 				Style.BOLD), "wrap");
 		
 		// TODO: LOW:  Changes in comment from other sources not reflected in component
-		commentTextArea = new JTextArea(component.getComment(), 5 , 50);
+		commentTextArea = new JTextArea(component.getComment(), 1, 1);
 		commentTextArea.setBorder(marginBorder);
 		commentTextArea.setLineWrap(true);
 		commentTextArea.setWrapStyleWord(true);
