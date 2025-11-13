@@ -35,7 +35,7 @@
   <launchers>
     <launcher name="OpenRocket 25.xx" id="59" icnsFile="../../swing/build/resources/main/pix/icon/icon-macos.icns">
       <executable name="OpenRocket" iconSet="true" iconFile="../../swing/build/resources/main/pix/icon/icon-windows.ico" executableDir="." executableMode="gui">
-        <versionInfo include="true" fileDescription="A model rocket flight-trajectory simulator." legalCopyright="Copyright 2007-2024 Sampo Niskanen and Others" internalName="${compiler:sys.shortName} ${compiler:sys.version}" />
+        <versionInfo include="true" fileDescription="A model rocket flight-trajectory simulator." legalCopyright="Copyright 2007-2025 Sampo Niskanen and Others" internalName="${compiler:sys.shortName} ${compiler:sys.version}" />
       </executable>
       <splashScreen show="true" width="662" height="336" bitmapFile="../../swing/build/resources/main/pix/splashscreen.png">
         <text>
@@ -660,18 +660,14 @@ return console.askYesNo(message, true);
     <unixInstaller name="linux Arm64" id="244" mediaFileName="${compiler:sys.shortName}-${compiler:sys.version}-installer-Linux-Arm64">
       <jreBundle platform="linux-aarch64" />
     </unixInstaller>
-    <macosArchive name="macOS (Intel)" id="213" mediaFileName="${compiler:sys.shortName}-${compiler:sys.version}-installer-macOS-Intel" architecture="amd64" dmgStylingMode="none" launcherId="59">
+    <macosArchive name="macOS (Intel)" id="213" mediaFileName="${compiler:sys.shortName}-${compiler:sys.version}-installer-macOS-Intel" architecture="amd64" dmgStylingMode="custom" useBackgroundImage="true" backgroundImageFile="macOS_resources/macOS_installer_background.png" bundleX="137" bundleY="148" windowHeight="300" launcherId="59">
       <topLevelFiles>
-        <file name=".DS_Store" file="./macOS_resources/DS_Store" />
-        <file name=".background/macOS_installer_background.png" file="./macOS_resources/macOS_installer_background.png" />
-        <symlink name="Applications" target="/Applications" />
+        <symlink name="Applications" useIconLocation="true" iconX="467" iconY="167" target="/Applications" />
       </topLevelFiles>
     </macosArchive>
-    <macosArchive name="macOS (Apple Silicon)" id="240" mediaFileName="${compiler:sys.shortName}-${compiler:sys.version}-installer-macOS-AppleSilicon" dmgStylingMode="none" launcherId="59">
+    <macosArchive name="macOS (Apple Silicon)" id="240" mediaFileName="${compiler:sys.shortName}-${compiler:sys.version}-installer-macOS-AppleSilicon" dmgStylingMode="custom" useBackgroundImage="true" backgroundImageFile="macOS_resources/macOS_installer_background.png" bundleX="137" bundleY="148" windowHeight="300" launcherId="59">
       <topLevelFiles>
-        <file name=".DS_Store" file="./macOS_resources/DS_Store" />
-        <file name=".background/macOS_installer_background.png" file="./macOS_resources/macOS_installer_background.png" />
-        <symlink name="Applications" target="/Applications" />
+        <symlink name="Applications" useIconLocation="true" iconX="467" iconY="147" target="/Applications" />
       </topLevelFiles>
     </macosArchive>
   </mediaSets>
