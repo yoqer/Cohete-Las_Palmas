@@ -915,7 +915,10 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		SpinnerNumberModel dpiModel = new SpinnerNumberModel(300d, 10d, 2000d, 10d);
 		JSpinner dpiSpinner = new JSpinner(dpiModel);
 		dpiSpinner.setEditor(new JSpinner.NumberEditor(dpiSpinner, "0"));
-		dialogPanel.add(new JLabel(trans.get("AppearanceCfg.createTexture.lbl.dpi")));
+		JLabel dpiLabel = new JLabel(trans.get("AppearanceCfg.createTexture.lbl.dpi"));
+		dpiLabel.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.dpi"));
+		dpiSpinner.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.dpi"));
+		dialogPanel.add(dpiLabel);
 		dialogPanel.add(dpiSpinner, "wrap");
 
 		// File name
