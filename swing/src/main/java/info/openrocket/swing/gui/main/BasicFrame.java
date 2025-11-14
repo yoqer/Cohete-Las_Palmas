@@ -545,7 +545,7 @@ private static final Translator trans = Application.getTranslator();
 				exportDecalAction();
 			}
 		});
-		item.setEnabled(document.getDecalList().size() > 0);
+		item.setEnabled(!document.getDecalList().isEmpty());
 
 		// TODO
 		/* document.getRocket().addChangeListener(new StateChangeListener() {
@@ -1984,7 +1984,7 @@ private static final Translator trans = Application.getTranslator();
 	}
 
 	public void exportDecalAction() {
-		new ExportDecalDialog(BasicFrame.this, document).setVisible(true);
+		ExportDecalAction.export(BasicFrame.this, document);
 	}
 
 
