@@ -618,6 +618,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		//// Select file button
 		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
 		chooseTextureBtn.setIcon(Icons.FILE_OPEN);
+		chooseTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
 		textureButtonsPanel.add(chooseTextureBtn, "cell 0 0, top");
@@ -629,6 +630,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		//// Create texture button
 		JButton createTextureBtn = new JButton(trans.get("AppearanceCfg.but.createTexture"));
 		createTextureBtn.setIcon(Icons.FILE_NEW);
+		createTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		// TODO: implementation
 		textureButtonsPanel.add(createTextureBtn, "cell 0 1, top");
 
@@ -637,6 +639,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 			JButton editBtn = new JButton(
 					trans.get("AppearanceCfg.but.edit"));
 			editBtn.setIcon(Icons.EDIT_EDIT);
+			editBtn.setHorizontalAlignment(SwingConstants.LEFT);
 			// Enable the editBtn only when the appearance builder has an Image
 			// assigned to it.
 			editBtn.setEnabled(!materialDefault.isSelected() && builder.getImage() != null);
@@ -675,6 +678,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		//// Delete button
 		JButton deleteTextureBtn = new JButton(trans.get("DecalModel.but.delete"));
 		deleteTextureBtn.setIcon(Icons.EDIT_DELETE);
+		deleteTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		Runnable refreshDeleteButtonState = () -> deleteTextureBtn.setEnabled(decalModel.getActiveDecal() != null);
 		deleteTextureBtn.addActionListener(e -> handleDeleteTexture(panel, decalModel, refreshDeleteButtonState));
 		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
