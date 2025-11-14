@@ -870,7 +870,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 	private void handleCreateTexture(Component parent, OpenRocketDocument document, RocketComponent component,
 									 DecalModel decalModel, boolean insideBuilder, AppearanceBuilder builder) {
-		TextureCreationParameters parameters = promptForTextureParameters(parent, component);
+		TextureCreationDialog.TextureCreationParameters parameters = promptForTextureParameters(parent, component);
 		if (parameters == null) {
 			return;
 		}
@@ -879,7 +879,8 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		TextureCreationService textureCreationService = new TextureCreationService();
 		TextureGenerationResult generationResult;
 		try {
-			generationResult = textureCreationService.generateTextureImage(component, insideBuilder, parameters.dpi());
+			generationResult = textureCreationService.generateTextureImage(
+					component, insideBuilder, parameters.dpi(), parameters.drawFinOutline());
 		} catch (TextureGenerationException ex) {
 			showCreateTextureError(parent,
 					trans.get("AppearanceCfg.createTexture.msg.generateFailed", ex.getMessage()));
@@ -908,83 +909,11 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		editButtonAction(parent, document, component, builder, insideBuilder);
 	}
 
-	private TextureCreationParameters promptForTextureParameters(Component parent, RocketComponent component) {
-		JPanel dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][]"));
-
-		// DPI Spinner
-		SpinnerNumberModel dpiModel = new SpinnerNumberModel(300d, 10d, 2000d, 10d);
-		JSpinner dpiSpinner = new JSpinner(dpiModel);
-		dpiSpinner.setEditor(new JSpinner.NumberEditor(dpiSpinner, "0"));
-		JLabel dpiLabel = new JLabel(trans.get("AppearanceCfg.createTexture.lbl.dpi"));
-		dpiLabel.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.dpi"));
-		dpiSpinner.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.dpi"));
-		dialogPanel.add(dpiLabel);
-		dialogPanel.add(dpiSpinner, "wrap");
-
-		// File name
-		JTextField fileNameField = new JTextField(20);
-		fileNameField.setText(defaultFileName(component));
-		dialogPanel.add(new JLabel(trans.get("AppearanceCfg.createTexture.lbl.filename")));
-		dialogPanel.add(fileNameField, "growx, wrap");
-
-		// Show dialog
-		int option = JOptionPane.showConfirmDialog(parent, dialogPanel,
-				trans.get("AppearanceCfg.createTexture.dialog.title"),
-				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-		if (option != JOptionPane.OK_OPTION) {
-			return null;
-		}
-
-		try {
-			dpiSpinner.commitEdit();
-		} catch (java.text.ParseException ex) {
-			showCreateTextureError(parent,
-					trans.get("AppearanceCfg.createTexture.msg.invalidDpi"));
-			return null;
-		}
-		String requestedFileName = slugifyFileName(fileNameField.getText());
-		if (requestedFileName.isEmpty()) {
-			showCreateTextureError(parent,
-					trans.get("AppearanceCfg.createTexture.msg.invalidFilename"));
-			return null;
-		}
-
-		return new TextureCreationParameters(((Number) dpiSpinner.getValue()).doubleValue(), requestedFileName);
+	private TextureCreationDialog.TextureCreationParameters promptForTextureParameters(Component parent, RocketComponent component) {
+		return new TextureCreationDialog(parent, component).showDialog();
 	}
 
-	/**
-	 * Generate a default file name for the texture based on the component's name.
-	 * @param component the rocket component
-	 * @return a slugified file name
-	 */
-	private String defaultFileName(RocketComponent component) {
-		String name = component.getName();
-		if (name == null || name.trim().isEmpty()) {
-			name = component.getComponentName();
-		}
-		if (name == null) {
-			name = "";
-		}
-		String slug = slugifyFileName(name);
-		return slug.isEmpty() ? "texture" : slug;
-	}
-
-	/**
-	 * Convert a string into a slug suitable for a file name.
-	 * @param value the input string
-	 * @return the slugified string (only lowercase letters, numbers, and hyphens)
-	 */
-	private String slugifyFileName(String value) {
-		if (value == null) {
-			return "";
-		}
-		String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
-				.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-		return normalized.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-")
-				.replaceAll("^-+|-+$", "");
-	}
-
-	private void showCreateTextureError(Component parent, String message) {
+	public static void showCreateTextureError(Component parent, String message) {
 		JOptionPane.showMessageDialog(parent,
 				message,
 				trans.get("AppearanceCfg.createTexture.dialog.title"),
@@ -1038,6 +967,4 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 		figureColorButton.removePropertyChangeListener(figureColorButtonListener);
 	}
-
-	private record TextureCreationParameters(double dpi, String fileName) { }
 }

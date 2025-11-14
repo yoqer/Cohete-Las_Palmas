@@ -29,12 +29,17 @@ public class TextureCreationService {
 
 	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
 														double dpi) throws TextureGenerationException {
+		return generateTextureImage(component, insideSurface, dpi, true);
+	}
+
+	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
+														double dpi, boolean drawFinOutline) throws TextureGenerationException {
 		if (dpi <= 0) {
 			throw new TextureGenerationException("DPI must be larger than zero.");
 		}
 
 		if (component instanceof FinSet) {
-			return generateForFinSet((FinSet) component, dpi);
+			return generateForFinSet((FinSet) component, dpi, drawFinOutline);
 		}
 
 		if (component instanceof SymmetricComponent) {
@@ -77,7 +82,7 @@ public class TextureCreationService {
 		return renderBlankImage(widthMeters, length, dpi, null);
 	}
 
-	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi)
+	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline)
 			throws TextureGenerationException {
 		CoordinateIF[] points = finSet.getFinPoints();
 		if (points == null || points.length < 3) {
@@ -104,8 +109,8 @@ public class TextureCreationService {
 		}
 
 		List<CoordinateIF> outline = new ArrayList<>(Arrays.asList(points));
-		return renderBlankImage(widthMeters, heightMeters, dpi,
-				new OutlineContext(outline, minX, maxY));
+		OutlineContext outlineContext = drawOutline ? new OutlineContext(outline, minX, maxY) : null;
+		return renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
 	}
 
 	private TextureGenerationResult renderBlankImage(double widthMeters, double heightMeters, double dpi,

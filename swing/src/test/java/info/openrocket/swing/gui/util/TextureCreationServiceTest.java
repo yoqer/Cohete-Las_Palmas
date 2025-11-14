@@ -3,6 +3,7 @@ package info.openrocket.swing.gui.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.awt.image.BufferedImage;
 
@@ -107,6 +108,20 @@ class TextureCreationServiceTest {
 		assertEquals(expectedHeight, result.getImage().getHeight());
 
 		assertTrue(hasOpaquePixels(result.getImage()), "Outline should place opaque pixels into the image");
+	}
+
+	@Test
+	void skipsOutlineWhenDisabled() throws TextureGenerationException {
+		TrapezoidFinSet finSet = new TrapezoidFinSet();
+		finSet.setHeight(0.15);
+		finSet.setRootChord(0.2);
+		finSet.setTipChord(0.12);
+		finSet.setSweep(0.05);
+
+		TextureCreationService service = new TextureCreationService();
+		TextureGenerationResult result = service.generateTextureImage(finSet, false, DPI, false);
+
+		assertFalse(hasOpaquePixels(result.getImage()), "Outline should be omitted when disabled");
 	}
 
 	@Test
