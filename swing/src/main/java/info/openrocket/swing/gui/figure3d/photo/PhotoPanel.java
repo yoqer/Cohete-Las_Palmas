@@ -47,6 +47,8 @@ import info.openrocket.core.document.events.DocumentChangeListener;
 import info.openrocket.core.motor.Motor;
 import info.openrocket.core.motor.MotorConfiguration;
 import info.openrocket.core.rocketcomponent.AxialStage;
+import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
+import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.FlightConfigurationId;
 import info.openrocket.core.rocketcomponent.MotorMount;
@@ -84,6 +86,7 @@ public class PhotoPanel extends JPanel implements GLEventListener {
 	private PhotoSettings p;
 	private OpenRocketDocument document;
 	private DocumentChangeListener changeListener;
+	private ComponentChangeListener componentChangeListener;
 
 	interface ImageCallback {
 		public void performAction(BufferedImage i);
@@ -109,6 +112,15 @@ public class PhotoPanel extends JPanel implements GLEventListener {
 			}
 		};
 		document.addDocumentChangeListener(changeListener);
+		componentChangeListener = new ComponentChangeListener() {
+			@Override
+			public void componentChanged(ComponentChangeEvent e) {
+				if (e.isTextureChange()) {
+					flushRendererTextureCache();
+				}
+			}
+		};
+		document.getRocket().addComponentChangeListener(componentChangeListener);
 
 		((GLAutoDrawable) canvas).invoke(false, new GLRunnable() {
 			@Override
@@ -123,6 +135,10 @@ public class PhotoPanel extends JPanel implements GLEventListener {
 
 	void clearDoc() {
 		document.removeDocumentChangeListener(changeListener);
+		if (componentChangeListener != null) {
+			document.getRocket().removeComponentChangeListener(componentChangeListener);
+			componentChangeListener = null;
+		}
 		changeListener = null;
 		document = null;
 	}
@@ -602,6 +618,19 @@ public class PhotoPanel extends JPanel implements GLEventListener {
 
 		FlameRenderer.init(gl);
 
+	}
+
+	private void flushRendererTextureCache() {
+		if (!(canvas instanceof GLAutoDrawable) || rr == null) {
+			return;
+		}
+		((GLAutoDrawable) canvas).invoke(true, new GLRunnable() {
+			@Override
+			public boolean run(GLAutoDrawable drawable) {
+				rr.flushTextureCache(drawable);
+				return false;
+			}
+		});
 	}
 
 	@Override
