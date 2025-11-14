@@ -180,7 +180,11 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	// SVG export options
 	public static final String SVG_STROKE_COLOR = "SVGStrokeColor";
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
-	
+
+	// Texture generation options
+	public static final String TEXTURE_GENERATION_DPI = "TextureGenerationDPI";
+	public static final String TEXTURE_GENERATION_DRAW_OUTLINE = "TextureGenerationDrawOutline";
+
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
 	private PinkNoiseWindModel averageWindModel = null;
@@ -1365,6 +1369,38 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGStrokeWidth(double width) {
 		putDouble(SVG_STROKE_WIDTH, width);
+	}
+
+	/**
+	 * Returns the texture generation DPI resolution setting.
+	 * @return the texture generation DPI
+	 */
+	public double getTextureGenerationDPI() {
+		return getDouble(TEXTURE_GENERATION_DPI, 300);
+	}
+
+	/**
+	 * Sets the texture generation DPI resolution setting.
+	 * @param dpi the texture generation DPI (dots per inch)
+	 */
+	public void setTextureGenerationDPI(double dpi) {
+		putDouble(TEXTURE_GENERATION_DPI, dpi);
+	}
+
+	/**
+	 * Returns whether to draw component outlines in texture generation.
+	 * @return true to draw outlines, false otherwise
+	 */
+	public boolean isTextureGenerationDrawOutline() {
+		return getBoolean(TEXTURE_GENERATION_DRAW_OUTLINE, true);
+	}
+
+	/**
+	 * Sets whether to draw component outlines in texture generation.
+	 * @param drawOutline true to draw outlines, false otherwise
+	 */
+	public void setTextureGenerationDrawOutline(boolean drawOutline) {
+		putBoolean(TEXTURE_GENERATION_DRAW_OUTLINE, drawOutline);
 	}
 
 	/**

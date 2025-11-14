@@ -1,13 +1,13 @@
 package info.openrocket.swing.gui.configdialog;
 
 import info.openrocket.core.l10n.Translator;
+import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.startup.Application;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -20,6 +20,7 @@ import java.util.Locale;
 
 public class TextureCreationDialog {
 	private static final Translator trans = Application.getTranslator();
+	private static final ApplicationPreferences prefs = Application.getPreferences();
 
 	private final Component parent;
 	private final RocketComponent component;
@@ -33,7 +34,7 @@ public class TextureCreationDialog {
 		this.component = component;
 		dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][][]"));
 
-		SpinnerNumberModel dpiModel = new SpinnerNumberModel(300d, 10d, 2000d, 10d);
+		SpinnerNumberModel dpiModel = new SpinnerNumberModel(prefs.getTextureGenerationDPI(), 10d, 2000d, 10d);
 		dpiSpinner = new JSpinner(dpiModel);
 		dpiSpinner.setEditor(new JSpinner.NumberEditor(dpiSpinner, "0"));
 		JLabel dpiLabel = new JLabel(trans.get("AppearanceCfg.createTexture.lbl.dpi"));
@@ -49,7 +50,7 @@ public class TextureCreationDialog {
 
 		if (component instanceof FinSet) {
 			outlineCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.outline"));
-			outlineCheckbox.setSelected(true);
+			outlineCheckbox.setSelected(prefs.isTextureGenerationDrawOutline());
 			outlineCheckbox.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.outline"));
 			dialogPanel.add(outlineCheckbox, "span 2");
 		} else {
@@ -78,6 +79,12 @@ public class TextureCreationDialog {
 			AppearancePanel.showCreateTextureError(parent,
 					trans.get("AppearanceCfg.createTexture.msg.invalidFilename"));
 			return null;
+		}
+
+		// Save preferences
+		prefs.setTextureGenerationDPI((Double) dpiSpinner.getValue());
+		if (outlineCheckbox != null) {
+			prefs.setTextureGenerationDrawOutline(outlineCheckbox.isSelected());
 		}
 
 		boolean drawOutline = outlineCheckbox != null && outlineCheckbox.isSelected();
