@@ -1,0 +1,208 @@
+package info.openrocket.swing.gui.util;
+
+import java.awt.BasicStroke;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+
+import info.openrocket.core.rocketcomponent.FinSet;
+import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.core.rocketcomponent.SymmetricComponent;
+import info.openrocket.core.util.CoordinateIF;
+
+/**
+ * Helper that can generate blank decal textures sized to a component and optionally render
+ * outline guides for fins.
+ */
+public class TextureCreationService {
+
+	private static final double METERS_PER_INCH = 0.0254d;
+	private static final int SAMPLING_STEPS = 128;
+
+	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
+														double dpi) throws TextureGenerationException {
+		if (dpi <= 0) {
+			throw new TextureGenerationException("DPI must be larger than zero.");
+		}
+
+		if (component instanceof FinSet) {
+			return generateForFinSet((FinSet) component, dpi);
+		}
+
+		if (component instanceof SymmetricComponent) {
+			return generateForSymmetric((SymmetricComponent) component, insideSurface, dpi);
+		}
+
+		throw new TextureGenerationException("Component type " + component.getClass().getSimpleName()
+				+ " is not supported for automatic texture creation.");
+	}
+
+	public void writeTexture(File file, TextureGenerationResult result) throws IOException {
+		File parent = file.getParentFile();
+		if (parent != null && !parent.exists()) {
+			parent.mkdirs();
+		}
+		ImageIO.write(result.getImage(), "png", file);
+	}
+
+	private TextureGenerationResult generateForSymmetric(SymmetricComponent component, boolean insideSurface,
+														 double dpi) throws TextureGenerationException {
+		double length = component.getLength();
+		if (length <= 0) {
+			throw new TextureGenerationException(
+					"Component length must be greater than zero to create a texture.");
+		}
+
+		double maxRadius = 0;
+		for (int i = 0; i <= SAMPLING_STEPS; i++) {
+			double x = length * i / SAMPLING_STEPS;
+			double radius = insideSurface ? component.getInnerRadius(x) : component.getRadius(x);
+			maxRadius = Math.max(maxRadius, radius);
+		}
+
+		if (maxRadius <= 0) {
+			throw new TextureGenerationException(
+					"Component radius must be greater than zero to create a texture.");
+		}
+
+		double widthMeters = 2 * Math.PI * maxRadius;
+		return renderBlankImage(widthMeters, length, dpi, null);
+	}
+
+	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi)
+			throws TextureGenerationException {
+		CoordinateIF[] points = finSet.getFinPoints();
+		if (points == null || points.length < 3) {
+			throw new TextureGenerationException("Unable to determine fin geometry for texture creation.");
+		}
+
+		double minX = Double.POSITIVE_INFINITY;
+		double maxX = Double.NEGATIVE_INFINITY;
+		double minY = Double.POSITIVE_INFINITY;
+		double maxY = Double.NEGATIVE_INFINITY;
+
+		for (CoordinateIF point : points) {
+			minX = Math.min(minX, point.getX());
+			maxX = Math.max(maxX, point.getX());
+			minY = Math.min(minY, point.getY());
+			maxY = Math.max(maxY, point.getY());
+		}
+
+		double widthMeters = maxX - minX;
+		double heightMeters = maxY - minY;
+
+		if (widthMeters <= 0 || heightMeters <= 0) {
+			throw new TextureGenerationException("Fin geometry has zero extent, cannot create texture.");
+		}
+
+		List<CoordinateIF> outline = new ArrayList<>(Arrays.asList(points));
+		return renderBlankImage(widthMeters, heightMeters, dpi,
+				new OutlineContext(outline, minX, maxY));
+	}
+
+	private TextureGenerationResult renderBlankImage(double widthMeters, double heightMeters, double dpi,
+													 OutlineContext outlineContext) throws TextureGenerationException {
+		double scale = dpi / METERS_PER_INCH;
+
+		int widthPx = Math.max(1, (int) Math.round(widthMeters * scale));
+		int heightPx = Math.max(1, (int) Math.round(heightMeters * scale));
+
+		if (widthPx <= 0 || heightPx <= 0) {
+			throw new TextureGenerationException("Computed image dimensions are invalid.");
+		}
+
+		BufferedImage image = new BufferedImage(widthPx, heightPx, BufferedImage.TYPE_INT_ARGB);
+
+		if (outlineContext != null) {
+			drawOutline(image, outlineContext, scale);
+		}
+
+		return new TextureGenerationResult(image, widthMeters, heightMeters, dpi);
+	}
+
+	private void drawOutline(BufferedImage image, OutlineContext outlineContext, double scale) {
+		Graphics2D g2d = image.createGraphics();
+		try {
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			Path2D path = new Path2D.Double();
+			boolean first = true;
+			for (CoordinateIF point : outlineContext.outlinePoints) {
+				double x = (point.getX() - outlineContext.minX) * scale;
+				double y = (outlineContext.maxY - point.getY()) * scale;
+				if (first) {
+					path.moveTo(x, y);
+					first = false;
+				} else {
+					path.lineTo(x, y);
+				}
+			}
+			path.closePath();
+
+			float strokeWidth = (float) Math.max(1f, scale * 0.0005f);
+			g2d.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g2d.setColor(new java.awt.Color(0, 0, 0, 200));
+			g2d.draw(path);
+		} finally {
+			g2d.dispose();
+		}
+	}
+
+	private static final class OutlineContext {
+		private final List<CoordinateIF> outlinePoints;
+		private final double minX;
+		private final double maxY;
+
+		private OutlineContext(List<CoordinateIF> outlinePoints, double minX, double maxY) {
+			this.outlinePoints = outlinePoints;
+			this.minX = minX;
+			this.maxY = maxY;
+		}
+	}
+
+	public static final class TextureGenerationResult {
+		private final BufferedImage image;
+		private final double widthMeters;
+		private final double heightMeters;
+		private final double dpi;
+
+		private TextureGenerationResult(BufferedImage image, double widthMeters, double heightMeters, double dpi) {
+			this.image = image;
+			this.widthMeters = widthMeters;
+			this.heightMeters = heightMeters;
+			this.dpi = dpi;
+		}
+
+		public BufferedImage getImage() {
+			return image;
+		}
+
+		public double getWidthMeters() {
+			return widthMeters;
+		}
+
+		public double getHeightMeters() {
+			return heightMeters;
+		}
+
+		public double getDpi() {
+			return dpi;
+		}
+	}
+
+	public static class TextureGenerationException extends Exception {
+		private static final long serialVersionUID = -3110562336932512500L;
+
+		public TextureGenerationException(String message) {
+			super(message);
+		}
+	}
+}
+
