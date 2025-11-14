@@ -110,7 +110,8 @@ public class TextureCreationService {
 
 		List<CoordinateIF> outline = new ArrayList<>(Arrays.asList(points));
 		OutlineContext outlineContext = drawOutline ? new OutlineContext(outline, minX, maxY) : null;
-		return renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
+		TextureGenerationResult result = renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
+		return rotateResult180(result);
 	}
 
 	private TextureGenerationResult renderBlankImage(double widthMeters, double heightMeters, double dpi,
@@ -131,6 +132,19 @@ public class TextureCreationService {
 		}
 
 		return new TextureGenerationResult(image, widthMeters, heightMeters, dpi);
+	}
+
+	private TextureGenerationResult rotateResult180(TextureGenerationResult result) {
+		BufferedImage source = result.getImage();
+		BufferedImage rotated = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+		Graphics2D g2d = rotated.createGraphics();
+		try {
+			g2d.rotate(Math.PI, source.getWidth() / 2.0, source.getHeight() / 2.0);
+			g2d.drawImage(source, 0, 0, null);
+		} finally {
+			g2d.dispose();
+		}
+		return new TextureGenerationResult(rotated, result.getWidthMeters(), result.getHeightMeters(), result.getDpi());
 	}
 
 	private void drawOutline(BufferedImage image, OutlineContext outlineContext, double scale) {
