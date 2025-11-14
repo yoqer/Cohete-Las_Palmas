@@ -7,10 +7,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
@@ -26,10 +32,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
-import javax.swing.colorchooser.ColorSelectionModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.SpinnerNumberModel;
 
+import info.openrocket.core.document.Attachment;
 import info.openrocket.core.util.Invalidatable;
 import info.openrocket.swing.gui.components.ColorChooserButton;
 import info.openrocket.swing.gui.util.Icons;
@@ -43,6 +48,7 @@ import info.openrocket.core.appearance.defaults.DefaultAppearance;
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.arch.SystemInfo.Platform;
 import info.openrocket.core.document.OpenRocketDocument;
+import info.openrocket.core.file.FileSystemAttachmentFactory;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
 import info.openrocket.core.rocketcomponent.FinSet;
@@ -63,7 +69,6 @@ import info.openrocket.swing.gui.adaptors.DecalModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.ColorIcon;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
 import info.openrocket.swing.gui.components.UnitSelector;
@@ -72,6 +77,9 @@ import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.EditDecalHelper;
 import info.openrocket.swing.gui.util.EditDecalHelper.EditDecalHelperException;
 import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.util.TextureCreationService;
+import info.openrocket.swing.gui.util.TextureCreationService.TextureGenerationException;
+import info.openrocket.swing.gui.util.TextureCreationService.TextureGenerationResult;
 
 public class AppearancePanel extends JPanel implements Invalidatable, InvalidatingWidget {
 	private static final long serialVersionUID = 2709187552673202019L;
@@ -631,8 +639,11 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		JButton createTextureBtn = new JButton(trans.get("AppearanceCfg.but.createTexture"));
 		createTextureBtn.setIcon(Icons.FILE_NEW);
 		createTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
-		// TODO: implementation
+		createTextureBtn.addActionListener(e -> handleCreateTexture(panel, document, c, decalModel,
+				insideBuilder, builder));
+		mDefault.addEnableComponent(createTextureBtn, false);
 		textureButtonsPanel.add(createTextureBtn, "cell 0 1, top");
+		order.add(createTextureBtn);
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
@@ -659,16 +670,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 			editBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					try {
-						DecalImage newImage = editDecalHelper.editDecal(
-								SwingUtilities
-										.getWindowAncestor(panel),
-								document, c, builder.getImage(), insideBuilder);
-						builder.setImage(newImage);
-					} catch (EditDecalHelperException ex) {
-						JOptionPane.showMessageDialog(panel,
-								ex.getMessage(), "", JOptionPane.ERROR_MESSAGE);
-					}
+					editButtonAction(panel, document, c, builder, insideBuilder);
 				}
 			});
 			textureButtonsPanel.add(editBtn, "cell 1 0, growx");
@@ -845,6 +847,147 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		});
 	}
 
+	/**
+	 * Handle the edit texture action
+	 * @param parent the parent component
+	 * @param document the current document
+	 * @param c the rocket component
+	 * @param builder the appearance builder
+	 * @param insideBuilder flag to check whether you are on the inside builder (true) or outside builder
+	 */
+	private void editButtonAction(Component parent, OpenRocketDocument document, RocketComponent c, AppearanceBuilder builder, boolean insideBuilder) {
+		try {
+			DecalImage newImage = editDecalHelper.editDecal(
+					SwingUtilities
+							.getWindowAncestor(parent),
+					document, c, builder.getImage(), insideBuilder);
+			builder.setImage(newImage);
+		} catch (EditDecalHelperException ex) {
+			JOptionPane.showMessageDialog(parent,
+					ex.getMessage(), "", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void handleCreateTexture(Component parent, OpenRocketDocument document, RocketComponent component,
+									 DecalModel decalModel, boolean insideBuilder, AppearanceBuilder builder) {
+		TextureCreationParameters parameters = promptForTextureParameters(parent, component);
+		if (parameters == null) {
+			return;
+		}
+
+		// Set up the texture generator
+		TextureCreationService textureCreationService = new TextureCreationService();
+		TextureGenerationResult generationResult;
+		try {
+			generationResult = textureCreationService.generateTextureImage(component, insideBuilder, parameters.dpi());
+		} catch (TextureGenerationException ex) {
+			showCreateTextureError(parent,
+					trans.get("AppearanceCfg.createTexture.msg.generateFailed", ex.getMessage()));
+			return;
+		}
+
+		// Generate the texture
+		File tempFile;
+		try {
+			Path tempDir = Files.createTempDirectory("OR_texture_");
+			tempDir.toFile().deleteOnExit();
+			tempFile = tempDir.resolve(parameters.fileName() + ".png").toFile();
+			textureCreationService.writeTexture(tempFile, generationResult);
+			tempFile.deleteOnExit();
+		} catch (IOException ioex) {
+			showCreateTextureError(parent,
+					trans.get("AppearanceCfg.createTexture.msg.writeFailed", ioex.getMessage()));
+			return;
+		}
+
+		// Create an attachment for the texture
+		Attachment a = (new FileSystemAttachmentFactory().getAttachment(tempFile));
+		decalModel.setSelectedItem(document.getDecalImage(a));
+
+		// Edit the texture
+		editButtonAction(parent, document, component, builder, insideBuilder);
+	}
+
+	private TextureCreationParameters promptForTextureParameters(Component parent, RocketComponent component) {
+		JPanel dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][]"));
+
+		// DPI Spinner
+		SpinnerNumberModel dpiModel = new SpinnerNumberModel(300d, 10d, 2000d, 10d);
+		JSpinner dpiSpinner = new JSpinner(dpiModel);
+		dpiSpinner.setEditor(new JSpinner.NumberEditor(dpiSpinner, "0"));
+		dialogPanel.add(new JLabel(trans.get("AppearanceCfg.createTexture.lbl.dpi")));
+		dialogPanel.add(dpiSpinner, "wrap");
+
+		// File name
+		JTextField fileNameField = new JTextField(20);
+		fileNameField.setText(defaultFileName(component));
+		dialogPanel.add(new JLabel(trans.get("AppearanceCfg.createTexture.lbl.filename")));
+		dialogPanel.add(fileNameField, "growx, wrap");
+
+		// Show dialog
+		int option = JOptionPane.showConfirmDialog(parent, dialogPanel,
+				trans.get("AppearanceCfg.createTexture.dialog.title"),
+				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+		if (option != JOptionPane.OK_OPTION) {
+			return null;
+		}
+
+		try {
+			dpiSpinner.commitEdit();
+		} catch (java.text.ParseException ex) {
+			showCreateTextureError(parent,
+					trans.get("AppearanceCfg.createTexture.msg.invalidDpi"));
+			return null;
+		}
+		String requestedFileName = slugifyFileName(fileNameField.getText());
+		if (requestedFileName.isEmpty()) {
+			showCreateTextureError(parent,
+					trans.get("AppearanceCfg.createTexture.msg.invalidFilename"));
+			return null;
+		}
+
+		return new TextureCreationParameters(((Number) dpiSpinner.getValue()).doubleValue(), requestedFileName);
+	}
+
+	/**
+	 * Generate a default file name for the texture based on the component's name.
+	 * @param component the rocket component
+	 * @return a slugified file name
+	 */
+	private String defaultFileName(RocketComponent component) {
+		String name = component.getName();
+		if (name == null || name.trim().isEmpty()) {
+			name = component.getComponentName();
+		}
+		if (name == null) {
+			name = "";
+		}
+		String slug = slugifyFileName(name);
+		return slug.isEmpty() ? "texture" : slug;
+	}
+
+	/**
+	 * Convert a string into a slug suitable for a file name.
+	 * @param value the input string
+	 * @return the slugified string (only lowercase letters, numbers, and hyphens)
+	 */
+	private String slugifyFileName(String value) {
+		if (value == null) {
+			return "";
+		}
+		String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+				.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+		return normalized.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-")
+				.replaceAll("^-+|-+$", "");
+	}
+
+	private void showCreateTextureError(Component parent, String message) {
+		JOptionPane.showMessageDialog(parent,
+				message,
+				trans.get("AppearanceCfg.createTexture.dialog.title"),
+				JOptionPane.ERROR_MESSAGE);
+	}
+
 	private void handleDeleteTexture(Component parent, DecalModel decalModel, Runnable onUpdateState) {
 		DecalImage selected = decalModel.getActiveDecal();
 		if (selected == null) {
@@ -892,4 +1035,6 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 
 		figureColorButton.removePropertyChangeListener(figureColorButtonListener);
 	}
+
+	private record TextureCreationParameters(double dpi, String fileName) { }
 }
