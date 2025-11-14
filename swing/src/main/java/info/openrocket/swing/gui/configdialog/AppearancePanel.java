@@ -626,6 +626,12 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		order.add(textureDropDown);
 		order.add(chooseTextureBtn);
 
+		//// Create texture button
+		JButton createTextureBtn = new JButton(trans.get("AppearanceCfg.but.createTexture"));
+		createTextureBtn.setIcon(Icons.FILE_NEW);
+		// TODO: implementation
+		textureButtonsPanel.add(createTextureBtn, "cell 0 1, top");
+
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
 			JButton editBtn = new JButton(
