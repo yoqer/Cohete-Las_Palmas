@@ -612,20 +612,19 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		mDefault.addEnableComponent(textureDropDown, false);
 		p.add(textureDropDown, "growx, top");
 
+		JPanel textureButtonsPanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
+		p.add(textureButtonsPanel, "top");
+
 		//// Select file button
 		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
 		chooseTextureBtn.setIcon(Icons.FILE_OPEN);
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
-		p.add(chooseTextureBtn, "top");
+		textureButtonsPanel.add(chooseTextureBtn, "cell 0 0, top");
 
-		JPanel actionPanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
-		p.add(actionPanel, "top");
 		panel.add(p, "spanx 3, growx, wrap");
 		order.add(textureDropDown);
 		order.add(chooseTextureBtn);
-
-		JPanel editDeletePanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
@@ -663,7 +662,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 					}
 				}
 			});
-			editDeletePanel.add(editBtn, "growx, wrap");
+			textureButtonsPanel.add(editBtn, "cell 1 0, growx");
 			order.add(editBtn);
 		}
 
@@ -675,10 +674,9 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
 		refreshDeleteButtonState.run();
 		mDefault.addEnableComponent(deleteTextureBtn, false);
-		editDeletePanel.add(deleteTextureBtn, "growx");
+		textureButtonsPanel.add(deleteTextureBtn, "cell 1 1, growx");
 		order.add(deleteTextureBtn);
 
-		actionPanel.add(editDeletePanel, "growx");
 
 		// TODO: move the separate columns in two separate panels instead of adding them in a zig-zag way
 		// Color
