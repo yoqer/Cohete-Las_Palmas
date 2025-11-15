@@ -169,7 +169,7 @@ class TextureCreationServiceTest {
 		finSet.setTipChord(0.12);
 		finSet.setSweep(0.05);
 
-		Color outlineColor = new Color(120, 10, 180, 220);
+		Color outlineColor = new Color(120, 10, 180, 255);
 		TextureCreationService service = new TextureCreationService();
 		TextureGenerationResult colored = service.generateTextureImage(finSet, false, DPI, true, 2f, false, outlineColor);
 
