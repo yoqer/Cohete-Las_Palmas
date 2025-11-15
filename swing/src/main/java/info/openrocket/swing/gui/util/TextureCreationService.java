@@ -1,12 +1,10 @@
 package info.openrocket.swing.gui.util;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.Shape;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -162,9 +160,17 @@ public class TextureCreationService {
 	}
 
 	private void drawOutline(BufferedImage image, OutlineContext outlineContext, double scale) {
-		Graphics2D g2d = image.createGraphics();
+		float requestedWidth = outlineContext.outlineWidthPx > 0
+				? outlineContext.outlineWidthPx
+				: (float) Math.max(1f, scale * 0.0005f);
+		float inflatedWidth = Math.max(1f, requestedWidth * 2f);
+
+		BufferedImage outlineLayer = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = outlineLayer.createGraphics();
 		try {
 			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+			g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+
 			Path2D path = new Path2D.Double();
 			boolean first = true;
 			for (CoordinateIF point : outlineContext.outlinePoints) {
@@ -179,19 +185,21 @@ public class TextureCreationService {
 			}
 			path.closePath();
 
-			// Get image size
-			Area clipArea = new Area(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
-			clipArea.subtract(new Area(path));
-
-			float strokeWidth = outlineContext.outlineWidthPx > 0
-					? outlineContext.outlineWidthPx
-					: (float) Math.max(1f, scale * 0.0005f);
-			g2d.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g2d.setStroke(new BasicStroke(inflatedWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
 			g2d.setColor(new java.awt.Color(0, 0, 0));
 			g2d.draw(path);
-			g2d.setClip(clipArea);
+
+			g2d.setComposite(AlphaComposite.Clear);
+			g2d.fill(path);
 		} finally {
 			g2d.dispose();
+		}
+
+		Graphics2D base = image.createGraphics();
+		try {
+			base.drawImage(outlineLayer, 0, 0, null);
+		} finally {
+			base.dispose();
 		}
 	}
 
