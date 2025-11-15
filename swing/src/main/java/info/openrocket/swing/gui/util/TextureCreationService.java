@@ -1,8 +1,8 @@
 package info.openrocket.swing.gui.util;
 
 import java.awt.AlphaComposite;
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
@@ -47,12 +47,19 @@ public class TextureCreationService {
 	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
 														double dpi, boolean drawFinOutline, float outlineWidthPx,
 														boolean mirrorVertically) throws TextureGenerationException {
+		return generateTextureImage(component, insideSurface, dpi, drawFinOutline, outlineWidthPx, mirrorVertically,
+				new Color(0, 0, 0, 200));
+	}
+
+	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
+														double dpi, boolean drawFinOutline, float outlineWidthPx,
+														boolean mirrorVertically, Color outlineColor) throws TextureGenerationException {
 		if (dpi <= 0) {
 			throw new TextureGenerationException("DPI must be larger than zero.");
 		}
 
 		if (component instanceof FinSet) {
-			return generateForFinSet((FinSet) component, dpi, drawFinOutline, outlineWidthPx, mirrorVertically);
+			return generateForFinSet((FinSet) component, dpi, drawFinOutline, outlineWidthPx, mirrorVertically, outlineColor);
 		}
 
 		if (component instanceof SymmetricComponent) {
@@ -96,7 +103,7 @@ public class TextureCreationService {
 	}
 
 	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline, float outlineWidthPx,
-													 boolean mirrorVertically)
+													 boolean mirrorVertically, Color outlineColor)
 			throws TextureGenerationException {
 		CoordinateIF[] points = finSet.getFinPoints();
 		if (points == null || points.length < 3) {
@@ -128,7 +135,8 @@ public class TextureCreationService {
 		if (!drawOutline || sanitizedOutlineWidth == 0f) {
 			outlineContext = null;
 		} else {
-			outlineContext = new OutlineContext(outline, minX, maxY, sanitizedOutlineWidth);
+			outlineContext = new OutlineContext(outline, minX, maxY, sanitizedOutlineWidth,
+					outlineColor == null ? new Color(0, 0, 0, 200) : outlineColor);
 		}
 		TextureGenerationResult result = renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
 		if (mirrorVertically) {
@@ -196,8 +204,8 @@ public class TextureCreationService {
 			}
 			path.closePath();
 
-			g2d.setStroke(new BasicStroke(inflatedWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
-			g2d.setColor(new java.awt.Color(0, 0, 0));
+		g2d.setStroke(new BasicStroke(inflatedWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+		g2d.setColor(outlineContext.outlineColor);
 			g2d.draw(path);
 
 			g2d.setComposite(AlphaComposite.Clear);
@@ -233,12 +241,14 @@ public class TextureCreationService {
 		private final double minX;
 		private final double maxY;
 		private final float outlineWidthPx;
+		private final Color outlineColor;
 
-		private OutlineContext(List<CoordinateIF> outlinePoints, double minX, double maxY, float outlineWidthPx) {
+		private OutlineContext(List<CoordinateIF> outlinePoints, double minX, double maxY, float outlineWidthPx, Color outlineColor) {
 			this.outlinePoints = outlinePoints;
 			this.minX = minX;
 			this.maxY = maxY;
 			this.outlineWidthPx = outlineWidthPx;
+			this.outlineColor = outlineColor;
 		}
 	}
 

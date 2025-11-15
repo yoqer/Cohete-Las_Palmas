@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 import org.junit.jupiter.api.AfterAll;
@@ -161,6 +162,22 @@ class TextureCreationServiceTest {
 	}
 
 	@Test
+	void appliesCustomOutlineColor() throws TextureGenerationException {
+		TrapezoidFinSet finSet = new TrapezoidFinSet();
+		finSet.setHeight(0.15);
+		finSet.setRootChord(0.2);
+		finSet.setTipChord(0.12);
+		finSet.setSweep(0.05);
+
+		Color outlineColor = new Color(120, 10, 180, 220);
+		TextureCreationService service = new TextureCreationService();
+		TextureGenerationResult colored = service.generateTextureImage(finSet, false, DPI, true, 2f, false, outlineColor);
+
+		int observed = findFirstOpaquePixelColor(colored.getImage());
+		assertEquals(outlineColor.getRGB(), observed, "Outline color should match the requested color");
+	}
+
+	@Test
 	void rejectsUnsupportedComponentTypes() {
 		Parachute parachute = new Parachute();
 		TextureCreationService service = new TextureCreationService();
@@ -212,6 +229,20 @@ class TextureCreationServiceTest {
 			}
 		}
 		return true;
+	}
+
+	private int findFirstOpaquePixelColor(BufferedImage image) {
+		int width = image.getWidth();
+		int height = image.getHeight();
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				int pixel = image.getRGB(x, y);
+				if ((pixel >>> 24) != 0) {
+					return pixel;
+				}
+			}
+		}
+		return 0;
 	}
 }
 

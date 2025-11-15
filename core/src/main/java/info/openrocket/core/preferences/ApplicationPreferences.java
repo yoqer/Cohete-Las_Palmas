@@ -186,6 +186,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String TEXTURE_GENERATION_DRAW_OUTLINE = "TextureGenerationDrawOutline";
 	public static final String TEXTURE_GENERATION_OUTLINE_PX = "TextureGenerationOutlinePx";
 	public static final String TEXTURE_GENERATION_RESET_TRANSFORMS = "TextureGenerationResetTransforms";
+	public static final String TEXTURE_GENERATION_OUTLINE_COLOR = "TextureGenerationOutlineColor";
 
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1431,6 +1432,18 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setTextureGenerationResetTransforms(boolean reset) {
 		putBoolean(TEXTURE_GENERATION_RESET_TRANSFORMS, reset);
+	}
+
+	public Color getTextureGenerationOutlineColor() {
+		int argb = getInt(TEXTURE_GENERATION_OUTLINE_COLOR, 0xC8000000);
+		return new Color(argb, true);
+	}
+
+	public void setTextureGenerationOutlineColor(Color color) {
+		if (color == null) {
+			return;
+		}
+		putInt(TEXTURE_GENERATION_OUTLINE_COLOR, color.getRGB());
 	}
 
 	/**
