@@ -37,12 +37,17 @@ public class TextureCreationService {
 
 	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
 														double dpi, boolean drawFinOutline) throws TextureGenerationException {
+		return generateTextureImage(component, insideSurface, dpi, drawFinOutline, -1f);
+	}
+
+	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
+														double dpi, boolean drawFinOutline, float outlineWidthPx) throws TextureGenerationException {
 		if (dpi <= 0) {
 			throw new TextureGenerationException("DPI must be larger than zero.");
 		}
 
 		if (component instanceof FinSet) {
-			return generateForFinSet((FinSet) component, dpi, drawFinOutline);
+			return generateForFinSet((FinSet) component, dpi, drawFinOutline, outlineWidthPx);
 		}
 
 		if (component instanceof SymmetricComponent) {
@@ -85,7 +90,7 @@ public class TextureCreationService {
 		return renderBlankImage(widthMeters, length, dpi, null);
 	}
 
-	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline)
+	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline, float outlineWidthPx)
 			throws TextureGenerationException {
 		CoordinateIF[] points = finSet.getFinPoints();
 		if (points == null || points.length < 3) {
@@ -112,7 +117,13 @@ public class TextureCreationService {
 		}
 
 		List<CoordinateIF> outline = new ArrayList<>(Arrays.asList(points));
-		OutlineContext outlineContext = drawOutline ? new OutlineContext(outline, minX, maxY) : null;
+		float sanitizedOutlineWidth = outlineWidthPx;
+		OutlineContext outlineContext;
+		if (!drawOutline || sanitizedOutlineWidth == 0f) {
+			outlineContext = null;
+		} else {
+			outlineContext = new OutlineContext(outline, minX, maxY, sanitizedOutlineWidth);
+		}
 		TextureGenerationResult result = renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
 		return rotateResult180(result);
 	}
@@ -168,7 +179,9 @@ public class TextureCreationService {
 			}
 			path.closePath();
 
-			float strokeWidth = (float) Math.max(1f, scale * 0.0005f);
+			float strokeWidth = outlineContext.outlineWidthPx > 0
+					? outlineContext.outlineWidthPx
+					: (float) Math.max(1f, scale * 0.0005f);
 			Shape originalClip = g2d.getClip();
 			Area clipArea = new Area(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
 			clipArea.subtract(new Area(path));
@@ -186,11 +199,13 @@ public class TextureCreationService {
 		private final List<CoordinateIF> outlinePoints;
 		private final double minX;
 		private final double maxY;
+		private final float outlineWidthPx;
 
-		private OutlineContext(List<CoordinateIF> outlinePoints, double minX, double maxY) {
+		private OutlineContext(List<CoordinateIF> outlinePoints, double minX, double maxY, float outlineWidthPx) {
 			this.outlinePoints = outlinePoints;
 			this.minX = minX;
 			this.maxY = maxY;
+			this.outlineWidthPx = outlineWidthPx;
 		}
 	}
 

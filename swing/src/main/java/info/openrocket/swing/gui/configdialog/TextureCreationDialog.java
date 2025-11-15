@@ -28,11 +28,12 @@ public class TextureCreationDialog {
 	private final JSpinner dpiSpinner;
 	private final JTextField fileNameField;
 	private final JCheckBox outlineCheckbox;
+	private final JSpinner outlineWidthSpinner;
 
 	public TextureCreationDialog(Component parent, RocketComponent component) {
 		this.parent = parent;
 		this.component = component;
-		dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][][]"));
+		dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][][][]"));
 
 		SpinnerNumberModel dpiModel = new SpinnerNumberModel(prefs.getTextureGenerationDPI(), 10d, 2000d, 10d);
 		dpiSpinner = new JSpinner(dpiModel);
@@ -52,9 +53,29 @@ public class TextureCreationDialog {
 			outlineCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.outline"));
 			outlineCheckbox.setSelected(prefs.isTextureGenerationDrawOutline());
 			outlineCheckbox.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.outline"));
-			dialogPanel.add(outlineCheckbox, "span 2");
+			dialogPanel.add(outlineCheckbox, "span 2, wrap");
+
+			// Outline width
+			int storedWidth = prefs.getTextureGenerationOutlinePx();
+			SpinnerNumberModel outlineModel = new SpinnerNumberModel(Math.max(0, storedWidth), 0, 50, 1);
+			outlineWidthSpinner = new JSpinner(outlineModel);
+			JLabel outlineWidthLabel = new JLabel(trans.get("AppearanceCfg.createTexture.lbl.outlineWidth"));
+			String outlineWidthTooltip = trans.get("AppearanceCfg.createTexture.lbl.ttip.outlineWidth");
+			outlineWidthLabel.setToolTipText(outlineWidthTooltip);
+			outlineWidthSpinner.setToolTipText(outlineWidthTooltip);
+			boolean outlineEnabled = outlineCheckbox.isSelected();
+			outlineWidthLabel.setEnabled(outlineEnabled);
+			outlineWidthSpinner.setEnabled(outlineEnabled);
+			outlineCheckbox.addActionListener(e -> {
+				boolean enabled = outlineCheckbox.isSelected();
+				outlineWidthLabel.setEnabled(enabled);
+				outlineWidthSpinner.setEnabled(enabled);
+			});
+			dialogPanel.add(outlineWidthLabel);
+			dialogPanel.add(outlineWidthSpinner, "wrap");
 		} else {
 			outlineCheckbox = null;
+			outlineWidthSpinner = null;
 		}
 	}
 
@@ -85,11 +106,13 @@ public class TextureCreationDialog {
 		prefs.setTextureGenerationDPI((Double) dpiSpinner.getValue());
 		if (outlineCheckbox != null) {
 			prefs.setTextureGenerationDrawOutline(outlineCheckbox.isSelected());
+			prefs.setTextureGenerationOutlinePx(((Number) outlineWidthSpinner.getValue()).intValue());
 		}
 
 		boolean drawOutline = outlineCheckbox != null && outlineCheckbox.isSelected();
+		int outlineWidth = outlineWidthSpinner != null ? ((Number) outlineWidthSpinner.getValue()).intValue() : 0;
 		return new TextureCreationParameters(((Number) dpiSpinner.getValue()).doubleValue(),
-				requestedFileName, drawOutline);
+				requestedFileName, drawOutline, outlineWidth);
 	}
 
 	private String defaultFileName() {
@@ -114,5 +137,5 @@ public class TextureCreationDialog {
 				.replaceAll("^-+|-+$", "");
 	}
 
-	public record TextureCreationParameters(double dpi, String fileName, boolean drawFinOutline) { }
+	public record TextureCreationParameters(double dpi, String fileName, boolean drawFinOutline, int outlineWidthPx) { }
 }

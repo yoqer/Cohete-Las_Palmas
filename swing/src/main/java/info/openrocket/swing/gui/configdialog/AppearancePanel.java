@@ -880,7 +880,8 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		TextureGenerationResult generationResult;
 		try {
 			generationResult = textureCreationService.generateTextureImage(
-					component, insideBuilder, parameters.dpi(), parameters.drawFinOutline());
+					component, insideBuilder, parameters.dpi(), parameters.drawFinOutline(),
+					parameters.outlineWidthPx());
 		} catch (TextureGenerationException ex) {
 			showCreateTextureError(parent,
 					trans.get("AppearanceCfg.createTexture.msg.generateFailed", ex.getMessage()));

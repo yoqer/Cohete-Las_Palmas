@@ -184,6 +184,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	// Texture generation options
 	public static final String TEXTURE_GENERATION_DPI = "TextureGenerationDPI";
 	public static final String TEXTURE_GENERATION_DRAW_OUTLINE = "TextureGenerationDrawOutline";
+	public static final String TEXTURE_GENERATION_OUTLINE_PX = "TextureGenerationOutlinePx";
 
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1401,6 +1402,20 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setTextureGenerationDrawOutline(boolean drawOutline) {
 		putBoolean(TEXTURE_GENERATION_DRAW_OUTLINE, drawOutline);
+	}
+
+	/**
+	 * Returns the preferred outline thickness for fin textures (in pixels).
+	 */
+	public int getTextureGenerationOutlinePx() {
+		return getInt(TEXTURE_GENERATION_OUTLINE_PX, 1);
+	}
+
+	/**
+	 * Sets the preferred outline thickness for fin textures (in pixels).
+	 */
+	public void setTextureGenerationOutlinePx(int outlinePx) {
+		putInt(TEXTURE_GENERATION_OUTLINE_PX, Math.max(0, outlinePx));
 	}
 
 	/**

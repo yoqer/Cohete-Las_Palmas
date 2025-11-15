@@ -125,6 +125,24 @@ class TextureCreationServiceTest {
 	}
 
 	@Test
+	void respectsCustomOutlineWidth() throws TextureGenerationException {
+		TrapezoidFinSet finSet = new TrapezoidFinSet();
+		finSet.setHeight(0.15);
+		finSet.setRootChord(0.2);
+		finSet.setTipChord(0.12);
+		finSet.setSweep(0.05);
+
+		TextureCreationService service = new TextureCreationService();
+		TextureGenerationResult thin = service.generateTextureImage(finSet, false, DPI, true, 1f);
+		TextureGenerationResult thick = service.generateTextureImage(finSet, false, DPI, true, 5f);
+
+		assertTrue(hasOpaquePixels(thin.getImage()));
+		assertTrue(hasOpaquePixels(thick.getImage()));
+		assertTrue(countOpaquePixels(thick.getImage()) > countOpaquePixels(thin.getImage()),
+				"Thicker outlines should cover more pixels");
+	}
+
+	@Test
 	void rejectsUnsupportedComponentTypes() {
 		Parachute parachute = new Parachute();
 		TextureCreationService service = new TextureCreationService();
@@ -144,6 +162,20 @@ class TextureCreationServiceTest {
 			}
 		}
 		return false;
+	}
+
+	private int countOpaquePixels(BufferedImage image) {
+		int width = image.getWidth();
+		int height = image.getHeight();
+		int count = 0;
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				if ((image.getRGB(x, y) >>> 24) != 0) {
+					count++;
+				}
+			}
+		}
+		return count;
 	}
 }
 
