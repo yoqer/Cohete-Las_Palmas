@@ -3,7 +3,10 @@ package info.openrocket.swing.gui.util;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Area;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -166,9 +169,14 @@ public class TextureCreationService {
 			path.closePath();
 
 			float strokeWidth = (float) Math.max(1f, scale * 0.0005f);
+			Shape originalClip = g2d.getClip();
+			Area clipArea = new Area(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
+			clipArea.subtract(new Area(path));
+			g2d.setClip(clipArea);
 			g2d.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g2d.setColor(new java.awt.Color(0, 0, 0, 200));
 			g2d.draw(path);
+			g2d.setClip(originalClip);
 		} finally {
 			g2d.dispose();
 		}
