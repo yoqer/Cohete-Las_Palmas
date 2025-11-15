@@ -185,6 +185,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String TEXTURE_GENERATION_DPI = "TextureGenerationDPI";
 	public static final String TEXTURE_GENERATION_DRAW_OUTLINE = "TextureGenerationDrawOutline";
 	public static final String TEXTURE_GENERATION_OUTLINE_PX = "TextureGenerationOutlinePx";
+	public static final String TEXTURE_GENERATION_RESET_TRANSFORMS = "TextureGenerationResetTransforms";
 
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1416,6 +1417,20 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setTextureGenerationOutlinePx(int outlinePx) {
 		putInt(TEXTURE_GENERATION_OUTLINE_PX, Math.max(0, outlinePx));
+	}
+
+	/**
+	 * Returns whether texture transforms should be reset when creating a new texture.
+	 */
+	public boolean isTextureGenerationResetTransforms() {
+		return getBoolean(TEXTURE_GENERATION_RESET_TRANSFORMS, true);
+	}
+
+	/**
+	 * Sets whether texture transforms should be reset when creating a new texture.
+	 */
+	public void setTextureGenerationResetTransforms(boolean reset) {
+		putBoolean(TEXTURE_GENERATION_RESET_TRANSFORMS, reset);
 	}
 
 	/**

@@ -15,7 +15,9 @@ import java.nio.file.Path;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.EventObject;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 import javax.swing.JComboBox;
@@ -117,6 +119,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 	private final List<Invalidatable> invalidatables = new ArrayList<>();
 	private final List<Runnable> cleanupTasks = new ArrayList<>();
 	private final List<Component> order;	// Component traversal order
+	private final Map<AppearanceBuilder, TextureTransformControls> transformControlMap = new HashMap<>();
 
 	/**
 	 * A non-unit that adjusts by a small amount, suitable for values that are
@@ -707,18 +710,18 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.scale")), "gapleft para");
 
 		panel.add(new JLabel("x:"), "split 4");
-		m = new DoubleModel(builder, "ScaleX", TEXTURE_UNIT);
-		register(m);
-		JSpinner scaleU = new JSpinner(m.getSpinnerModel());
+		DoubleModel scaleXModel = new DoubleModel(builder, "ScaleX", TEXTURE_UNIT);
+		register(scaleXModel);
+		JSpinner scaleU = new JSpinner(scaleXModel.getSpinnerModel());
 		scaleU.setEditor(new SpinnerEditor(scaleU));
 		mDefault.addEnableComponent(scaleU, false);
 		panel.add(scaleU, "w 50lp");
 		order.add(((SpinnerEditor) scaleU.getEditor()).getTextField());
 
 		panel.add(new JLabel("y:"));
-		m = new DoubleModel(builder, "ScaleY", TEXTURE_UNIT);
-		register(m);
-		JSpinner scaleV = new JSpinner(m.getSpinnerModel());
+		DoubleModel scaleYModel = new DoubleModel(builder, "ScaleY", TEXTURE_UNIT);
+		register(scaleYModel);
+		JSpinner scaleV = new JSpinner(scaleYModel.getSpinnerModel());
 		scaleV.setEditor(new SpinnerEditor(scaleV));
 		mDefault.addEnableComponent(scaleV, false);
 		panel.add(scaleV, "wrap, w 50lp");
@@ -749,18 +752,18 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.offset")), "gapleft para");
 
 		panel.add(new JLabel("x:"), "split 4");
-		m = new DoubleModel(builder, "OffsetU", TEXTURE_UNIT);
-		register(m);
-		JSpinner offsetU = new JSpinner(m.getSpinnerModel());
+		DoubleModel offsetUModel = new DoubleModel(builder, "OffsetU", TEXTURE_UNIT);
+		register(offsetUModel);
+		JSpinner offsetU = new JSpinner(offsetUModel.getSpinnerModel());
 		offsetU.setEditor(new SpinnerEditor(offsetU));
 		mDefault.addEnableComponent(offsetU, false);
 		panel.add(offsetU, "w 50lp");
 		order.add(((SpinnerEditor) offsetU.getEditor()).getTextField());
 
 		panel.add(new JLabel("y:"));
-		m = new DoubleModel(builder, "OffsetV", TEXTURE_UNIT);
-		register(m);
-		JSpinner offsetV = new JSpinner(m.getSpinnerModel());
+		DoubleModel offsetVModel = new DoubleModel(builder, "OffsetV", TEXTURE_UNIT);
+		register(offsetVModel);
+		JSpinner offsetV = new JSpinner(offsetVModel.getSpinnerModel());
 		offsetV.setEditor(new SpinnerEditor(offsetV));
 		mDefault.addEnableComponent(offsetV, false);
 		panel.add(offsetV, "wrap, w 50lp");
@@ -800,6 +803,9 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 				-Math.PI, Math.PI));
 		mDefault.addEnableComponent(bs, false);
 		panel.add(bs, "w 100lp, wrap");
+
+		transformControlMap.put(builder, new TextureTransformControls(
+				scaleXModel, scaleYModel, offsetUModel, offsetVModel, rotationModel));
 
 		// Repeat
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.repeat")), "skip 2, gapleft para");
@@ -907,6 +913,10 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		Attachment a = (new FileSystemAttachmentFactory().getAttachment(tempFile));
 		decalModel.setSelectedItem(document.getDecalImage(a));
 
+		if (parameters.resetTransforms()) {
+			resetTextureTransforms(builder);
+		}
+
 		// Edit the texture
 		editButtonAction(parent, document, component, builder, insideBuilder);
 	}
@@ -920,6 +930,19 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 				message,
 				trans.get("AppearanceCfg.createTexture.dialog.title"),
 				JOptionPane.ERROR_MESSAGE);
+	}
+
+	private void resetTextureTransforms(AppearanceBuilder builder) {
+		TextureTransformControls controls = transformControlMap.get(builder);
+		if (controls != null) {
+			controls.reset();
+			return;
+		}
+		builder.setScaleU(1);
+		builder.setScaleV(1);
+		builder.setOffsetU(0);
+		builder.setOffsetV(0);
+		builder.setRotation(0);
 	}
 
 	private void handleDeleteTexture(Component parent, DecalModel decalModel, Runnable onUpdateState) {
@@ -968,5 +991,31 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		cleanupTasks.clear();
 
 		figureColorButton.removePropertyChangeListener(figureColorButtonListener);
+	}
+
+	private static class TextureTransformControls {
+		private final DoubleModel scaleXModel;
+		private final DoubleModel scaleYModel;
+		private final DoubleModel offsetUModel;
+		private final DoubleModel offsetVModel;
+		private final DoubleModel rotationModel;
+
+		private TextureTransformControls(DoubleModel scaleXModel, DoubleModel scaleYModel,
+										 DoubleModel offsetUModel, DoubleModel offsetVModel,
+										 DoubleModel rotationModel) {
+			this.scaleXModel = scaleXModel;
+			this.scaleYModel = scaleYModel;
+			this.offsetUModel = offsetUModel;
+			this.offsetVModel = offsetVModel;
+			this.rotationModel = rotationModel;
+		}
+
+		private void reset() {
+			scaleXModel.setValue(1);
+			scaleYModel.setValue(1);
+			offsetUModel.setValue(0);
+			offsetVModel.setValue(0);
+			rotationModel.setValue(0);
+		}
 	}
 }

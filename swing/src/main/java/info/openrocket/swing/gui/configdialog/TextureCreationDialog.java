@@ -27,13 +27,14 @@ public class TextureCreationDialog {
 	private final JPanel dialogPanel;
 	private final JSpinner dpiSpinner;
 	private final JTextField fileNameField;
+	private final JCheckBox resetTransformsCheckbox;
 	private final JCheckBox outlineCheckbox;
 	private final JSpinner outlineWidthSpinner;
 
 	public TextureCreationDialog(Component parent, RocketComponent component) {
 		this.parent = parent;
 		this.component = component;
-		dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][][][]"));
+		dialogPanel = new JPanel(new MigLayout("ins 0", "[right][grow]", "[][][][][]"));
 
 		SpinnerNumberModel dpiModel = new SpinnerNumberModel(prefs.getTextureGenerationDPI(), 10d, 2000d, 10d);
 		dpiSpinner = new JSpinner(dpiModel);
@@ -48,6 +49,11 @@ public class TextureCreationDialog {
 		fileNameField.setText(defaultFileName());
 		dialogPanel.add(new JLabel(trans.get("AppearanceCfg.createTexture.lbl.filename")));
 		dialogPanel.add(fileNameField, "growx, wrap");
+
+		resetTransformsCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.resetTransforms"));
+		resetTransformsCheckbox.setSelected(prefs.isTextureGenerationResetTransforms());
+		resetTransformsCheckbox.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.resetTransforms"));
+		dialogPanel.add(resetTransformsCheckbox, "span 2, wrap");
 
 		if (component instanceof FinSet) {
 			outlineCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.outline"));
@@ -108,11 +114,12 @@ public class TextureCreationDialog {
 			prefs.setTextureGenerationDrawOutline(outlineCheckbox.isSelected());
 			prefs.setTextureGenerationOutlinePx(((Number) outlineWidthSpinner.getValue()).intValue());
 		}
+		prefs.setTextureGenerationResetTransforms(resetTransformsCheckbox.isSelected());
 
 		boolean drawOutline = outlineCheckbox != null && outlineCheckbox.isSelected();
 		int outlineWidth = outlineWidthSpinner != null ? ((Number) outlineWidthSpinner.getValue()).intValue() : 0;
 		return new TextureCreationParameters(((Number) dpiSpinner.getValue()).doubleValue(),
-				requestedFileName, drawOutline, outlineWidth);
+				requestedFileName, drawOutline, outlineWidth, resetTransformsCheckbox.isSelected());
 	}
 
 	private String defaultFileName() {
@@ -137,5 +144,6 @@ public class TextureCreationDialog {
 				.replaceAll("^-+|-+$", "");
 	}
 
-	public record TextureCreationParameters(double dpi, String fileName, boolean drawFinOutline, int outlineWidthPx) { }
+	public record TextureCreationParameters(double dpi, String fileName, boolean drawFinOutline,
+											int outlineWidthPx, boolean resetTransforms) { }
 }
