@@ -622,6 +622,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		JPanel p = new JPanel(new MigLayout("fill, ins 0", "[grow][][pref!]"));
 		mDefault.addEnableComponent(textureDropDown, false);
 		p.add(textureDropDown, "growx, top");
+		order.add(textureDropDown);
 
 		JPanel textureButtonsPanel = new JPanel(new MigLayout("fill, ins 0, gapy 4", "[fill]"));
 		p.add(textureButtonsPanel, "top");
@@ -635,18 +636,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		textureButtonsPanel.add(chooseTextureBtn);
 
 		panel.add(p, "spanx 3, growx, wrap");
-		order.add(textureDropDown);
 		order.add(chooseTextureBtn);
-
-		//// Create texture button
-		JButton createTextureBtn = new JButton(Icons.FILE_NEW);
-		createTextureBtn.setToolTipText(trans.get("AppearanceCfg.but.createTexture"));
-		createTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
-		createTextureBtn.addActionListener(e -> handleCreateTexture(panel, document, c, decalModel,
-				insideBuilder, builder));
-		mDefault.addEnableComponent(createTextureBtn, false);
-		textureButtonsPanel.add(createTextureBtn, "gapright unrel");
-		order.add(createTextureBtn);
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
@@ -679,6 +669,16 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 			order.add(editBtn);
 		}
 
+		//// Create texture button
+		JButton createTextureBtn = new JButton(Icons.FILE_NEW);
+		createTextureBtn.setToolTipText(trans.get("AppearanceCfg.but.createTexture"));
+		createTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
+		createTextureBtn.addActionListener(e -> handleCreateTexture(panel, document, c, decalModel,
+				insideBuilder, builder));
+		mDefault.addEnableComponent(createTextureBtn, false);
+		textureButtonsPanel.add(createTextureBtn);
+		order.add(createTextureBtn);
+
 		//// Delete button
 		JButton deleteTextureBtn = new JButton(Icons.EDIT_DELETE);
 		deleteTextureBtn.setToolTipText(trans.get("DecalModel.but.delete"));
@@ -688,7 +688,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
 		refreshDeleteButtonState.run();
 		mDefault.addEnableComponent(deleteTextureBtn, false);
-		textureButtonsPanel.add(deleteTextureBtn);
+		textureButtonsPanel.add(deleteTextureBtn, "gapleft unrel");
 		order.add(deleteTextureBtn);
 
 
