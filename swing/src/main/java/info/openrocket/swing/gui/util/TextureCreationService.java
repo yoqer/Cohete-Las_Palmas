@@ -1,6 +1,7 @@
 package info.openrocket.swing.gui.util;
 
 import java.awt.AlphaComposite;
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -40,12 +41,18 @@ public class TextureCreationService {
 
 	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
 														double dpi, boolean drawFinOutline, float outlineWidthPx) throws TextureGenerationException {
+		return generateTextureImage(component, insideSurface, dpi, drawFinOutline, outlineWidthPx, false);
+	}
+
+	public TextureGenerationResult generateTextureImage(RocketComponent component, boolean insideSurface,
+														double dpi, boolean drawFinOutline, float outlineWidthPx,
+														boolean mirrorVertically) throws TextureGenerationException {
 		if (dpi <= 0) {
 			throw new TextureGenerationException("DPI must be larger than zero.");
 		}
 
 		if (component instanceof FinSet) {
-			return generateForFinSet((FinSet) component, dpi, drawFinOutline, outlineWidthPx);
+			return generateForFinSet((FinSet) component, dpi, drawFinOutline, outlineWidthPx, mirrorVertically);
 		}
 
 		if (component instanceof SymmetricComponent) {
@@ -88,7 +95,8 @@ public class TextureCreationService {
 		return renderBlankImage(widthMeters, length, dpi, null);
 	}
 
-	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline, float outlineWidthPx)
+	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline, float outlineWidthPx,
+													 boolean mirrorVertically)
 			throws TextureGenerationException {
 		CoordinateIF[] points = finSet.getFinPoints();
 		if (points == null || points.length < 3) {
@@ -123,6 +131,9 @@ public class TextureCreationService {
 			outlineContext = new OutlineContext(outline, minX, maxY, sanitizedOutlineWidth);
 		}
 		TextureGenerationResult result = renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
+		if (mirrorVertically) {
+			result = mirrorVertically(result);
+		}
 		return rotateResult180(result);
 	}
 
@@ -201,6 +212,20 @@ public class TextureCreationService {
 		} finally {
 			base.dispose();
 		}
+	}
+
+	private TextureGenerationResult mirrorVertically(TextureGenerationResult original) {
+		BufferedImage src = original.getImage();
+		BufferedImage mirrored = new BufferedImage(src.getWidth(), src.getHeight(), src.getType());
+		Graphics2D g2 = mirrored.createGraphics();
+		try {
+			g2.translate(0, src.getHeight());
+			g2.scale(1, -1);
+			g2.drawImage(src, 0, 0, null);
+		} finally {
+			g2.dispose();
+		}
+		return new TextureGenerationResult(mirrored, original.getWidthMeters(), original.getHeightMeters(), original.getDpi());
 	}
 
 	private static final class OutlineContext {

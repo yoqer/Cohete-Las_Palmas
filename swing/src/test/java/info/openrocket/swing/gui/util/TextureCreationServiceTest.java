@@ -143,6 +143,24 @@ class TextureCreationServiceTest {
 	}
 
 	@Test
+	void mirrorsFinTextureWhenRequested() throws TextureGenerationException {
+		TrapezoidFinSet finSet = new TrapezoidFinSet();
+		finSet.setHeight(0.15);
+		finSet.setRootChord(0.2);
+		finSet.setTipChord(0.12);
+		finSet.setSweep(0.05);
+
+		TextureCreationService service = new TextureCreationService();
+		TextureCreationResult normal = service.generateTextureImage(finSet, false, DPI, true, 2f, false);
+		TextureCreationResult mirrored = service.generateTextureImage(finSet, false, DPI, true, 2f, true);
+
+		assertTrue(hasOpaquePixels(normal.getImage()));
+		assertTrue(hasOpaquePixels(mirrored.getImage()));
+		assertTrue(isVerticalMirror(normal.getImage(), mirrored.getImage()),
+				"Mirrored texture should be a vertical reflection of the original");
+	}
+
+	@Test
 	void rejectsUnsupportedComponentTypes() {
 		Parachute parachute = new Parachute();
 		TextureCreationService service = new TextureCreationService();
@@ -176,6 +194,24 @@ class TextureCreationServiceTest {
 			}
 		}
 		return count;
+	}
+
+	private boolean isVerticalMirror(BufferedImage original, BufferedImage mirrored) {
+		if (original.getWidth() != mirrored.getWidth() || original.getHeight() != mirrored.getHeight()) {
+			return false;
+		}
+		int width = original.getWidth();
+		int height = original.getHeight();
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				int origPixel = original.getRGB(x, y);
+				int mirrorPixel = mirrored.getRGB(x, height - 1 - y);
+				if (origPixel != mirrorPixel) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 }
 
