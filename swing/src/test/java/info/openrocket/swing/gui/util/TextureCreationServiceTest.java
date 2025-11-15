@@ -152,8 +152,8 @@ class TextureCreationServiceTest {
 		finSet.setSweep(0.05);
 
 		TextureCreationService service = new TextureCreationService();
-		TextureCreationResult normal = service.generateTextureImage(finSet, false, DPI, true, 2f, false);
-		TextureCreationResult mirrored = service.generateTextureImage(finSet, false, DPI, true, 2f, true);
+		TextureCreationService.TextureGenerationResult normal = service.generateTextureImage(finSet, false, DPI, true, 2f, false);
+		TextureCreationService.TextureGenerationResult mirrored = service.generateTextureImage(finSet, false, DPI, true, 2f, true);
 
 		assertTrue(hasOpaquePixels(normal.getImage()));
 		assertTrue(hasOpaquePixels(mirrored.getImage()));
