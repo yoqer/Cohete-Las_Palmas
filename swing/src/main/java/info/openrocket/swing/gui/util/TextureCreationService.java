@@ -164,7 +164,7 @@ public class TextureCreationService {
 	private void drawOutline(BufferedImage image, OutlineContext outlineContext, double scale) {
 		Graphics2D g2d = image.createGraphics();
 		try {
-			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 			Path2D path = new Path2D.Double();
 			boolean first = true;
 			for (CoordinateIF point : outlineContext.outlinePoints) {
@@ -179,17 +179,17 @@ public class TextureCreationService {
 			}
 			path.closePath();
 
+			// Get image size
+			Area clipArea = new Area(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
+			clipArea.subtract(new Area(path));
+
 			float strokeWidth = outlineContext.outlineWidthPx > 0
 					? outlineContext.outlineWidthPx
 					: (float) Math.max(1f, scale * 0.0005f);
-			Shape originalClip = g2d.getClip();
-			Area clipArea = new Area(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
-			clipArea.subtract(new Area(path));
-			g2d.setClip(clipArea);
 			g2d.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g2d.setColor(new java.awt.Color(0, 0, 0, 200));
+			g2d.setColor(new java.awt.Color(0, 0, 0));
 			g2d.draw(path);
-			g2d.setClip(originalClip);
+			g2d.setClip(clipArea);
 		} finally {
 			g2d.dispose();
 		}
