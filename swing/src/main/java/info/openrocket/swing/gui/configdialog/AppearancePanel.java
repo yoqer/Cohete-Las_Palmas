@@ -627,32 +627,31 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		p.add(textureButtonsPanel, "top");
 
 		//// Select file button
-		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
-		chooseTextureBtn.setIcon(Icons.FILE_OPEN);
+		JButton chooseTextureBtn = new JButton(Icons.FILE_OPEN);
+		chooseTextureBtn.setToolTipText(trans.get("DecalModel.lbl.choose"));
 		chooseTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
-		textureButtonsPanel.add(chooseTextureBtn, "cell 0 0, top");
+		textureButtonsPanel.add(chooseTextureBtn);
 
 		panel.add(p, "spanx 3, growx, wrap");
 		order.add(textureDropDown);
 		order.add(chooseTextureBtn);
 
 		//// Create texture button
-		JButton createTextureBtn = new JButton(trans.get("AppearanceCfg.but.createTexture"));
-		createTextureBtn.setIcon(Icons.FILE_NEW);
+		JButton createTextureBtn = new JButton(Icons.FILE_NEW);
+		createTextureBtn.setToolTipText(trans.get("AppearanceCfg.but.createTexture"));
 		createTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		createTextureBtn.addActionListener(e -> handleCreateTexture(panel, document, c, decalModel,
 				insideBuilder, builder));
 		mDefault.addEnableComponent(createTextureBtn, false);
-		textureButtonsPanel.add(createTextureBtn, "cell 0 1, top");
+		textureButtonsPanel.add(createTextureBtn, "gapright unrel");
 		order.add(createTextureBtn);
 
 		//// Edit button
 		if ((SystemInfo.getPlatform() != Platform.UNIX) || !SystemInfo.isConfined()) {
-			JButton editBtn = new JButton(
-					trans.get("AppearanceCfg.but.edit"));
-			editBtn.setIcon(Icons.EDIT_EDIT);
+			JButton editBtn = new JButton(Icons.EDIT_EDIT);
+			editBtn.setToolTipText(trans.get("AppearanceCfg.but.edit"));
 			editBtn.setHorizontalAlignment(SwingConstants.LEFT);
 			// Enable the editBtn only when the appearance builder has an Image
 			// assigned to it.
@@ -676,20 +675,20 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 					editButtonAction(panel, document, c, builder, insideBuilder);
 				}
 			});
-			textureButtonsPanel.add(editBtn, "cell 1 0, growx");
+			textureButtonsPanel.add(editBtn);
 			order.add(editBtn);
 		}
 
 		//// Delete button
-		JButton deleteTextureBtn = new JButton(trans.get("DecalModel.but.delete"));
-		deleteTextureBtn.setIcon(Icons.EDIT_DELETE);
+		JButton deleteTextureBtn = new JButton(Icons.EDIT_DELETE);
+		deleteTextureBtn.setToolTipText(trans.get("DecalModel.but.delete"));
 		deleteTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		Runnable refreshDeleteButtonState = () -> deleteTextureBtn.setEnabled(decalModel.getActiveDecal() != null);
 		deleteTextureBtn.addActionListener(e -> handleDeleteTexture(panel, decalModel, refreshDeleteButtonState));
 		textureDropDown.addActionListener(e -> refreshDeleteButtonState.run());
 		refreshDeleteButtonState.run();
 		mDefault.addEnableComponent(deleteTextureBtn, false);
-		textureButtonsPanel.add(deleteTextureBtn, "cell 1 1, growx");
+		textureButtonsPanel.add(deleteTextureBtn);
 		order.add(deleteTextureBtn);
 
 
