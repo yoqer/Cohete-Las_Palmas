@@ -1435,15 +1435,11 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	}
 
 	public Color getTextureGenerationOutlineColor() {
-		int argb = getInt(TEXTURE_GENERATION_OUTLINE_COLOR, 0xC8000000);
-		return new Color(argb, true);
+		return getColor(TEXTURE_GENERATION_OUTLINE_COLOR, new ORColor(0, 0, 0)).toAWTColor();
 	}
 
 	public void setTextureGenerationOutlineColor(Color color) {
-		if (color == null) {
-			return;
-		}
-		putInt(TEXTURE_GENERATION_OUTLINE_COLOR, color.getRGB());
+		putColor(TEXTURE_GENERATION_OUTLINE_COLOR, ORColor.fromAWTColor(color));
 	}
 
 	/**
