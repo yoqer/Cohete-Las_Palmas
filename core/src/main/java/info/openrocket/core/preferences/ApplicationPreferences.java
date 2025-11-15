@@ -180,6 +180,8 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	// SVG export options
 	public static final String SVG_STROKE_COLOR = "SVGStrokeColor";
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
+	public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
+	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
 	
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1365,6 +1367,42 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGStrokeWidth(double width) {
 		putDouble(SVG_STROKE_WIDTH, width);
+	}
+
+	/**
+	 * Returns whether SVG exports should include crosshairs (used for centering rings/bulkheads).
+	 *
+	 * @return true if crosshairs should be drawn
+	 */
+	public boolean isSVGDrawCrosshair() {
+		return getBoolean(SVG_DRAW_CROSSHAIR, true);
+	}
+
+	/**
+	 * Sets whether SVG exports should include crosshairs.
+	 *
+	 * @param drawCrosshair true to include crosshairs
+	 */
+	public void setSVGDrawCrosshair(boolean drawCrosshair) {
+		putBoolean(SVG_DRAW_CROSSHAIR, drawCrosshair);
+	}
+
+	/**
+	 * Returns the color used for crosshair guides in SVG exports.
+	 *
+	 * @return the crosshair color
+	 */
+	public Color getSVGCrosshairColor() {
+		return getColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(Color.GRAY)).toAWTColor();
+	}
+
+	/**
+	 * Sets the crosshair color for SVG exports.
+	 *
+	 * @param color the color to use for crosshairs
+	 */
+	public void setSVGCrosshairColor(Color color) {
+		putColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(color));
 	}
 
 	/**

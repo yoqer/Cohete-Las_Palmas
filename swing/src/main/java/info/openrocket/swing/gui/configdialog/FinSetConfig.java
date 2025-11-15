@@ -23,6 +23,7 @@ import javax.xml.transform.TransformerException;
 import info.openrocket.core.material.MaterialGroup;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.util.CoordinateIF;
+import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.SwingPreferences;
@@ -648,17 +649,22 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 	 * @throws Exception if there is an error writing the SVG file
 	 */
 	public static void writeSVGFile(FinSet finSet, File file, SVGOptionPanel svgOptions) throws ParserConfigurationException, TransformerException {
+		SVGExportOptions options = new SVGExportOptions(svgOptions.getStrokeColor(), svgOptions.getStrokeWidth());
+		writeSVGFile(finSet, file, options);
+	}
+
+	public static void writeSVGFile(FinSet finSet, File file, SVGExportOptions options) throws ParserConfigurationException, TransformerException {
 		CoordinateIF[] points = finSet.generateContinuousFinAndTabShape();
 
 		SVGBuilder builder = new SVGBuilder();
-		builder.addPath(points, null, svgOptions.getStrokeColor(), svgOptions.getStrokeWidth());
+		builder.addPath(points, null, options.getStrokeColor(), options.getStrokeWidthMm());
 
 		// Export fin tab separately if it's beyond the fin
 		if (finSet.isTabBeyondFin()) {
 			CoordinateIF[] tabPoints = finSet.getTabPointsWithRoot();
 			CoordinateIF finFront = finSet.getFinFront();
 			// Need to offset to the fin front because the tab points are relative to the fin front
-			builder.addPath(tabPoints, finFront.getX(), finFront.getY(), null, svgOptions.getStrokeColor(), svgOptions.getStrokeWidth());
+			builder.addPath(tabPoints, finFront.getX(), finFront.getY(), null, options.getStrokeColor(), options.getStrokeWidthMm());
 		}
 
 		builder.writeToFile(file);

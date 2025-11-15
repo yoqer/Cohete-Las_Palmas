@@ -75,6 +75,7 @@ import info.openrocket.core.document.events.DocumentChangeListener;
 import info.openrocket.core.file.GeneralRocketSaver;
 import info.openrocket.core.file.RocketLoadException;
 import info.openrocket.core.file.rasaero.RASAeroCommonConstants;
+import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.Markers;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
@@ -92,8 +93,10 @@ import info.openrocket.core.util.TestRockets;
 import info.openrocket.swing.gui.configdialog.SaveDesignInfoPanel;
 import info.openrocket.swing.gui.dialogs.ErrorWarningDialog;
 import info.openrocket.swing.gui.components.StyledLabel;
+import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
 import info.openrocket.swing.gui.customexpression.CustomExpressionDialog;
+import info.openrocket.swing.gui.export.SVGRocketPartsExporter;
 import info.openrocket.swing.gui.dialogs.AboutDialog;
 import info.openrocket.swing.gui.dialogs.BugReportDialog;
 import info.openrocket.swing.gui.dialogs.componentanalysis.ComponentAnalysisDialog;
@@ -529,6 +532,18 @@ private static final Translator trans = Application.getTranslator();
 			}
 		});
 		exportSubMenu.add(exportOBJ);
+
+		//////		Export SVG templates
+		JMenuItem exportSvgTemplates = new JMenuItem(trans.get("main.menu.file.exportAs.SVGTemplates"));
+		exportSvgTemplates.setIcon(Icons.FILE_EXPORT);
+		exportSvgTemplates.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGTemplates.desc"));
+		exportSvgTemplates.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exportSvgTemplatesAction();
+			}
+		});
+		exportSubMenu.add(exportSvgTemplates);
 
 		fileMenu.add(exportSubMenu);
 		fileMenu.addSeparator();
@@ -1792,6 +1807,63 @@ private static final Translator trans = Application.getTranslator();
 		}
 
 		return true;
+	}
+
+	private void exportSvgTemplatesAction() {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileFilter(FileHelper.SVG_FILTER);
+
+		SVGOptionPanel optionPanel = new SVGOptionPanel(true);
+		optionPanel.setStrokeColor(prefs.getSVGStrokeColor());
+		optionPanel.setStrokeWidth(prefs.getSVGStrokeWidth());
+		optionPanel.setDrawCrosshair(prefs.isSVGDrawCrosshair());
+		optionPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
+		chooser.setAccessory(optionPanel);
+
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		File defaultDir = swingPrefs.getDefaultDirectory();
+		if (defaultDir != null) {
+			chooser.setCurrentDirectory(defaultDir);
+		}
+		String defaultName = document.getRocket().getName();
+		if (defaultName == null || defaultName.isBlank()) {
+			defaultName = "rocket";
+		}
+		File parentDir = defaultDir != null ? defaultDir : new File(System.getProperty("user.home", "."));
+		chooser.setSelectedFile(new File(parentDir, defaultName + "-templates.svg"));
+
+		if (chooser.showSaveDialog(BasicFrame.this) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+
+		File target = FileHelper.forceExtension(chooser.getSelectedFile(), "svg");
+		if (!FileHelper.confirmWrite(target, BasicFrame.this)) {
+			return;
+		}
+
+		swingPrefs.setDefaultDirectory(chooser.getCurrentDirectory());
+		prefs.setSVGStrokeColor(optionPanel.getStrokeColor());
+		prefs.setSVGStrokeWidth(optionPanel.getStrokeWidth());
+		prefs.setSVGDrawCrosshair(optionPanel.isDrawCrosshair());
+		prefs.setSVGCrosshairColor(optionPanel.getCrosshairColor());
+
+		SVGExportOptions options = new SVGExportOptions(optionPanel.getStrokeColor(),
+				optionPanel.getStrokeWidth(), optionPanel.isDrawCrosshair(), optionPanel.getCrosshairColor());
+		try {
+			new SVGRocketPartsExporter().export(document, target, options);
+			log.info(Markers.USER_MARKER, "Exported SVG templates to {}", target.getAbsolutePath());
+		} catch (IllegalStateException noParts) {
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					trans.get("main.menu.file.exportAs.SVGTemplates.empty"),
+					trans.get("main.menu.file.exportAs.SVGTemplates.title"),
+					JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception ex) {
+			log.warn("Failed to export SVG templates", ex);
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					String.format(trans.get("main.menu.file.exportAs.SVGTemplates.error"), ex.getMessage()),
+					trans.get("main.menu.file.exportAs.SVGTemplates.title"),
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 
