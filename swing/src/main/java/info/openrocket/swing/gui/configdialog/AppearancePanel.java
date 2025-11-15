@@ -627,8 +627,8 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		p.add(textureButtonsPanel, "top");
 
 		//// Select file button
-		JButton chooseTextureBtn = new JButton(Icons.FILE_OPEN);
-		chooseTextureBtn.setToolTipText(trans.get("DecalModel.lbl.choose"));
+		JButton chooseTextureBtn = new JButton(trans.get("DecalModel.lbl.choose"));
+		chooseTextureBtn.setIcon(Icons.FILE_OPEN);
 		chooseTextureBtn.setHorizontalAlignment(SwingConstants.LEFT);
 		chooseTextureBtn.addActionListener(e -> decalModel.promptForFileSelection());
 		mDefault.addEnableComponent(chooseTextureBtn, false);
