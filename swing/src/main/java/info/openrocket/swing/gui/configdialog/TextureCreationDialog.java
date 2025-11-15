@@ -58,14 +58,14 @@ public class TextureCreationDialog {
 		resetTransformsCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.resetTransforms"));
 		resetTransformsCheckbox.setSelected(prefs.isTextureGenerationResetTransforms());
 		resetTransformsCheckbox.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.resetTransforms"));
-		dialogPanel.add(resetTransformsCheckbox, "span 2, wrap");
+		dialogPanel.add(resetTransformsCheckbox, "skip, wrap");
 
 		if (component instanceof FinSet) {
 			// Outline checkbox
 			outlineCheckbox = new JCheckBox(trans.get("AppearanceCfg.createTexture.lbl.outline"));
 			outlineCheckbox.setSelected(prefs.isTextureGenerationDrawOutline());
 			outlineCheckbox.setToolTipText(trans.get("AppearanceCfg.createTexture.lbl.ttip.outline"));
-			dialogPanel.add(outlineCheckbox, "span 2, wrap");
+			dialogPanel.add(outlineCheckbox, "skip, wrap");
 
 			// Outline width
 			int storedWidth = prefs.getTextureGenerationOutlinePx();
