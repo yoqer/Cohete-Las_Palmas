@@ -99,7 +99,8 @@ public class SVGBuilder {
 			double y = toSvgUnits(coord.getY() + yPos + originY);
 			updateCanvasSize(x, y);
 			final String command = (i == 0) ? "M" : "L";
-			dAttribute.append(String.format(Locale.ENGLISH, "%s%.1f,%.1f ", command, x, y));		// Coordinates are in meters, SVG is in mm
+			// Use higher precision for coordinates to avoid visible stepping on small parts
+			dAttribute.append(String.format(Locale.ENGLISH, "%s%.3f,%.3f ", command, x, y));		// Coordinates are in meters, SVG is in mm
 		}
 
 		// Close the path if it's the same start and end point
