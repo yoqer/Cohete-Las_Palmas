@@ -97,6 +97,7 @@ import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
 import info.openrocket.swing.gui.customexpression.CustomExpressionDialog;
 import info.openrocket.swing.gui.export.SVGRocketPartsExporter;
+import info.openrocket.swing.gui.export.SvgOptionsDialog;
 import info.openrocket.swing.gui.dialogs.AboutDialog;
 import info.openrocket.swing.gui.dialogs.BugReportDialog;
 import info.openrocket.swing.gui.dialogs.componentanalysis.ComponentAnalysisDialog;
@@ -1810,15 +1811,19 @@ private static final Translator trans = Application.getTranslator();
 	}
 
 	private void exportSvgTemplatesAction() {
+		// Show SVG options dialog first
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this);
+		optionsDialog.setFromPreferences(prefs);
+		if (!optionsDialog.showDialog()) {
+			return; // User cancelled
+		}
+
+		// Get options from dialog
+		SVGExportOptions options = optionsDialog.getExportOptions();
+
+		// Now show file chooser without accessory panel
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileFilter(FileHelper.SVG_FILTER);
-
-		SVGOptionPanel optionPanel = new SVGOptionPanel(true);
-		optionPanel.setStrokeColor(prefs.getSVGStrokeColor());
-		optionPanel.setStrokeWidth(prefs.getSVGStrokeWidth());
-		optionPanel.setDrawCrosshair(prefs.isSVGDrawCrosshair());
-		optionPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
-		chooser.setAccessory(optionPanel);
 
 		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
 		File defaultDir = swingPrefs.getDefaultDirectory();
@@ -1842,13 +1847,7 @@ private static final Translator trans = Application.getTranslator();
 		}
 
 		swingPrefs.setDefaultDirectory(chooser.getCurrentDirectory());
-		prefs.setSVGStrokeColor(optionPanel.getStrokeColor());
-		prefs.setSVGStrokeWidth(optionPanel.getStrokeWidth());
-		prefs.setSVGDrawCrosshair(optionPanel.isDrawCrosshair());
-		prefs.setSVGCrosshairColor(optionPanel.getCrosshairColor());
 
-		SVGExportOptions options = new SVGExportOptions(optionPanel.getStrokeColor(),
-				optionPanel.getStrokeWidth(), optionPanel.isDrawCrosshair(), optionPanel.getCrosshairColor());
 		try {
 			new SVGRocketPartsExporter().export(document, target, options);
 			log.info(Markers.USER_MARKER, "Exported SVG templates to {}", target.getAbsolutePath());

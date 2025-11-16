@@ -28,20 +28,21 @@ public final class SvgExportHelper {
 	private SvgExportHelper() {}
 
 	public static void exportSinglePart(Component parent, OpenRocketDocument document, RocketComponent component) {
-		JFileChooser chooser = new JFileChooser();
-		chooser.setFileFilter(FileHelper.SVG_FILTER);
-
-		// Load preferences
-		SVGOptionPanel optionPanel = new SVGOptionPanel(true);
-		chooser.setAccessory(optionPanel);
-		chooser.setCurrentDirectory(prefs.getDefaultDirectory());
-		chooser.setSelectedFile(suggestDefaultFile(component));
-
-		if (JFileChooser.APPROVE_OPTION != chooser.showSaveDialog(parent)) {
+		// First: show options dialog
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(parent));
+		optionsDialog.setFromPreferences(prefs);
+		if (!optionsDialog.showDialog((javax.swing.JComponent) parent)) {
 			return;
 		}
 
-		// Get target file, confirm overwrite
+		// Then: plain file chooser
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileFilter(FileHelper.SVG_FILTER);
+		chooser.setCurrentDirectory(prefs.getDefaultDirectory());
+		chooser.setSelectedFile(suggestDefaultFile(component));
+		if (JFileChooser.APPROVE_OPTION != chooser.showSaveDialog(parent)) {
+			return;
+		}
 		File target = FileHelper.forceExtension(chooser.getSelectedFile(), "svg");
 		if (!FileHelper.confirmWrite(target, parent)) {
 			return;
@@ -49,13 +50,13 @@ public final class SvgExportHelper {
 
 		// Save preferences
 		prefs.setDefaultDirectory(chooser.getCurrentDirectory());
-		prefs.setSVGStrokeColor(optionPanel.getStrokeColor());
-		prefs.setSVGStrokeWidth(optionPanel.getStrokeWidth());
-		prefs.setSVGDrawCrosshair(optionPanel.isDrawCrosshair());
-		prefs.setSVGCrosshairColor(optionPanel.getCrosshairColor());
+		prefs.setSVGStrokeColor(optionsDialog.getStrokeColor());
+		prefs.setSVGStrokeWidth(optionsDialog.getStrokeWidth());
+		prefs.setSVGDrawCrosshair(optionsDialog.isDrawCrosshair());
+		prefs.setSVGCrosshairColor(optionsDialog.getCrosshairColor());
 
-		SVGExportOptions options = new SVGExportOptions(optionPanel.getStrokeColor(),
-				optionPanel.getStrokeWidth(), optionPanel.isDrawCrosshair(), optionPanel.getCrosshairColor());
+		SVGExportOptions options = new SVGExportOptions(optionsDialog.getStrokeColor(),
+				optionsDialog.getStrokeWidth(), optionsDialog.isDrawCrosshair(), optionsDialog.getCrosshairColor());
 
 		// Dispatch to the appropriate exporter based on component type
 		try {
