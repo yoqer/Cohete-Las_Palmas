@@ -3,6 +3,7 @@ package info.openrocket.core.file.svg.export;
 import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
+import info.openrocket.core.util.MathUtil;
 
 /**
  * Utilities to render side profiles of symmetric components (nose cones, body tubes, transitions).
@@ -10,9 +11,38 @@ import info.openrocket.core.util.CoordinateIF;
 public final class ProfileSvgExporter {
 	private ProfileSvgExporter() {}
 
-	public static Bounds calculateBounds(SymmetricComponent component) {
-		final int segments = computeSegments(component);
+	/**
+	 * Check if a component has constant radius (like BodyTube).
+	 */
+	private static boolean isConstantRadius(SymmetricComponent component) {
 		double length = component.getLength();
+		if (length <= 0) return true;
+		
+		// Sample a few points to check if radius is constant
+		double r0 = safeRadius(component, 0);
+		double rMid = safeRadius(component, length / 2.0);
+		double rEnd = safeRadius(component, length);
+		
+		// Use a small tolerance for floating-point comparison
+		return MathUtil.equals(r0, rMid, 1e-9) && MathUtil.equals(r0, rEnd, 1e-9);
+	}
+
+	public static Bounds calculateBounds(SymmetricComponent component) {
+		double length = component.getLength();
+		
+		// Optimize for constant-radius components (like BodyTube)
+		if (isConstantRadius(component)) {
+			double radius = safeRadius(component, 0);
+			Bounds b = new Bounds();
+			b.include(0, radius);
+			b.include(0, -radius);
+			b.include(length, radius);
+			b.include(length, -radius);
+			return b;
+		}
+		
+		// Variable radius: sample many points
+		final int segments = computeSegments(component);
 		Bounds b = new Bounds();
 		for (int i = 0; i <= segments; i++) {
 			double x = (length * i) / segments;
@@ -34,8 +64,22 @@ public final class ProfileSvgExporter {
 	}
 
 	private static CoordinateIF[] sampleClosed(SymmetricComponent component, double originX, double originY) {
-		final int segments = computeSegments(component);
 		double length = component.getLength();
+		
+		// Optimize for constant-radius components: draw perfect rectangle with 4 points
+		if (isConstantRadius(component)) {
+			double radius = safeRadius(component, 0);
+			return new CoordinateIF[] {
+				new Coordinate(originX, originY + radius),           // Top-left
+				new Coordinate(originX + length, originY + radius), // Top-right
+				new Coordinate(originX + length, originY - radius), // Bottom-right
+				new Coordinate(originX, originY - radius),          // Bottom-left
+				new Coordinate(originX, originY + radius)           // Close path
+			};
+		}
+		
+		// Variable radius: sample many points
+		final int segments = computeSegments(component);
 		// top: 0..segments (segments+1 points), bottom: segments..0 (segments+1 points), total 2*segments+2
 		CoordinateIF[] points = new CoordinateIF[2 * segments + 2];
 		// Top edge
