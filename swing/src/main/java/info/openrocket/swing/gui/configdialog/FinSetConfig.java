@@ -2,7 +2,6 @@ package info.openrocket.swing.gui.configdialog;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -11,29 +10,20 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 
 import info.openrocket.core.material.MaterialGroup;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.util.CoordinateIF;
-import info.openrocket.core.file.svg.export.SVGExportOptions;
-import info.openrocket.swing.gui.components.SVGOptionPanel;
-import info.openrocket.swing.gui.util.FileHelper;
-import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.export.SvgExportHelper;
 import info.openrocket.swing.gui.widgets.GroupableAndSearchableComboBox;
 import info.openrocket.swing.gui.widgets.MaterialComboBox;
 import net.miginfocom.swing.MigLayout;
 
 import info.openrocket.core.document.OpenRocketDocument;
-import info.openrocket.core.file.svg.export.SVGBuilder;
-import info.openrocket.core.file.svg.export.FinSvgExporter;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.Markers;
 import info.openrocket.core.material.Material;
@@ -151,7 +141,7 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 			public void actionPerformed(ActionEvent e) {
 				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
 
-				info.openrocket.swing.gui.export.SvgExportHelper.exportSinglePart(FinSetConfig.this, document, component);
+				SvgExportHelper.exportSinglePart(FinSetConfig.this, document, component);
 			}
 		});
 
@@ -617,25 +607,4 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 	    return filletPanel;
 	}
 
-	/**
-	 * Writes the FinSet object to an SVG file.
-	 *
-	 * @param finSet      the FinSet object to write to the SVG file
-	 * @param file        the File object representing the SVG file to be written
-	 * @param svgOptions  the SVGOptionPanel object containing the options for writing the SVG file
-	 * @throws Exception if there is an error writing the SVG file
-	 */
-	public static void writeSVGFile(FinSet finSet, File file, SVGOptionPanel svgOptions) throws ParserConfigurationException, TransformerException {
-		// Use stroke color as label color for backward compatibility
-		SVGExportOptions options = new SVGExportOptions(svgOptions.getStrokeColor(), svgOptions.getStrokeWidth(),
-				true, svgOptions.getStrokeColor(), false, svgOptions.getStrokeColor());
-		writeSVGFile(finSet, file, options);
-	}
-
-	public static void writeSVGFile(FinSet finSet, File file, SVGExportOptions options) throws ParserConfigurationException, TransformerException {
-		SVGBuilder builder = new SVGBuilder();
-		FinSvgExporter.drawFinSet(finSet, builder, 0, 0, options);
-
-		builder.writeToFile(file);
-	}
 }
