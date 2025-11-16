@@ -113,10 +113,10 @@ public class DecalModel extends AbstractListModel<DecalImage> implements ComboBo
 
 				JFileChooser fc = new JFileChooser(current);
 				fc.setFileFilter(FileHelper.getImageFileFilter());
-				fc.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+				fc.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 				int action = fc.showOpenDialog(SwingUtilities.getWindowAncestor(parent));
 				if (action == JFileChooser.APPROVE_OPTION) {
-					((SwingPreferences) Application.getPreferences()).setDefaultDirectory(fc.getCurrentDirectory());
+					Application.getPreferences().setDefaultDirectory(fc.getCurrentDirectory());
 					File file = fc.getSelectedFile();
 					lastImageDir = file.getParentFile();
 					Attachment a = (new FileSystemAttachmentFactory().getAttachment(file));

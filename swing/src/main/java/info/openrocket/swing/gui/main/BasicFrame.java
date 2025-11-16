@@ -1297,14 +1297,14 @@ private static final Translator trans = Application.getTranslator();
 
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(true);
-		chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 		int option = chooser.showOpenDialog(parent);
 		if (option != JFileChooser.APPROVE_OPTION) {
 			log.info(Markers.USER_MARKER, "Decided not to open files, option=" + option);
 			return;
 		}
 
-		((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+		Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 
 		File[] files = chooser.getSelectedFiles();
 		log.info(Markers.USER_MARKER, "Opening files " + Arrays.toString(files));
@@ -1545,7 +1545,7 @@ private static final Translator trans = Application.getTranslator();
 			return null;
 		}
 
-		((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+		Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 
 		return file;
 	}
