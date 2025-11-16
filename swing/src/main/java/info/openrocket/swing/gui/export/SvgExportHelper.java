@@ -54,9 +54,10 @@ public final class SvgExportHelper {
 		prefs.setSVGStrokeWidth(optionsDialog.getStrokeWidth());
 		prefs.setSVGDrawCrosshair(optionsDialog.isDrawCrosshair());
 		prefs.setSVGCrosshairColor(optionsDialog.getCrosshairColor());
+		prefs.setSVGShowLabels(optionsDialog.isShowLabels());
+		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
 
-		SVGExportOptions options = new SVGExportOptions(optionsDialog.getStrokeColor(),
-				optionsDialog.getStrokeWidth(), optionsDialog.isDrawCrosshair(), optionsDialog.getCrosshairColor());
+		SVGExportOptions options = optionsDialog.getExportOptions();
 
 		// Dispatch to the appropriate exporter based on component type
 		try {

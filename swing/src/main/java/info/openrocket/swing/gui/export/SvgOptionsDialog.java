@@ -87,8 +87,26 @@ public class SvgOptionsDialog extends JDialog {
 			getStrokeColor(),
 			getStrokeWidth(),
 			isDrawCrosshair(),
-			getCrosshairColor()
+			getCrosshairColor(),
+			isShowLabels(),
+			getLabelColor()
 		);
+	}
+
+	public boolean isShowLabels() {
+		return optionsPanel.isShowLabels();
+	}
+
+	public void setShowLabels(boolean showLabels) {
+		optionsPanel.setShowLabels(showLabels);
+	}
+
+	public Color getLabelColor() {
+		return optionsPanel.getLabelColor();
+	}
+
+	public void setLabelColor(Color color) {
+		optionsPanel.setLabelColor(color);
 	}
 
 	public void setFromPreferences(ApplicationPreferences prefs) {
@@ -96,6 +114,8 @@ public class SvgOptionsDialog extends JDialog {
 		optionsPanel.setStrokeWidth(prefs.getSVGStrokeWidth());
 		optionsPanel.setDrawCrosshair(prefs.isSVGDrawCrosshair());
 		optionsPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
+		optionsPanel.setShowLabels(prefs.isSVGShowLabels());
+		optionsPanel.setLabelColor(prefs.getSVGLabelColor());
 	}
 }
 

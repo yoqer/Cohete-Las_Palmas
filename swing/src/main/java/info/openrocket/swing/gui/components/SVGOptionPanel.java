@@ -21,10 +21,14 @@ public class SVGOptionPanel extends JPanel {
 	private final ColorChooserButton colorChooser;
 	private ColorChooserButton crosshairColorChooser;
 	private JLabel crosshairColorLabel;
+	private ColorChooserButton labelColorChooser;
+	private JLabel labelColorLabel;
 	private double strokeWidth = 0.1;
 	private boolean drawCrosshair = true;
+	private boolean showLabels = true;
 	private final boolean showCrosshairToggle;
 	private JCheckBox crosshairCheckbox;
+	private JCheckBox showLabelsCheckbox;
 
 	public SVGOptionPanel() {
 		this(false);
@@ -52,7 +56,7 @@ public class SVGOptionPanel extends JPanel {
 		spin.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeWidth.ttip"));
 		spin.setEditor(new SpinnerEditor(spin, 5));
 		add(spin);
-		add(new UnitSelector(dm), "growx, wrap");
+		add(new UnitSelector(dm), "growx, wrap para");
 
 		if (showCrosshairToggle) {
 			crosshairCheckbox = new JCheckBox(trans.get("SVGOptionPanel.lbl.crosshair"));
@@ -66,7 +70,7 @@ public class SVGOptionPanel extends JPanel {
 			add(crosshairColorLabel);
 			crosshairColorChooser = new ColorChooserButton(prefs.getSVGCrosshairColor());
 			crosshairColorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairColor.ttip"));
-			add(crosshairColorChooser, "wrap");
+			add(crosshairColorChooser, "wrap para");
 
 			crosshairCheckbox.addActionListener(e -> {
 				drawCrosshair = crosshairCheckbox.isSelected();
@@ -74,6 +78,32 @@ public class SVGOptionPanel extends JPanel {
 			});
 			updateCrosshairInputs();
 		}
+
+		// Show labels checkbox (always shown)
+		showLabelsCheckbox = new JCheckBox(trans.get("SVGOptionPanel.lbl.showLabels"));
+		showLabelsCheckbox.setToolTipText(trans.get("SVGOptionPanel.lbl.showLabels.ttip"));
+		showLabels = prefs.isSVGShowLabels();
+		showLabelsCheckbox.setSelected(showLabels);
+		add(showLabelsCheckbox, "spanx, wrap");
+
+		// Label color
+		labelColorLabel = new JLabel(trans.get("SVGOptionPanel.lbl.labelColor"));
+		labelColorLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.labelColor.ttip"));
+		add(labelColorLabel);
+		labelColorChooser = new ColorChooserButton(prefs.getSVGLabelColor());
+		labelColorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.labelColor.ttip"));
+		add(labelColorChooser, "wrap");
+
+		// Enable/disable label color controls based on checkbox
+		showLabelsCheckbox.addActionListener(e -> {
+			boolean enabled = showLabelsCheckbox.isSelected();
+			labelColorLabel.setEnabled(enabled);
+			labelColorChooser.setEnabled(enabled);
+		});
+		// Initial state
+		boolean labelsEnabled = showLabelsCheckbox.isSelected();
+		labelColorLabel.setEnabled(labelsEnabled);
+		labelColorChooser.setEnabled(labelsEnabled);
 	}
 
 	public Color getStrokeColor() {
@@ -114,6 +144,34 @@ public class SVGOptionPanel extends JPanel {
 	public void setCrosshairColor(Color color) {
 		if (showCrosshairToggle && crosshairColorChooser != null) {
 			crosshairColorChooser.setSelectedColor(color);
+		}
+	}
+
+	public boolean isShowLabels() {
+		return showLabelsCheckbox != null ? showLabelsCheckbox.isSelected() : showLabels;
+	}
+
+	public void setShowLabels(boolean showLabels) {
+		this.showLabels = showLabels;
+		if (showLabelsCheckbox != null) {
+			showLabelsCheckbox.setSelected(showLabels);
+			boolean enabled = showLabels;
+			if (labelColorLabel != null) {
+				labelColorLabel.setEnabled(enabled);
+			}
+			if (labelColorChooser != null) {
+				labelColorChooser.setEnabled(enabled);
+			}
+		}
+	}
+
+	public Color getLabelColor() {
+		return labelColorChooser != null ? labelColorChooser.getSelectedColor() : Color.BLACK;
+	}
+
+	public void setLabelColor(Color color) {
+		if (labelColorChooser != null) {
+			labelColorChooser.setSelectedColor(color);
 		}
 	}
 

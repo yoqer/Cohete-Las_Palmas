@@ -226,6 +226,65 @@ public class SVGBuilder {
 	}
 
 	/**
+	 * Adds a text element to the SVG document.
+	 *
+	 * @param x the x-coordinate of the text anchor (in meters)
+	 * @param y the y-coordinate of the text anchor (in meters)
+	 * @param text the text content to display
+	 * @param fontSize the font size in millimeters
+	 * @param fill the text color, or null for black
+	 * @param anchor the text anchor position ("start", "middle", "end")
+	 */
+	public void addText(double x, double y, String text, double fontSize, Color fill, String anchor) {
+		Element textElement = doc.createElement("text");
+		
+		double svgX = toSvgUnits(x + originX);
+		double svgY = toSvgUnits(y + originY);
+		
+		// Estimate text width: average character width is about 0.6 * font size for most fonts
+		double estimatedTextWidth = text.length() * fontSize * 0.6;
+		
+		// Update canvas size to account for text bounds
+		// Text extends above baseline (y - fontSize) and below baseline (y + fontSize * 0.3 for descenders)
+		// For horizontal extent, account for anchor position
+		if (anchor == null || anchor.isEmpty() || "start".equals(anchor)) {
+			// Text starts at x and extends right
+			updateCanvasSize(svgX, svgY - fontSize);
+			updateCanvasSize(svgX + estimatedTextWidth, svgY + fontSize * 0.3);
+		} else if ("middle".equals(anchor)) {
+			// Text is centered at x, extends left and right
+			double halfWidth = estimatedTextWidth / 2.0;
+			updateCanvasSize(svgX - halfWidth, svgY - fontSize);
+			updateCanvasSize(svgX + halfWidth, svgY + fontSize * 0.3);
+		} else if ("end".equals(anchor)) {
+			// Text ends at x, extends left
+			updateCanvasSize(svgX - estimatedTextWidth, svgY - fontSize);
+			updateCanvasSize(svgX, svgY + fontSize * 0.3);
+		} else {
+			// Default: treat as start
+			updateCanvasSize(svgX, svgY - fontSize);
+			updateCanvasSize(svgX + estimatedTextWidth, svgY + fontSize * 0.3);
+		}
+		
+		textElement.setAttribute("x", formatDouble(svgX));
+		textElement.setAttribute("y", formatDouble(svgY));
+		textElement.setAttribute("font-size", formatDouble(fontSize));
+		textElement.setAttribute("fill", colorToString(fill != null ? fill : Color.BLACK));
+		if (anchor != null && !anchor.isEmpty()) {
+			textElement.setAttribute("text-anchor", anchor);
+		}
+		textElement.setTextContent(text);
+		svgRoot.appendChild(textElement);
+	}
+
+	/**
+	 * Adds a text element with default anchor "middle" (centered horizontally).
+	 */
+	public void addText(double x, double y, String text, double fontSize, Color fill) {
+		addText(x, y, text, fontSize, fill, "middle");
+	}
+
+	/**
 	 * Repositions the drawing origin so subsequent calls are offset.
 	 */
 	public void setOrigin(double originX, double originY) {

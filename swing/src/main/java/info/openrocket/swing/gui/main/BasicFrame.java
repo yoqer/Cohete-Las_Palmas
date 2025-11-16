@@ -1848,6 +1848,14 @@ private static final Translator trans = Application.getTranslator();
 
 		swingPrefs.setDefaultDirectory(chooser.getCurrentDirectory());
 
+		// Save SVG preferences
+		prefs.setSVGStrokeColor(optionsDialog.getStrokeColor());
+		prefs.setSVGStrokeWidth(optionsDialog.getStrokeWidth());
+		prefs.setSVGDrawCrosshair(optionsDialog.isDrawCrosshair());
+		prefs.setSVGCrosshairColor(optionsDialog.getCrosshairColor());
+		prefs.setSVGShowLabels(optionsDialog.isShowLabels());
+		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
+
 		try {
 			new SVGRocketPartsExporter().export(document, target, options);
 			log.info(Markers.USER_MARKER, "Exported SVG templates to {}", target.getAbsolutePath());

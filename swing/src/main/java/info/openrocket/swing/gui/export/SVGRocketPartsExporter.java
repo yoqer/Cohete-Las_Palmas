@@ -25,6 +25,8 @@ import java.util.List;
 public class SVGRocketPartsExporter {
 	private static final double PART_PADDING = 0.01; // meters
 	private static final double DEFAULT_ROW_WIDTH = 0.35; // meters
+	private static final double LABEL_FONT_SIZE_MM = 3.0; // millimeters
+	private static final double LABEL_SPACING = 0.002; // meters spacing between part and label
 
 	public void export(OpenRocketDocument document, File destination, SVGExportOptions options)
 			throws ParserConfigurationException, TransformerException {
@@ -49,10 +51,11 @@ public class SVGRocketPartsExporter {
 		double cursorX = 0;
 		double cursorY = 0;
 		double rowHeight = 0;
+		double labelHeight = options.isShowLabels() ? (LABEL_FONT_SIZE_MM / 1000.0) + LABEL_SPACING : 0; // Convert mm to meters
 
 		for (Part part : parts) {
 			double width = part.width + (2 * PART_PADDING);
-			double height = part.height + (2 * PART_PADDING);
+			double height = part.height + (2 * PART_PADDING) + labelHeight;
 
 			if (cursorX > 0 && cursorX + width > rowWidth) {
 				cursorX = 0;
@@ -63,6 +66,13 @@ public class SVGRocketPartsExporter {
 			double originX = cursorX + PART_PADDING;
 			double originY = cursorY + PART_PADDING;
 			part.renderer.render(builder, originX, originY, options);
+
+			// Add label below the part, centered horizontally
+			if (options.isShowLabels() && part.label != null && !part.label.trim().isEmpty()) {
+				double labelX = originX + (part.width / 2.0);
+				double labelY = originY + part.height + LABEL_SPACING + (LABEL_FONT_SIZE_MM / 1000.0);
+				builder.addText(labelX, labelY, part.label, LABEL_FONT_SIZE_MM, options.getLabelColor());
+			}
 
 			cursorX += width + PART_PADDING;
 			rowHeight = Math.max(rowHeight, height);
@@ -117,31 +127,35 @@ public class SVGRocketPartsExporter {
 		private final double width;
 		private final double height;
 		private final PartRenderer renderer;
+		private final String label;
 
-		private Part(double width, double height, PartRenderer renderer) {
+		private Part(double width, double height, PartRenderer renderer, String label) {
 			this.width = width;
 			this.height = height;
 			this.renderer = renderer;
+			this.label = label;
 		}
 
 		static Part fromRing(CenteringRing ring, List<RingSvgExporter.Hole> holes) {
 			double outerRadius = ring.getOuterRadius();
 			double innerRadius = ring.getInnerRadius();
 			List<RingSvgExporter.Hole> safeHoles = holes == null ? Collections.emptyList() : holes;
+			String label = ring.getName();
 			return new Part(outerRadius * 2, outerRadius * 2, (builder, originX, originY, options) -> {
 				double centerX = originX + outerRadius;
 				double centerY = originY + outerRadius;
 				RingSvgExporter.renderRing(builder, centerX, centerY, outerRadius, innerRadius, safeHoles, options);
-			});
+			}, label);
 		}
 
 		static Part fromBulkhead(Bulkhead bulkhead) {
 			double outerRadius = bulkhead.getOuterRadius();
+			String label = bulkhead.getName();
 			return new Part(outerRadius * 2, outerRadius * 2, (builder, originX, originY, options) -> {
 				double centerX = originX + outerRadius;
 				double centerY = originY + outerRadius;
 				RingSvgExporter.renderRing(builder, centerX, centerY, outerRadius, 0, Collections.emptyList(), options);
-			});
+			}, label);
 		}
 
 		static Part fromFinSet(FinSet finSet) {
@@ -150,22 +164,24 @@ public class SVGRocketPartsExporter {
 			double height = bounds.getHeight();
 			double minX = bounds.getMinX();
 			double minY = bounds.getMinY();
+			String label = finSet.getName();
 			return new Part(width, height, (builder, originX, originY, options) -> {
 				double offsetX = originX - minX;
 				double offsetY = originY - minY;
 				FinSvgExporter.drawFinSet(finSet, builder, offsetX, offsetY, options);
-			});
+			}, label);
 		}
 
 		static Part fromProfile(SymmetricComponent comp) {
 			ProfileSvgExporter.Bounds b = ProfileSvgExporter.calculateBounds(comp);
 			double width = Math.max(0.001, b.getWidth());
 			double height = Math.max(0.001, b.getMaxAbsY() * 2.0); // accommodate top and bottom space
+			String label = comp.getName();
 			return new Part(width, height, (builder, originX, originY, options) -> {
 				// center the full closed outline vertically within its tile
 				double midY = originY + (height / 2.0);
 				ProfileSvgExporter.drawClosedProfile(comp, builder, originX, midY, options);
-			});
+			}, label);
 		}
 	}
 }

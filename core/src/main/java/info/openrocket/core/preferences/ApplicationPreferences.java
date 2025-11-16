@@ -182,6 +182,8 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
 	public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
 	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
+	public static final String SVG_SHOW_LABELS = "SVGShowLabels";
+	public static final String SVG_LABEL_COLOR = "SVGLabelColor";
 	
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1420,6 +1422,42 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGCrosshairColor(Color color) {
 		putColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(color));
+	}
+
+	/**
+	 * Returns whether SVG exports should include component name labels.
+	 *
+	 * @return true if labels should be shown
+	 */
+	public boolean isSVGShowLabels() {
+		return getBoolean(SVG_SHOW_LABELS, true);
+	}
+
+	/**
+	 * Sets whether SVG exports should include component name labels.
+	 *
+	 * @param showLabels true to include labels
+	 */
+	public void setSVGShowLabels(boolean showLabels) {
+		putBoolean(SVG_SHOW_LABELS, showLabels);
+	}
+
+	/**
+	 * Returns the color used for component name labels in SVG exports.
+	 *
+	 * @return the label color
+	 */
+	public Color getSVGLabelColor() {
+		return getColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
+	}
+
+	/**
+	 * Sets the label color for SVG exports.
+	 *
+	 * @param color the color to use for labels
+	 */
+	public void setSVGLabelColor(Color color) {
+		putColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(color));
 	}
 
 	/**

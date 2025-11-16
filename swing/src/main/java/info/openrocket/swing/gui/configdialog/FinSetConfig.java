@@ -626,7 +626,9 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 	 * @throws Exception if there is an error writing the SVG file
 	 */
 	public static void writeSVGFile(FinSet finSet, File file, SVGOptionPanel svgOptions) throws ParserConfigurationException, TransformerException {
-		SVGExportOptions options = new SVGExportOptions(svgOptions.getStrokeColor(), svgOptions.getStrokeWidth());
+		// Use stroke color as label color for backward compatibility
+		SVGExportOptions options = new SVGExportOptions(svgOptions.getStrokeColor(), svgOptions.getStrokeWidth(),
+				true, svgOptions.getStrokeColor(), false, svgOptions.getStrokeColor());
 		writeSVGFile(finSet, file, options);
 	}
 
