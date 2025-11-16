@@ -33,6 +33,7 @@ import net.miginfocom.swing.MigLayout;
 
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.SVGBuilder;
+import info.openrocket.core.file.svg.export.FinSvgExporter;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.Markers;
 import info.openrocket.core.material.Material;
@@ -654,18 +655,8 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 	}
 
 	public static void writeSVGFile(FinSet finSet, File file, SVGExportOptions options) throws ParserConfigurationException, TransformerException {
-		CoordinateIF[] points = finSet.generateContinuousFinAndTabShape();
-
 		SVGBuilder builder = new SVGBuilder();
-		builder.addPath(points, null, options.getStrokeColor(), options.getStrokeWidthMm());
-
-		// Export fin tab separately if it's beyond the fin
-		if (finSet.isTabBeyondFin()) {
-			CoordinateIF[] tabPoints = finSet.getTabPointsWithRoot();
-			CoordinateIF finFront = finSet.getFinFront();
-			// Need to offset to the fin front because the tab points are relative to the fin front
-			builder.addPath(tabPoints, finFront.getX(), finFront.getY(), null, options.getStrokeColor(), options.getStrokeWidthMm());
-		}
+		FinSvgExporter.drawFinSet(finSet, builder, 0, 0, options);
 
 		builder.writeToFile(file);
 	}
