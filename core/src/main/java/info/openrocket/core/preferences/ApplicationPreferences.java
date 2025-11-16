@@ -225,6 +225,23 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 
 	public abstract java.util.prefs.Preferences getPreferences();
 
+	public File getDefaultDirectory() {
+		String file = getString(ApplicationPreferences.DEFAULT_DIRECTORY, null);
+		if (file == null)
+			return null;
+		return new File(file);
+	}
+
+	public void setDefaultDirectory(File dir) {
+		String d;
+		if (dir == null) {
+			d = null;
+		} else {
+			d = dir.getAbsolutePath();
+		}
+		putString(ApplicationPreferences.DEFAULT_DIRECTORY, d);
+	}
+
 	/*
 	 * Welcome dialog
 	 */
