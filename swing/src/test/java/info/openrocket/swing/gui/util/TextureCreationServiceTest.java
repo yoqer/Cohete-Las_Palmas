@@ -157,7 +157,7 @@ class TextureCreationServiceTest {
 
 		assertTrue(hasOpaquePixels(normal.getImage()));
 		assertTrue(hasOpaquePixels(mirrored.getImage()));
-		assertTrue(isVerticalMirror(normal.getImage(), mirrored.getImage()),
+		assertTrue(isHorizontallyMirror(normal.getImage(), mirrored.getImage()),
 				"Mirrored texture should be a vertical reflection of the original");
 	}
 
@@ -213,7 +213,7 @@ class TextureCreationServiceTest {
 		return count;
 	}
 
-	private boolean isVerticalMirror(BufferedImage original, BufferedImage mirrored) {
+	private boolean isHorizontallyMirror(BufferedImage original, BufferedImage mirrored) {
 		if (original.getWidth() != mirrored.getWidth() || original.getHeight() != mirrored.getHeight()) {
 			return false;
 		}
@@ -222,7 +222,7 @@ class TextureCreationServiceTest {
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				int origPixel = original.getRGB(x, y);
-				int mirrorPixel = mirrored.getRGB(x, height - 1 - y);
+				int mirrorPixel = mirrored.getRGB(width - 1 - x, y);
 				if (origPixel != mirrorPixel) {
 					return false;
 				}
