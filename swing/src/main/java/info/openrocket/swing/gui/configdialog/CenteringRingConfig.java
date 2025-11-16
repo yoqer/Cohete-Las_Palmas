@@ -23,6 +23,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.export.ComponentSvgExportService;
+import info.openrocket.swing.gui.export.SvgExportHelper;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import org.slf4j.Logger;
@@ -64,64 +65,11 @@ public class CenteringRingConfig extends RingComponentConfig {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				log.info("Exporting centering ring '{}' to SVG", component.getName());
-				JFileChooser chooser = new JFileChooser();
-				chooser.setFileFilter(FileHelper.SVG_FILTER);
-				SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
-				SVGOptionPanel optionPanel = new SVGOptionPanel(true);
-				optionPanel.setStrokeColor(prefs.getSVGStrokeColor());
-				optionPanel.setStrokeWidth(prefs.getSVGStrokeWidth());
-				optionPanel.setDrawCrosshair(prefs.isSVGDrawCrosshair());
-				optionPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
-				chooser.setAccessory(optionPanel);
-				chooser.setCurrentDirectory(swingPrefs.getDefaultDirectory());
-				chooser.setSelectedFile(suggestDefaultFile(swingPrefs));
-
-				if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(CenteringRingConfig.this)) {
-					File selectedFile = chooser.getSelectedFile();
-					selectedFile = FileHelper.forceExtension(selectedFile, "svg");
-					if (!FileHelper.confirmWrite(selectedFile, buttonPanel)) {
-						return;
-					}
-					swingPrefs.setDefaultDirectory(chooser.getCurrentDirectory());
-					prefs.setSVGStrokeColor(optionPanel.getStrokeColor());
-					prefs.setSVGStrokeWidth(optionPanel.getStrokeWidth());
-					prefs.setSVGDrawCrosshair(optionPanel.isDrawCrosshair());
-					prefs.setSVGCrosshairColor(optionPanel.getCrosshairColor());
-
-					try {
-						SVGExportOptions options = new SVGExportOptions(optionPanel.getStrokeColor(),
-								optionPanel.getStrokeWidth(), optionPanel.isDrawCrosshair(), optionPanel.getCrosshairColor());
-						ComponentSvgExportService.exportCenteringRing((CenteringRing) component, selectedFile, options);
-					}
-					catch (Exception svgErr) {
-						log.warn("Failed to export centering ring SVG", svgErr);
-						JOptionPane.showMessageDialog(CenteringRingConfig.this,
-								String.format(trans.get("CenteringRingConfig.errorSVG.msg"), svgErr.getMessage()),
-								trans.get("CenteringRingConfig.errorSVG.title"), JOptionPane.ERROR_MESSAGE);
-					}
-				}
+				SvgExportHelper.exportSinglePart(CenteringRingConfig.this, document, component);
 			}
 		});
 
 		addButtons(exportBtn);
 		order.add(exportBtn);
 	}
-
-	private File suggestDefaultFile(SwingPreferences swingPrefs) {
-		File directory = swingPrefs.getDefaultDirectory();
-		if (directory == null) {
-			directory = new File(System.getProperty("user.home", "."));
-		}
-
-		String baseName = component.getName();
-		if (baseName == null || baseName.isBlank()) {
-			baseName = component.getComponentName();
-		}
-		if (baseName == null || baseName.isBlank()) {
-			baseName = "component";
-		}
-		String normalized = baseName.trim().toLowerCase(Locale.ENGLISH).replaceAll("\\s+", "-");
-		return new File(directory, normalized + ".svg");
-	}
-	
 }

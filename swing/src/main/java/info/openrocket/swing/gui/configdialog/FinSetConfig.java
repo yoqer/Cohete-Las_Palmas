@@ -151,31 +151,7 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 			public void actionPerformed(ActionEvent e) {
 				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
 
-				JFileChooser chooser = new JFileChooser();
-				chooser.setFileFilter(FileHelper.SVG_FILTER);
-				chooser.setAccessory(new SVGOptionPanel());
-				chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
-
-				if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FinSetConfig.this)){
-					File selectedFile= chooser.getSelectedFile();
-					selectedFile = FileHelper.forceExtension(selectedFile, "svg");
-					if (!FileHelper.confirmWrite(selectedFile, buttonPanel)) {
-						return;
-					}
-
-					((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
-					SVGOptionPanel svgOptions = (SVGOptionPanel) chooser.getAccessory();
-					prefs.setSVGStrokeColor(svgOptions.getStrokeColor());
-					prefs.setSVGStrokeWidth(svgOptions.getStrokeWidth());
-
-					try {
-						FinSetConfig.writeSVGFile((FinSet) component, selectedFile, svgOptions);
-					} catch (Exception svgErr) {
-						JOptionPane.showMessageDialog(FinSetConfig.this,
-								String.format(trans.get("FinSetConfig.errorSVG.msg"), svgErr.getMessage()),
-								trans.get("FinSetConfig.errorSVG.title"), JOptionPane.ERROR_MESSAGE);
-					}
-				}
+				info.openrocket.swing.gui.export.SvgExportHelper.exportSinglePart(FinSetConfig.this, document, component);
 			}
 		});
 

@@ -5,6 +5,7 @@ import info.openrocket.core.file.svg.export.SVGBuilder;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.rocketcomponent.Bulkhead;
 import info.openrocket.core.rocketcomponent.CenteringRing;
+import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.InnerTube;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.position.AxialMethod;
@@ -18,6 +19,13 @@ import java.util.List;
 
 public final class ComponentSvgExportService {
 	private ComponentSvgExportService() {
+	}
+
+	public static void exportFinSet(FinSet finSet, File destination, SVGExportOptions options)
+			throws ParserConfigurationException, TransformerException {
+		SVGBuilder builder = new SVGBuilder();
+		info.openrocket.core.file.svg.export.FinSvgExporter.drawFinSet(finSet, builder, 0, 0, options);
+		builder.writeToFile(destination);
 	}
 
 	public static void exportCenteringRing(CenteringRing ring, File destination, SVGExportOptions options)
