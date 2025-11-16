@@ -1,0 +1,103 @@
+package info.openrocket.core.file.svg.export;
+
+import info.openrocket.core.rocketcomponent.SymmetricComponent;
+import info.openrocket.core.util.Coordinate;
+import info.openrocket.core.util.CoordinateIF;
+
+/**
+ * Utilities to render side profiles of symmetric components (nose cones, body tubes, transitions).
+ */
+public final class ProfileSvgExporter {
+	private ProfileSvgExporter() {}
+
+	public static Bounds calculateBounds(SymmetricComponent component) {
+		final int segments = computeSegments(component);
+		double length = component.getLength();
+		Bounds b = new Bounds();
+		for (int i = 0; i <= segments; i++) {
+			double x = (length * i) / segments;
+			double r = safeRadius(component, x);
+			b.include(x, r);
+			b.include(x, -r);
+		}
+		return b;
+	}
+
+	/**
+	 * Draws the full closed side profile outline (top and bottom) of a symmetric component
+	 * at the given origin. The outline starts at (0,+r), goes to (L,+r), returns at (L,-r)
+	 * back to (0,-r) and closes.
+	 */
+	public static void drawClosedProfile(SymmetricComponent component, SVGBuilder builder,
+	                                     double originX, double originY, SVGExportOptions options) {
+		builder.addPath(sampleClosed(component, originX, originY), null, options.getStrokeColor(), options.getStrokeWidthMm());
+	}
+
+	private static CoordinateIF[] sampleClosed(SymmetricComponent component, double originX, double originY) {
+		final int segments = computeSegments(component);
+		double length = component.getLength();
+		// top: 0..segments (segments+1 points), bottom: segments..0 (segments+1 points), total 2*segments+2
+		CoordinateIF[] points = new CoordinateIF[2 * segments + 2];
+		// Top edge
+		for (int i = 0; i <= segments; i++) {
+			double x = (length * i) / segments;
+			double r = safeRadius(component, x);
+			points[i] = new Coordinate(originX + x, originY + r);
+		}
+		// Bottom edge (reverse)
+		for (int i = 0; i <= segments; i++) {
+			int idx = segments + 1 + i;
+			double x = (length * (segments - i)) / segments;
+			double r = safeRadius(component, x);
+			points[idx] = new Coordinate(originX + x, originY - r);
+		}
+		// Ensure closure by repeating first point at end if not identical (SVGBuilder also closes if identical)
+		points[points.length - 1] = new Coordinate(points[0].getX(), points[0].getY());
+		return points;
+	}
+
+	private static double safeRadius(SymmetricComponent component, double x) {
+		double r = component.getRadius(x);
+		return Math.max(0, r);
+	}
+
+	/**
+	 * Choose segment count adaptively based on component length, targeting ~0.5 mm per segment,
+	 * with sensible min/max caps to avoid overly heavy paths.
+	 */
+	private static int computeSegments(SymmetricComponent component) {
+		double lengthMm = component.getLength() * 1000.0;
+		int target = (int) Math.ceil(lengthMm / 0.5); // ~0.5 mm per segment
+		int min = 200;
+		int max = 2000;
+		if (target < min) return min;
+		if (target > max) return max;
+		return target;
+	}
+
+	public static final class Bounds {
+		private double minX = Double.MAX_VALUE;
+		private double minY = Double.MAX_VALUE;
+		private double maxX = -Double.MAX_VALUE;
+		private double maxY = -Double.MAX_VALUE;
+
+		private void include(double x, double y) {
+			if (x < minX) minX = x;
+			if (y < minY) minY = y;
+			if (x > maxX) maxX = x;
+			if (y > maxY) maxY = y;
+		}
+
+		public double getWidth() {
+			return (maxX == -Double.MAX_VALUE) ? 0 : (maxX - minX);
+		}
+		public double getHeight() {
+			return (maxY == -Double.MAX_VALUE) ? 0 : (maxY - minY);
+		}
+		public double getMaxAbsY() {
+			if (maxY == -Double.MAX_VALUE || minY == Double.MAX_VALUE) return 0;
+			return Math.max(Math.abs(maxY), Math.abs(minY));
+		}
+	}
+}
+

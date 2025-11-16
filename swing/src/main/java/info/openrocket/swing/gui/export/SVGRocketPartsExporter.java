@@ -2,13 +2,18 @@ package info.openrocket.swing.gui.export;
 
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.FinSvgExporter;
+import info.openrocket.core.file.svg.export.ProfileSvgExporter;
 import info.openrocket.core.file.svg.export.RingSvgExporter;
 import info.openrocket.core.file.svg.export.SVGBuilder;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
+import info.openrocket.core.rocketcomponent.BodyTube;
 import info.openrocket.core.rocketcomponent.Bulkhead;
 import info.openrocket.core.rocketcomponent.CenteringRing;
 import info.openrocket.core.rocketcomponent.FinSet;
+import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.core.rocketcomponent.SymmetricComponent;
+import info.openrocket.core.rocketcomponent.Transition;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -87,6 +92,12 @@ public class SVGRocketPartsExporter {
 			parts.add(Part.fromBulkhead((Bulkhead) component));
 		} else if (component instanceof FinSet) {
 			parts.add(Part.fromFinSet((FinSet) component));
+		} else if (component instanceof NoseCone) {
+			parts.add(Part.fromProfile((NoseCone) component));
+		} else if (component instanceof BodyTube) {
+			parts.add(Part.fromProfile((BodyTube) component));
+		} else if (component instanceof Transition) {
+			parts.add(Part.fromProfile((Transition) component));
 		}
 
 		List<RocketComponent> children = component.getChildren();
@@ -143,6 +154,17 @@ public class SVGRocketPartsExporter {
 				double offsetX = originX - minX;
 				double offsetY = originY - minY;
 				FinSvgExporter.drawFinSet(finSet, builder, offsetX, offsetY, options);
+			});
+		}
+
+		static Part fromProfile(SymmetricComponent comp) {
+			ProfileSvgExporter.Bounds b = ProfileSvgExporter.calculateBounds(comp);
+			double width = Math.max(0.001, b.getWidth());
+			double height = Math.max(0.001, b.getMaxAbsY() * 2.0); // accommodate top and bottom space
+			return new Part(width, height, (builder, originX, originY, options) -> {
+				// center the full closed outline vertically within its tile
+				double midY = originY + (height / 2.0);
+				ProfileSvgExporter.drawClosedProfile(comp, builder, originX, midY, options);
 			});
 		}
 	}
