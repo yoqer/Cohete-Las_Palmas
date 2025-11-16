@@ -103,7 +103,7 @@ public class TextureCreationService {
 	}
 
 	private TextureGenerationResult generateForFinSet(FinSet finSet, double dpi, boolean drawOutline, float outlineWidthPx,
-													 boolean mirrorVertically, Color outlineColor)
+													 boolean mirrorHorizontally, Color outlineColor)
 			throws TextureGenerationException {
 		CoordinateIF[] points = finSet.getFinPoints();
 		if (points == null || points.length < 3) {
@@ -139,8 +139,8 @@ public class TextureCreationService {
 					outlineColor == null ? new Color(0, 0, 0, 200) : outlineColor);
 		}
 		TextureGenerationResult result = renderBlankImage(widthMeters, heightMeters, dpi, outlineContext);
-		if (mirrorVertically) {
-			result = mirrorVertically(result);
+		if (mirrorHorizontally) {
+			result = mirrorHorizontally(result);
 		}
 		return rotateResult180(result);
 	}
@@ -222,13 +222,13 @@ public class TextureCreationService {
 		}
 	}
 
-	private TextureGenerationResult mirrorVertically(TextureGenerationResult original) {
+	private TextureGenerationResult mirrorHorizontally(TextureGenerationResult original) {
 		BufferedImage src = original.getImage();
 		BufferedImage mirrored = new BufferedImage(src.getWidth(), src.getHeight(), src.getType());
 		Graphics2D g2 = mirrored.createGraphics();
 		try {
-			g2.translate(0, src.getHeight());
-			g2.scale(1, -1);
+			g2.translate(src.getWidth(), 0);
+			g2.scale(-1, 1);
 			g2.drawImage(src, 0, 0, null);
 		} finally {
 			g2.dispose();
