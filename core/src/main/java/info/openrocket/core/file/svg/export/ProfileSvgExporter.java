@@ -62,7 +62,7 @@ public final class ProfileSvgExporter {
 		}
 		
 		// Build points in traversal order: top forward, then bottom backward, then close
-		CoordinateIF[] points = new CoordinateIF[2 * segments + 2];
+		CoordinateIF[] points = new CoordinateIF[2 * segments + 3];
 		int idx = 0;
 		
 		// Top edge: forward from 0 to length
