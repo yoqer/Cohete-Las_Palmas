@@ -89,8 +89,8 @@ public final class ProfileSvgExporter {
 	private static int computeSegments(SymmetricComponent component) {
 		double lengthMm = component.getLength() * 1000.0;
 		int target = (int) Math.ceil(lengthMm / 0.5); // ~0.5 mm per segment
-		int min = 200;
-		int max = 2000;
+		int min = 100;
+		int max = 500;
 		if (target < min) return min;
 		if (target > max) return max;
 		return target;
