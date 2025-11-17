@@ -1855,7 +1855,7 @@ private static final Translator trans = Application.getTranslator();
 			}
 		}
 		File parentDir = defaultDir != null ? defaultDir : new File(System.getProperty("user.home", "."));
-		chooser.setSelectedFile(new File(parentDir, defaultName + "-templates.svg"));
+		chooser.setSelectedFile(new File(parentDir, defaultName + "-profile.svg"));
 
 		if (chooser.showSaveDialog(BasicFrame.this) != JFileChooser.APPROVE_OPTION) {
 			return;
