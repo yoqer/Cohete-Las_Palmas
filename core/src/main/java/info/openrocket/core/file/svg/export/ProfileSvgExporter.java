@@ -8,6 +8,8 @@ import info.openrocket.core.util.MathUtil;
 
 /**
  * Utilities to render side profiles of symmetric components (nose cones, body tubes, transitions).
+ * TODO: we should probably create common profile generation code in the core module and use it both for SVG export
+ *   and for swing/src/main/java/info/openrocket/swing/gui/rocketfigure to avoid code duplication.
  */
 public final class ProfileSvgExporter {
 	private ProfileSvgExporter() {}
@@ -51,23 +53,26 @@ public final class ProfileSvgExporter {
 		
 		// Variable radius: sample many points
 		final int segments = computeSegments(component);
-		// top: 0..segments (segments+1 points), bottom: segments..0 (segments+1 points), total 2*segments+2
+		// Build points in traversal order: top forward, then bottom backward, then close
 		CoordinateIF[] points = new CoordinateIF[2 * segments + 2];
-		// Top edge
+		int idx = 0;
+		
+		// Top edge: forward from 0 to length
 		for (int i = 0; i <= segments; i++) {
 			double x = (length * i) / segments;
 			double r = component.getRadius(x);
-			points[i] = new Coordinate(originX + x, originY + r);
+			points[idx++] = new Coordinate(originX + x, originY + r);
 		}
-		// Bottom edge (reverse)
-		for (int i = 0; i <= segments; i++) {
-			int idx = segments + 1 + i;
-			double x = (length * (segments - i)) / segments;
+		
+		// Bottom edge: backward from length to 0
+		for (int i = segments; i >= 0; i--) {
+			double x = (length * i) / segments;
 			double r = component.getRadius(x);
-			points[idx] = new Coordinate(originX + x, originY - r);
+			points[idx++] = new Coordinate(originX + x, originY - r);
 		}
-		// Ensure closure by repeating first point at end if not identical (SVGBuilder also closes if identical)
-		points[points.length - 1] = new Coordinate(points[0].getX(), points[0].getY());
+		
+		// Close path by repeating first point
+		points[idx] = new Coordinate(points[0].getX(), points[0].getY());
 		return points;
 	}
 
