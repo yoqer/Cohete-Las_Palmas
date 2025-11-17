@@ -1,6 +1,7 @@
 package info.openrocket.core.file.svg.export;
 
 import info.openrocket.core.rocketcomponent.SymmetricComponent;
+import info.openrocket.core.rocketcomponent.Transition;
 import info.openrocket.core.util.BoundingBox;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
@@ -23,7 +24,30 @@ public final class ProfileSvgExporter {
 
 	public static Bounds calculateBounds(SymmetricComponent component) {
 		BoundingBox box = component.getInstanceBoundingBox();
-		return new Bounds(box);
+		Bounds bounds = new Bounds(box);
+		
+		// Include shoulders if this is a transition
+		if (component instanceof Transition transition) {
+			double transitionLength = transition.getLength();
+			
+			// Fore shoulder extends backward (negative X)
+			if (transition.getForeShoulderLength() > 0) {
+				double foreShoulderLength = transition.getForeShoulderLength();
+				double foreShoulderRadius = transition.getForeShoulderRadius();
+				bounds.include(-foreShoulderLength, foreShoulderRadius);
+				bounds.include(-foreShoulderLength, -foreShoulderRadius);
+			}
+			
+			// Aft shoulder extends forward (positive X)
+			if (transition.getAftShoulderLength() > 0) {
+				double aftShoulderLength = transition.getAftShoulderLength();
+				double aftShoulderRadius = transition.getAftShoulderRadius();
+				bounds.include(transitionLength + aftShoulderLength, aftShoulderRadius);
+				bounds.include(transitionLength + aftShoulderLength, -aftShoulderRadius);
+			}
+		}
+		
+		return bounds;
 	}
 
 	/**
@@ -34,6 +58,54 @@ public final class ProfileSvgExporter {
 	public static void drawClosedProfile(SymmetricComponent component, SVGBuilder builder,
 	                                     double originX, double originY, SVGExportOptions options) {
 		builder.addPath(sampleClosed(component, originX, originY), null, options.getStrokeColor(), options.getStrokeWidthMm());
+		
+		// Draw shoulders if this is a transition
+		if (component instanceof Transition) {
+			drawShoulders((Transition) component, builder, originX, originY, options);
+		}
+	}
+
+	/**
+	 * Draws the fore and aft shoulders of a transition as rectangles.
+	 * Fore shoulder extends backward (negative X) from the front of the transition.
+	 * Aft shoulder extends forward (positive X) from the back of the transition.
+	 */
+	private static void drawShoulders(Transition transition, SVGBuilder builder,
+	                                  double originX, double originY, SVGExportOptions options) {
+		double transitionLength = transition.getLength();
+		
+		// Draw fore shoulder (extends backward from front)
+		if (transition.getForeShoulderLength() > 0) {
+			double foreShoulderLength = transition.getForeShoulderLength();
+			double foreShoulderRadius = transition.getForeShoulderRadius();
+			double foreShoulderX = originX - foreShoulderLength;
+			
+			CoordinateIF[] foreShoulderPath = new CoordinateIF[] {
+				new Coordinate(foreShoulderX, originY + foreShoulderRadius),                    // Top-left
+				new Coordinate(originX, originY + foreShoulderRadius),                         // Top-right
+				new Coordinate(originX, originY - foreShoulderRadius),                         // Bottom-right
+				new Coordinate(foreShoulderX, originY - foreShoulderRadius),                    // Bottom-left
+				new Coordinate(foreShoulderX, originY + foreShoulderRadius)                      // Close path
+			};
+			builder.addPath(foreShoulderPath, null, options.getStrokeColor(), options.getStrokeWidthMm());
+		}
+		
+		// Draw aft shoulder (extends forward from back)
+		if (transition.getAftShoulderLength() > 0) {
+			double aftShoulderLength = transition.getAftShoulderLength();
+			double aftShoulderRadius = transition.getAftShoulderRadius();
+			double aftShoulderX = originX + transitionLength;
+			double aftShoulderEndX = aftShoulderX + aftShoulderLength;
+			
+			CoordinateIF[] aftShoulderPath = new CoordinateIF[] {
+				new Coordinate(aftShoulderX, originY + aftShoulderRadius),                       // Top-left
+				new Coordinate(aftShoulderEndX, originY + aftShoulderRadius),                    // Top-right
+				new Coordinate(aftShoulderEndX, originY - aftShoulderRadius),                    // Bottom-right
+				new Coordinate(aftShoulderX, originY - aftShoulderRadius),                       // Bottom-left
+				new Coordinate(aftShoulderX, originY + aftShoulderRadius)                        // Close path
+			};
+			builder.addPath(aftShoulderPath, null, options.getStrokeColor(), options.getStrokeWidthMm());
+		}
 	}
 
 	private static CoordinateIF[] sampleClosed(SymmetricComponent component, double originX, double originY) {
