@@ -290,6 +290,143 @@ class RailButtonSvgExporterTest {
 			"Should contain flange top coordinate: " + contents);
 	}
 
+	@Test
+	void drawRailButtonProfileHasCorrectDimensionsInMm() throws Exception {
+		// Test with specific dimensions: 20mm outer diameter, 10mm inner diameter
+		// Base: 5mm, Inner: 2mm, Flange: 2mm
+		RailButton railButton = createRailButton(0.02, 0.01, 0.005, 0.002, 0.0);
+		// outerDiameter = 20mm, innerDiameter = 10mm
+		// baseHeight = 5mm, innerHeight = 2mm, flangeHeight = 2mm
+		// Total height = 9mm
+
+		SVGBuilder builder = new SVGBuilder();
+		SVGExportOptions options = new SVGExportOptions(Color.BLACK, 0.1);
+
+		RailButtonSvgExporter.drawRailButtonProfile(railButton, builder, 0.0, 0.0, options);
+
+		File svgFile = File.createTempFile("railbutton-dimensions", ".svg");
+		builder.writeToFile(svgFile);
+
+		String contents = Files.readString(svgFile.toPath());
+		
+		// Extract all path coordinates
+		java.util.regex.Pattern pathPattern = java.util.regex.Pattern.compile("d=\"([^\"]+)\"");
+		java.util.regex.Matcher pathMatcher = pathPattern.matcher(contents);
+		
+		int pathIndex = 0;
+		while (pathMatcher.find()) {
+			String pathData = pathMatcher.group(1);
+			java.util.regex.Pattern coordPattern = java.util.regex.Pattern.compile("([ML])([\\d.\\-]+),([\\d.\\-]+)");
+			java.util.regex.Matcher coordMatcher = coordPattern.matcher(pathData);
+			
+			double minX = Double.MAX_VALUE;
+			double maxX = -Double.MAX_VALUE;
+			double minY = Double.MAX_VALUE;
+			double maxY = -Double.MAX_VALUE;
+			
+			while (coordMatcher.find()) {
+				double x = Double.parseDouble(coordMatcher.group(2));
+				double y = Double.parseDouble(coordMatcher.group(3));
+				minX = Math.min(minX, x);
+				maxX = Math.max(maxX, x);
+				minY = Math.min(minY, y);
+				maxY = Math.max(maxY, y);
+			}
+			
+			double width = maxX - minX;
+			double height = maxY - minY;
+			
+			if (pathIndex == 0) {
+				// Base rectangle: 20mm wide (outerDiameter), 5mm tall (baseHeight)
+				Assertions.assertEquals(20.0, width, 0.1,
+					String.format("Base rectangle width: expected 20.0mm, got %.3fmm", width));
+				Assertions.assertEquals(5.0, height, 0.1,
+					String.format("Base rectangle height: expected 5.0mm, got %.3fmm", height));
+				Assertions.assertEquals(0.0, minY, 0.1,
+					"Base rectangle should start at y=0");
+			} else if (pathIndex == 1) {
+				// Inner rectangle: 10mm wide (innerDiameter), 2mm tall (innerHeight)
+				Assertions.assertEquals(10.0, width, 0.1,
+					String.format("Inner rectangle width: expected 10.0mm, got %.3fmm", width));
+				Assertions.assertEquals(2.0, height, 0.1,
+					String.format("Inner rectangle height: expected 2.0mm, got %.3fmm", height));
+				Assertions.assertEquals(5.0, minY, 0.1,
+					"Inner rectangle should start at y=5mm (after base)");
+			} else if (pathIndex == 2) {
+				// Flange rectangle: 20mm wide (outerDiameter), 2mm tall (flangeHeight)
+				Assertions.assertEquals(20.0, width, 0.1,
+					String.format("Flange rectangle width: expected 20.0mm, got %.3fmm", width));
+				Assertions.assertEquals(2.0, height, 0.1,
+					String.format("Flange rectangle height: expected 2.0mm, got %.3fmm", height));
+				Assertions.assertEquals(7.0, minY, 0.1,
+					"Flange rectangle should start at y=7mm (after base + inner)");
+				Assertions.assertEquals(9.0, maxY, 0.1,
+					"Flange rectangle should end at y=9mm (total height)");
+			}
+			
+			pathIndex++;
+		}
+		
+		Assertions.assertEquals(3, pathIndex, "Should have exactly 3 rectangles");
+	}
+
+	@Test
+	void drawRailButtonProfileConvertsMetersToMillimetersCorrectly() throws Exception {
+		// Test the conversion factor: 1 meter = 1000 millimeters
+		// Use a simple case: 10mm outer diameter, 5mm base height
+		RailButton railButton = new RailButton();
+		railButton.setOuterDiameter(0.01); // 10mm
+		railButton.setInnerDiameter(0.008); // 8mm
+		railButton.setBaseHeight(0.005); // 5mm
+		railButton.setFlangeHeight(0.002); // 2mm
+		railButton.setTotalHeight(0.009); // 9mm total
+
+		SVGBuilder builder = new SVGBuilder();
+		SVGExportOptions options = new SVGExportOptions(Color.BLACK, 0.1);
+
+		RailButtonSvgExporter.drawRailButtonProfile(railButton, builder, 0.0, 0.0, options);
+
+		File svgFile = File.createTempFile("railbutton-conversion", ".svg");
+		builder.writeToFile(svgFile);
+
+		String contents = Files.readString(svgFile.toPath());
+		
+		// Extract first path (base rectangle) and verify dimensions
+		java.util.regex.Pattern pathPattern = java.util.regex.Pattern.compile("d=\"([^\"]+)\"");
+		java.util.regex.Matcher pathMatcher = pathPattern.matcher(contents);
+		
+		Assertions.assertTrue(pathMatcher.find(), "Should contain at least one path");
+		String pathData = pathMatcher.group(1);
+		
+		// Parse coordinates
+		java.util.regex.Pattern coordPattern = java.util.regex.Pattern.compile("([ML])([\\d.\\-]+),([\\d.\\-]+)");
+		java.util.regex.Matcher coordMatcher = coordPattern.matcher(pathData);
+		
+		double minX = Double.MAX_VALUE;
+		double maxX = -Double.MAX_VALUE;
+		double minY = Double.MAX_VALUE;
+		double maxY = -Double.MAX_VALUE;
+		
+		while (coordMatcher.find()) {
+			double x = Double.parseDouble(coordMatcher.group(2));
+			double y = Double.parseDouble(coordMatcher.group(3));
+			minX = Math.min(minX, x);
+			maxX = Math.max(maxX, x);
+			minY = Math.min(minY, y);
+			maxY = Math.max(maxY, y);
+		}
+		
+		// Verify conversion: 0.01m outer diameter = 10mm in SVG
+		double width = maxX - minX;
+		Assertions.assertEquals(10.0, width, 0.01,
+			String.format("Outer diameter conversion: 0.01m should be 10.0mm, got %.3fmm", width));
+		
+		// Verify conversion: 0.005m base height = 5mm in SVG
+		double height = maxY - minY;
+		Assertions.assertEquals(5.0, height, 0.01,
+			String.format("Base height conversion: 0.005m should be 5.0mm, got %.3fmm", height));
+	}
+
 	private static RailButton createRailButton(double outerDiameter, double innerDiameter, 
 	                                           double baseHeight, double flangeHeight, double screwHeight) {
 		RailButton railButton = new RailButton();
