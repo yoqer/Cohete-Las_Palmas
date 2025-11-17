@@ -32,7 +32,26 @@ public class SVGRocketPartsExporter {
 			throws ParserConfigurationException, TransformerException {
 		List<Part> parts = collectParts(document);
 		if (parts.isEmpty()) {
-			throw new IllegalStateException("No centering rings or bulkheads found.");
+			throw new IllegalStateException("No exportable components found.");
+		}
+
+		SVGBuilder builder = new SVGBuilder();
+		double maxDimension = 0;
+		for (Part part : parts) {
+			maxDimension = Math.max(maxDimension, Math.max(part.width, part.height));
+		}
+		double rowWidth = Math.max(DEFAULT_ROW_WIDTH, maxDimension + (2 * PART_PADDING) + 0.05);
+
+		layoutParts(builder, parts, rowWidth, options);
+
+		builder.writeToFile(destination);
+	}
+
+	public void export(List<RocketComponent> components, File destination, SVGExportOptions options)
+			throws ParserConfigurationException, TransformerException {
+		List<Part> parts = collectParts(components);
+		if (parts.isEmpty()) {
+			throw new IllegalStateException("No exportable components found.");
 		}
 
 		SVGBuilder builder = new SVGBuilder();
@@ -85,6 +104,17 @@ public class SVGRocketPartsExporter {
 			return parts;
 		}
 		collectRecursive(document.getRocket(), parts);
+		return parts;
+	}
+
+	private List<Part> collectParts(List<RocketComponent> components) {
+		List<Part> parts = new ArrayList<>();
+		if (components == null || components.isEmpty()) {
+			return parts;
+		}
+		for (RocketComponent component : components) {
+			collectRecursive(component, parts);
+		}
 		return parts;
 	}
 

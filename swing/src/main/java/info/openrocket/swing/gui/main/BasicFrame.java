@@ -276,6 +276,7 @@ private static final Translator trans = Application.getTranslator();
 
 			popupMenu.addSeparator();
 			popupMenu.add(actions.getExportOBJAction());
+			popupMenu.add(actions.getExportSVGAction());
 		}
 
 		createMenu();
@@ -1809,7 +1810,13 @@ private static final Translator trans = Application.getTranslator();
 		return true;
 	}
 
-	private void exportSvgProfilesAction() {
+	/**
+	 * Export SVG profiles. If components are provided, exports only those components;
+	 * otherwise exports all exportable components from the document.
+	 *
+	 * @param components Components to export, or null to export all from document
+	 */
+	private void exportSvgProfilesAction(List<RocketComponent> components) {
 		// Show SVG options dialog first
 		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this);
 		optionsDialog.setFromPreferences(prefs);
@@ -1820,7 +1827,7 @@ private static final Translator trans = Application.getTranslator();
 		// Get options from dialog
 		SVGExportOptions options = optionsDialog.getExportOptions();
 
-		// Now show file chooser without accessory panel
+		// Now show file chooser
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileFilter(FileHelper.SVG_FILTER);
 
@@ -1829,9 +1836,23 @@ private static final Translator trans = Application.getTranslator();
 		if (defaultDir != null) {
 			chooser.setCurrentDirectory(defaultDir);
 		}
-		String defaultName = document.getRocket().getName();
-		if (defaultName == null || defaultName.isBlank()) {
-			defaultName = "rocket";
+
+		// Determine default filename
+		String defaultName;
+		if (components != null && !components.isEmpty()) {
+			if (components.size() == 1) {
+				defaultName = components.get(0).getName();
+				if (defaultName == null || defaultName.isBlank()) {
+					defaultName = components.get(0).getComponentName();
+				}
+			} else {
+				defaultName = "components";
+			}
+		} else {
+			defaultName = document.getRocket().getName();
+			if (defaultName == null || defaultName.isBlank()) {
+				defaultName = "rocket";
+			}
 		}
 		File parentDir = defaultDir != null ? defaultDir : new File(System.getProperty("user.home", "."));
 		chooser.setSelectedFile(new File(parentDir, defaultName + "-templates.svg"));
@@ -1856,7 +1877,11 @@ private static final Translator trans = Application.getTranslator();
 		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
 
 		try {
-			new SVGRocketPartsExporter().export(document, target, options);
+			if (components != null && !components.isEmpty()) {
+				new SVGRocketPartsExporter().export(components, target, options);
+			} else {
+				new SVGRocketPartsExporter().export(document, target, options);
+			}
 			log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
 		} catch (IllegalStateException noParts) {
 			JOptionPane.showMessageDialog(BasicFrame.this,
@@ -1870,6 +1895,24 @@ private static final Translator trans = Application.getTranslator();
 					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
 					JOptionPane.ERROR_MESSAGE);
 		}
+	}
+
+	/**
+	 * Export all exportable components from the document as SVG profiles.
+	 */
+	private void exportSvgProfilesAction() {
+		exportSvgProfilesAction(null);
+	}
+
+	/**
+	 * Export selected components as SVG profiles.
+	 */
+	public void exportSVGAction() {
+		List<RocketComponent> selectedComponents = getSelectedComponents();
+		if (selectedComponents == null || selectedComponents.isEmpty()) {
+			return;
+		}
+		exportSvgProfilesAction(selectedComponents);
 	}
 
 
