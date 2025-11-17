@@ -53,6 +53,14 @@ public final class ProfileSvgExporter {
 		
 		// Variable radius: sample many points
 		final int segments = computeSegments(component);
+
+		// Compute radii once for all x positions
+		double[] radii = new double[segments + 1];
+		for (int i = 0; i <= segments; i++) {
+			double x = (length * i) / segments;
+			radii[i] = component.getRadius(x);
+		}
+		
 		// Build points in traversal order: top forward, then bottom backward, then close
 		CoordinateIF[] points = new CoordinateIF[2 * segments + 2];
 		int idx = 0;
@@ -60,15 +68,13 @@ public final class ProfileSvgExporter {
 		// Top edge: forward from 0 to length
 		for (int i = 0; i <= segments; i++) {
 			double x = (length * i) / segments;
-			double r = component.getRadius(x);
-			points[idx++] = new Coordinate(originX + x, originY + r);
+			points[idx++] = new Coordinate(originX + x, originY + radii[i]);
 		}
 		
-		// Bottom edge: backward from length to 0
+		// Bottom edge: backward from length to 0 (reuse radii with inverted y)
 		for (int i = segments; i >= 0; i--) {
 			double x = (length * i) / segments;
-			double r = component.getRadius(x);
-			points[idx++] = new Coordinate(originX + x, originY - r);
+			points[idx++] = new Coordinate(originX + x, originY - radii[i]);
 		}
 		
 		// Close path by repeating first point
