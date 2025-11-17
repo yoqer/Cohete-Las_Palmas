@@ -535,7 +535,7 @@ private static final Translator trans = Application.getTranslator();
 
 		//////		Export SVG profiles
 		JMenuItem exportSvgProfiles = new JMenuItem(trans.get("main.menu.file.exportAs.SVGProfiles"));
-		exportSvgProfiles.setIcon(Icons.FILE_EXPORT);
+		exportSvgProfiles.setIcon(Icons.EXPORT_SVG);
 		exportSvgProfiles.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGProfiles.desc"));
 		exportSvgProfiles.addActionListener(new ActionListener() {
 			@Override
