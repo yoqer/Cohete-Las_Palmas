@@ -459,7 +459,14 @@ public class OpenRocketSaver extends RocketSaver {
 				if (null != w.getSources()) {
 					for (RocketComponent c : w.getSources()) {
 						// Save component ID if it's still in the tree, else nil UUID
-						writeElement("source", null != simulation.getRocket().findComponent(c.getID()) ? c.getID() : new UUID(0, 0));
+						UUID uuid = new UUID(0, 0);
+						if (null != c) {
+							uuid = c.getID();
+						}
+						if (null == simulation.getRocket().findComponent(uuid)) {
+							uuid = new UUID(0, 0);
+						}
+						writeElement("source", uuid);
 					}
 				}
 
