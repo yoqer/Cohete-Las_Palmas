@@ -32,6 +32,7 @@ import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.ParallelStage;
+import info.openrocket.core.rocketcomponent.RailButton;
 import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.Transition;
@@ -1356,7 +1357,8 @@ public class RocketActions {
 					component instanceof Bulkhead ||
 					component instanceof FinSet ||
 					component instanceof Transition ||
-					component instanceof BodyTube;
+					component instanceof BodyTube ||
+					component instanceof RailButton;
 		}
 	}
 

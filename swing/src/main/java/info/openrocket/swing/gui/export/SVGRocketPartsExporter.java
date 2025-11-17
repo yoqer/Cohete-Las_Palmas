@@ -3,6 +3,7 @@ package info.openrocket.swing.gui.export;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.FinSvgExporter;
 import info.openrocket.core.file.svg.export.ProfileSvgExporter;
+import info.openrocket.core.file.svg.export.RailButtonSvgExporter;
 import info.openrocket.core.file.svg.export.RingSvgExporter;
 import info.openrocket.core.file.svg.export.SVGBuilder;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
@@ -11,6 +12,7 @@ import info.openrocket.core.rocketcomponent.Bulkhead;
 import info.openrocket.core.rocketcomponent.CenteringRing;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.NoseCone;
+import info.openrocket.core.rocketcomponent.RailButton;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.rocketcomponent.Transition;
@@ -138,6 +140,8 @@ public class SVGRocketPartsExporter {
 			parts.add(Part.fromProfile((BodyTube) component));
 		} else if (component instanceof Transition) {
 			parts.add(Part.fromProfile((Transition) component));
+		} else if (component instanceof RailButton) {
+			parts.add(Part.fromRailButton((RailButton) component));
 		}
 
 		List<RocketComponent> children = component.getChildren();
@@ -211,6 +215,19 @@ public class SVGRocketPartsExporter {
 				// center the full closed outline vertically within its tile
 				double midY = originY + (height / 2.0);
 				ProfileSvgExporter.drawClosedProfile(comp, builder, originX, midY, options);
+			}, label);
+		}
+
+		static Part fromRailButton(RailButton railButton) {
+			RailButtonSvgExporter.Bounds bounds = RailButtonSvgExporter.calculateBounds(railButton);
+			double width = Math.max(0.001, bounds.getWidth());
+			double height = Math.max(0.001, bounds.getHeight());
+			String label = railButton.getName();
+			return new Part(width, height, (builder, originX, originY, options) -> {
+				// Rail button reference point is center bottom, so adjust originY to account for bounds
+				double adjustedY = originY - bounds.getMinY();
+				double adjustedX = originX - bounds.getMinX();
+				RailButtonSvgExporter.drawRailButtonProfile(railButton, builder, adjustedX, adjustedY, options);
 			}, label);
 		}
 	}
