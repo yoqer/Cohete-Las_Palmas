@@ -93,7 +93,6 @@ import info.openrocket.core.util.TestRockets;
 import info.openrocket.swing.gui.configdialog.SaveDesignInfoPanel;
 import info.openrocket.swing.gui.dialogs.ErrorWarningDialog;
 import info.openrocket.swing.gui.components.StyledLabel;
-import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
 import info.openrocket.swing.gui.customexpression.CustomExpressionDialog;
 import info.openrocket.swing.gui.export.SVGRocketPartsExporter;
@@ -534,17 +533,17 @@ private static final Translator trans = Application.getTranslator();
 		});
 		exportSubMenu.add(exportOBJ);
 
-		//////		Export SVG templates
-		JMenuItem exportSvgTemplates = new JMenuItem(trans.get("main.menu.file.exportAs.SVGTemplates"));
-		exportSvgTemplates.setIcon(Icons.FILE_EXPORT);
-		exportSvgTemplates.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGTemplates.desc"));
-		exportSvgTemplates.addActionListener(new ActionListener() {
+		//////		Export SVG profiles
+		JMenuItem exportSvgProfiles = new JMenuItem(trans.get("main.menu.file.exportAs.SVGProfiles"));
+		exportSvgProfiles.setIcon(Icons.FILE_EXPORT);
+		exportSvgProfiles.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGProfiles.desc"));
+		exportSvgProfiles.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				exportSvgTemplatesAction();
+				exportSvgProfilesAction();
 			}
 		});
-		exportSubMenu.add(exportSvgTemplates);
+		exportSubMenu.add(exportSvgProfiles);
 
 		fileMenu.add(exportSubMenu);
 		fileMenu.addSeparator();
@@ -1810,7 +1809,7 @@ private static final Translator trans = Application.getTranslator();
 		return true;
 	}
 
-	private void exportSvgTemplatesAction() {
+	private void exportSvgProfilesAction() {
 		// Show SVG options dialog first
 		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this);
 		optionsDialog.setFromPreferences(prefs);
@@ -1858,17 +1857,17 @@ private static final Translator trans = Application.getTranslator();
 
 		try {
 			new SVGRocketPartsExporter().export(document, target, options);
-			log.info(Markers.USER_MARKER, "Exported SVG templates to {}", target.getAbsolutePath());
+			log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
 		} catch (IllegalStateException noParts) {
 			JOptionPane.showMessageDialog(BasicFrame.this,
-					trans.get("main.menu.file.exportAs.SVGTemplates.empty"),
-					trans.get("main.menu.file.exportAs.SVGTemplates.title"),
+					trans.get("main.menu.file.exportAs.SVGProfiles.empty"),
+					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
 					JOptionPane.INFORMATION_MESSAGE);
 		} catch (Exception ex) {
-			log.warn("Failed to export SVG templates", ex);
+			log.warn("Failed to export SVG profiles", ex);
 			JOptionPane.showMessageDialog(BasicFrame.this,
-					String.format(trans.get("main.menu.file.exportAs.SVGTemplates.error"), ex.getMessage()),
-					trans.get("main.menu.file.exportAs.SVGTemplates.title"),
+					String.format(trans.get("main.menu.file.exportAs.SVGProfiles.error"), ex.getMessage()),
+					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
 					JOptionPane.ERROR_MESSAGE);
 		}
 	}
