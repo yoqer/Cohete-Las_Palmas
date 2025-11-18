@@ -1833,9 +1833,9 @@ private static final Translator trans = Application.getTranslator();
 			return; // User cancelled
 		}
 
-		// Get selected components from dialog
-		List<RocketComponent> selectedComponents = optionsDialog.getSelectedComponents();
-
+		// Get the selected tab to determine export type
+		int selectedTab = optionsDialog.getSelectedTab();
+		
 		// Get options from dialog (includes spacing)
 		SVGExportOptions options = optionsDialog.getExportOptions();
 
@@ -1849,25 +1849,37 @@ private static final Translator trans = Application.getTranslator();
 			chooser.setCurrentDirectory(defaultDir);
 		}
 
-		// Determine default filename
+		// Determine default filename based on selected tab
 		String defaultName;
-		if (components != null && !components.isEmpty()) {
-			if (components.size() == 1) {
-				defaultName = components.get(0).getName();
-				if (defaultName == null || defaultName.isBlank()) {
-					defaultName = components.get(0).getComponentName();
+		String fileSuffix;
+		if (selectedTab == SvgOptionsDialog.COMPONENTS_TAB) {
+			// Components tab
+			if (components != null && !components.isEmpty()) {
+				if (components.size() == 1) {
+					defaultName = components.get(0).getName();
+					if (defaultName == null || defaultName.isBlank()) {
+						defaultName = components.get(0).getComponentName();
+					}
+				} else {
+					defaultName = "components";
 				}
 			} else {
-				defaultName = "components";
+				defaultName = document.getRocket().getName();
+				if (defaultName == null || defaultName.isBlank()) {
+					defaultName = "rocket";
+				}
 			}
+			fileSuffix = "-profile.svg";
 		} else {
+			// Fin Guides tab
 			defaultName = document.getRocket().getName();
 			if (defaultName == null || defaultName.isBlank()) {
 				defaultName = "rocket";
 			}
+			fileSuffix = "-finguides.svg";
 		}
 		File parentDir = defaultDir != null ? defaultDir : new File(System.getProperty("user.home", "."));
-		chooser.setSelectedFile(new File(parentDir, defaultName + "-profile.svg"));
+		chooser.setSelectedFile(new File(parentDir, defaultName + fileSuffix));
 
 		if (chooser.showSaveDialog(BasicFrame.this) != JFileChooser.APPROVE_OPTION) {
 			return;
@@ -1889,19 +1901,32 @@ private static final Translator trans = Application.getTranslator();
 		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
 
 		try {
-			if (!selectedComponents.isEmpty()) {
-				new SVGRocketPartsExporter().export(selectedComponents, target, options);
-			} else {
-				new SVGRocketPartsExporter().export(document, target, options);
+			if (selectedTab == SvgOptionsDialog.COMPONENTS_TAB) {
+				// Export components
+				List<RocketComponent> selectedComponents = optionsDialog.getSelectedComponents();
+				if (!selectedComponents.isEmpty()) {
+					new SVGRocketPartsExporter().export(selectedComponents, target, options);
+				} else {
+					new SVGRocketPartsExporter().export(document, target, options);
+				}
+				log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
+			} else if (selectedTab == SvgOptionsDialog.FIN_GUIDES_TAB) {
+				// Export fin guides (not yet implemented)
+				throw new UnsupportedOperationException("Fin guide SVG export is not yet implemented");
 			}
-			log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
+		} catch (UnsupportedOperationException ex) {
+			log.warn("Fin guide export not implemented", ex);
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					trans.get("SVGOptionPanel.finGuides.notImplemented"),
+					trans.get("SVGOptionPanel.finGuides.notImplemented.title"),
+					JOptionPane.INFORMATION_MESSAGE);
 		} catch (IllegalStateException noParts) {
 			JOptionPane.showMessageDialog(BasicFrame.this,
 					trans.get("main.menu.file.exportAs.SVGProfiles.empty"),
 					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
 					JOptionPane.INFORMATION_MESSAGE);
 		} catch (Exception ex) {
-			log.warn("Failed to export SVG profiles", ex);
+			log.warn("Failed to export SVG", ex);
 			JOptionPane.showMessageDialog(BasicFrame.this,
 					String.format(trans.get("main.menu.file.exportAs.SVGProfiles.error"), ex.getMessage()),
 					trans.get("main.menu.file.exportAs.SVGProfiles.title"),

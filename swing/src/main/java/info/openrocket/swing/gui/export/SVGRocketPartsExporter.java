@@ -137,6 +137,41 @@ public class SVGRocketPartsExporter {
 	}
 
 	/**
+	 * Collect all FinSet components from a document.
+	 * @param document The document to collect FinSets from
+	 * @return List of FinSet components
+	 */
+	public static List<FinSet> collectFinSets(OpenRocketDocument document) {
+		List<FinSet> finSets = new ArrayList<>();
+		if (document == null || document.getRocket() == null) {
+			return finSets;
+		}
+		collectFinSetsRecursive(document.getRocket(), finSets);
+		return finSets;
+	}
+
+	/**
+	 * Recursively collect FinSet components.
+	 */
+	private static void collectFinSetsRecursive(RocketComponent component, List<FinSet> finSets) {
+		if (component == null) {
+			return;
+		}
+
+		if (component instanceof FinSet) {
+			finSets.add((FinSet) component);
+		}
+
+		List<RocketComponent> children = component.getChildren();
+		if (children == null || children.isEmpty()) {
+			return;
+		}
+		for (RocketComponent child : children) {
+			collectFinSetsRecursive(child, finSets);
+		}
+	}
+
+	/**
 	 * Recursively collect exportable components.
 	 * Includes individual exportable components as well as ComponentAssemblies
 	 * (which export all their exportable children when selected).
