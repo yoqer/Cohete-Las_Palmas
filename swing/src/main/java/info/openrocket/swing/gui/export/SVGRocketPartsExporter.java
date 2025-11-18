@@ -24,7 +24,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SVGRocketPartsExporter {
 	private static final double PART_PADDING = 0.01; // meters
@@ -108,7 +110,8 @@ public class SVGRocketPartsExporter {
 		if (document == null || document.getRocket() == null) {
 			return parts;
 		}
-		collectRecursive(document.getRocket(), parts);
+		Set<RocketComponent> processed = new HashSet<>();
+		collectRecursive(document.getRocket(), parts, processed);
 		return parts;
 	}
 
@@ -117,8 +120,9 @@ public class SVGRocketPartsExporter {
 		if (components == null || components.isEmpty()) {
 			return parts;
 		}
+		Set<RocketComponent> processed = new HashSet<>();
 		for (RocketComponent component : components) {
-			collectRecursive(component, parts);
+			collectRecursive(component, parts, processed);
 		}
 		return parts;
 	}
@@ -167,10 +171,18 @@ public class SVGRocketPartsExporter {
 		}
 	}
 
-	private void collectRecursive(RocketComponent component, List<Part> parts) {
+	private void collectRecursive(RocketComponent component, List<Part> parts, Set<RocketComponent> processed) {
 		if (component == null) {
 			return;
 		}
+
+		// Skip if already processed to avoid duplicates
+		if (processed.contains(component)) {
+			return;
+		}
+
+		// Mark as processed before adding to parts
+		processed.add(component);
 
 		if (component instanceof RingComponent ringComponent) {
 			parts.add(Part.fromTube(ringComponent));
@@ -190,12 +202,13 @@ public class SVGRocketPartsExporter {
 			parts.add(Part.fromRailButton((RailButton) component));
 		}
 
+		// Recursively process children (e.g., for ComponentAssembly)
 		List<RocketComponent> children = component.getChildren();
 		if (children == null || children.isEmpty()) {
 			return;
 		}
 		for (RocketComponent child : children) {
-			collectRecursive(child, parts);
+			collectRecursive(child, parts, processed);
 		}
 	}
 
