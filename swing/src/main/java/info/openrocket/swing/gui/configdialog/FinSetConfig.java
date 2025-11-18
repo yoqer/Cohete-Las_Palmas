@@ -1,32 +1,11 @@
 package info.openrocket.swing.gui.configdialog;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SwingUtilities;
-
-import info.openrocket.core.material.MaterialGroup;
-import info.openrocket.core.preferences.ApplicationPreferences;
-import info.openrocket.core.util.CoordinateIF;
-import info.openrocket.swing.gui.export.SvgExportHelper;
-import info.openrocket.swing.gui.widgets.GroupableAndSearchableComboBox;
-import info.openrocket.swing.gui.widgets.MaterialComboBox;
-import net.miginfocom.swing.MigLayout;
-
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.Markers;
 import info.openrocket.core.material.Material;
+import info.openrocket.core.material.MaterialGroup;
+import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.rocketcomponent.CenteringRing;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.FreeformFinSet;
@@ -36,8 +15,8 @@ import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.rocketcomponent.position.AxialMethod;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
+import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.MathUtil;
-
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
@@ -46,9 +25,25 @@ import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
 import info.openrocket.swing.gui.components.UnitSelector;
-
+import info.openrocket.swing.gui.widgets.GroupableAndSearchableComboBox;
+import info.openrocket.swing.gui.widgets.MaterialComboBox;
+import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SwingUtilities;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 
 @SuppressWarnings("serial")
@@ -133,28 +128,13 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 		});
 		split.setEnabled(((FinSet) component).getFinCount() > 1);
 
-		//// Export to SVG
-		JButton exportSVGBtn = new JButton(trans.get("FinSetConfig.lbl.exportSVG"));
-		exportSVGBtn.setToolTipText(trans.get("FinSetConfig.lbl.exportSVG.ttip"));
-		exportSVGBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
-
-				SvgExportHelper.exportSinglePart(FinSetConfig.this, document, component);
-			}
-		});
-
 		if (convert == null) {
-			addButtons(split, exportSVGBtn);
+			addButtons(split);
 			order.add(split);
-			order.add(exportSVGBtn);
-		}
-		else {
-			addButtons(split, convert, exportSVGBtn);
+		} else {
+			addButtons(split, convert);
 			order.add(split);
 			order.add(convert);
-			order.add(exportSVGBtn);
 		}
 	}
 	
