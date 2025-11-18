@@ -33,7 +33,6 @@ open module info.openrocket.swing {
 	requires org.checkerframework.checker.qual;
 	requires org.apache.commons.lang3;
 	requires java.management;
-    requires org.junit.jupiter.api;
 
 	// Service providers
 	// Also edit swing/src/main/resources/META-INF/services !! (until gradle-modules-plugin supports service
