@@ -15,6 +15,7 @@ import info.openrocket.core.aerodynamics.AerodynamicCalculator;
 import info.openrocket.core.aerodynamics.AerodynamicForces;
 import info.openrocket.core.aerodynamics.BarrowmanCalculator;
 import info.openrocket.core.aerodynamics.FlightConditions;
+import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.material.Material;
 import info.openrocket.core.rocketcomponent.position.AnglePositionable;
@@ -53,6 +54,8 @@ import info.openrocket.core.util.StateChangeListener;
 public abstract class RocketComponent implements ChangeSource, Cloneable, Iterable<RocketComponent> {
 	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(RocketComponent.class);
+
+	public static RemovedComponent REMOVED = new RemovedComponent();
 	
 	// Because of changes to Java 1.7.0-45's mechanism to construct DataFlavor objects (used in Drag and Drop)
 	// We cannot access static members of the Application object in this class.  Instead of holding
@@ -2448,7 +2451,7 @@ public abstract class RocketComponent implements ChangeSource, Cloneable, Iterab
 	/**
 	 * Find a component with the given ID.  The component tree is searched from this component
 	 * down (including this component) for the ID and the corresponding component is returned,
-	 * or null if not found.
+	 * or the RemovedCompoment if not found.
 	 *
 	 * @param idToFind  ID to search for.
 	 * @return    The component with the ID, or null if not found.
@@ -2465,7 +2468,7 @@ public abstract class RocketComponent implements ChangeSource, Cloneable, Iterab
 			}
 		}
 		mutex.unlock("findComponent");
-		return null;
+		return REMOVED;
 	}
 
 	public final RocketComponent getNextComponent() {
@@ -3229,4 +3232,55 @@ public abstract class RocketComponent implements ChangeSource, Cloneable, Iterab
 	public void setDisplayOrder_back(int displayOrder_back) {
 		this.displayOrder_back = displayOrder_back;
 	}
+
+	// A null component. Attempting to get a component from a null UUID returns this component
+	private static class RemovedComponent extends RocketComponent {
+		
+		private static final Translator trans = Application.getTranslator();
+		
+		private RemovedComponent() {
+			super(AxialMethod.TOP);
+		}
+		
+		public String getComponentName() {
+			return trans.get("NullComponent.COMPONENT_REMOVED");
+		}
+		
+		public double getComponentMass() {
+			return 0;
+		}
+		
+		public CoordinateIF getComponentCG() {
+			return Coordinate.ZERO;
+		}
+		
+		public double getLongitudinalUnitInertia() {
+			return 0;
+		}
+		
+		public double getRotationalUnitInertia() {
+			return 0;
+		}
+		
+		public boolean allowsChildren() {
+			return false;
+		}
+		
+		public boolean isCompatible(Class<? extends RocketComponent> type) {
+			return false;
+		}
+		
+		public ArrayList<CoordinateIF> getComponentBounds() {
+			return new ArrayList<CoordinateIF>();
+		}
+		
+		public boolean isAerodynamic() {
+			return false;
+		}
+		
+		public boolean isMassive() {
+			return false;
+		}
+	}
+
 }
