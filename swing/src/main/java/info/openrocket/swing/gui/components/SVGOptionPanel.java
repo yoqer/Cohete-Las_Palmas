@@ -11,17 +11,20 @@ import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.print.PaperSize;
 import info.openrocket.swing.gui.print.PrintUnit;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
+import info.openrocket.swing.gui.print.PaperOrientation;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Color;
@@ -47,6 +50,13 @@ public class SVGOptionPanel extends JPanel {
 	private PaperSize selectedPageSize = PaperSize.getDefault();
 	private static final String CUSTOM_PAGE_SIZE = "Custom";
 	private static final String PAGE_SIZE_SEPARATOR = "__PAGE_SIZE_SEPARATOR__";
+	
+	// Page orientation
+	private PaperOrientation pageOrientation = PaperOrientation.PORTRAIT;
+	private ButtonGroup orientationGroup;
+	private JLabel pageOrientationLabel;
+	private JRadioButton portraitRadioButton;
+	private JRadioButton landscapeRadioButton;
 	
 	// Custom page size
 	private double customPageWidth = 0.21; // Default A4 width in meters
@@ -168,15 +178,38 @@ public class SVGOptionPanel extends JPanel {
 				updatePageSizeControls();
 			}
 		});
-		rightPanel.add(pageSizeCombo, "growx, wrap para");
+		rightPanel.add(pageSizeCombo, "growx, wrap");
+		
+		// Page orientation
+		pageOrientationLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageOrientation"));
+		rightPanel.add(pageOrientationLabel);
+		orientationGroup = new ButtonGroup();
+		portraitRadioButton = new JRadioButton(trans.get("SVGOptionPanel.radio.portrait"));
+		portraitRadioButton.setToolTipText(trans.get("SVGOptionPanel.radio.portrait.ttip"));
+		portraitRadioButton.setSelected(pageOrientation == PaperOrientation.PORTRAIT);
+		landscapeRadioButton = new JRadioButton(trans.get("SVGOptionPanel.radio.landscape"));
+		landscapeRadioButton.setToolTipText(trans.get("SVGOptionPanel.radio.landscape.ttip"));
+		landscapeRadioButton.setSelected(pageOrientation == PaperOrientation.LANDSCAPE);
+		orientationGroup.add(portraitRadioButton);
+		orientationGroup.add(landscapeRadioButton);
+		portraitRadioButton.addActionListener(e -> {
+			pageOrientation = PaperOrientation.PORTRAIT;
+			updatePageSizeControls();
+		});
+		landscapeRadioButton.addActionListener(e -> {
+			pageOrientation = PaperOrientation.LANDSCAPE;
+			updatePageSizeControls();
+		});
+		rightPanel.add(portraitRadioButton, "split 2");
+		rightPanel.add(landscapeRadioButton, "wrap para");
 		
 		// Page width
 		pageWidthLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageWidth"));
 		pageWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
 		pageWidthModel = new DoubleModel(this, "CustomPageWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
 
-		//// Initialize with default paper size dimensions
-		double[] initialDimensions = getPaperSizeDimensions(selectedPageSize);
+		//// Initialize with default paper size dimensions (with orientation)
+		double[] initialDimensions = getOrientedPaperSizeDimensions(selectedPageSize, pageOrientation);
 		pageWidthModel.setValue(initialDimensions[0]);
 		pageWidthSpinner = new JSpinner(pageWidthModel.getSpinnerModel());
 		pageWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
@@ -237,11 +270,15 @@ public class SVGOptionPanel extends JPanel {
 			pageHeightLabel.setEnabled(true);
 			pageHeightSpinner.setEnabled(true);
 			pageHeightUnitSelector.setEnabled(true);
+			// Disable orientation label and radio buttons in custom mode
+			pageOrientationLabel.setEnabled(false);
+			portraitRadioButton.setEnabled(false);
+			landscapeRadioButton.setEnabled(false);
 			selectedPageSize = null;
 		} else if (selected instanceof PaperSize) {
-			// Disable widgets and update values to match selected paper size
+			// Disable widgets and update values to match selected paper size with orientation
 			selectedPageSize = (PaperSize) selected;
-			double[] dimensions = getPaperSizeDimensions(selectedPageSize);
+			double[] dimensions = getOrientedPaperSizeDimensions(selectedPageSize, pageOrientation);
 			pageWidthModel.setValue(dimensions[0]);
 			pageHeightModel.setValue(dimensions[1]);
 			pageWidthLabel.setEnabled(false);
@@ -250,6 +287,10 @@ public class SVGOptionPanel extends JPanel {
 			pageHeightLabel.setEnabled(false);
 			pageHeightSpinner.setEnabled(false);
 			pageHeightUnitSelector.setEnabled(false);
+			// Enable orientation label and radio buttons when using standard paper size
+			pageOrientationLabel.setEnabled(true);
+			portraitRadioButton.setEnabled(true);
+			landscapeRadioButton.setEnabled(true);
 		}
 	}
 	
@@ -264,6 +305,19 @@ public class SVGOptionPanel extends JPanel {
 		double width = PrintUnit.POINTS.toMeters(rect.getWidth());
 		double height = PrintUnit.POINTS.toMeters(rect.getHeight());
 		return new double[]{width, height};
+	}
+	
+	private double[] getOrientedPaperSizeDimensions(PaperSize paperSize, PaperOrientation orientation) {
+		double[] dimensions = getPaperSizeDimensions(paperSize);
+		double width = dimensions[0];
+		double height = dimensions[1];
+		
+		// Apply orientation - landscape swaps width and height
+		if (orientation == PaperOrientation.LANDSCAPE) {
+			return new double[]{height, width};
+		} else {
+			return new double[]{width, height};
+		}
 	}
 
 	/**
@@ -421,10 +475,25 @@ public class SVGOptionPanel extends JPanel {
 		if (isCustomPageSize()) {
 			return new double[]{customPageWidth, customPageHeight};
 		} else if (selectedPageSize != null) {
-			return getPaperSizeDimensions(selectedPageSize);
+			return getOrientedPaperSizeDimensions(selectedPageSize, pageOrientation);
 		} else {
 			// Fallback to A4
 			return new double[]{0.21, 0.297};
 		}
+	}
+	
+	public PaperOrientation getPageOrientation() {
+		return pageOrientation;
+	}
+	
+	public void setPageOrientation(PaperOrientation orientation) {
+		this.pageOrientation = orientation;
+		if (portraitRadioButton != null) {
+			portraitRadioButton.setSelected(orientation == PaperOrientation.PORTRAIT);
+		}
+		if (landscapeRadioButton != null) {
+			landscapeRadioButton.setSelected(orientation == PaperOrientation.LANDSCAPE);
+		}
+		updatePageSizeControls();
 	}
 }
