@@ -30,60 +30,6 @@ public class SVGRocketPartsExporter {
 	private static final double LABEL_FONT_SIZE_MM = 3.0; // millimeters
 	private static final double LABEL_SPACING = 0.002; // meters spacing between part and label
 
-	/**
-	 * Check if the parts overflow the paper size.
-	 * @param parts List of parts to check
-	 * @param options Export options containing paper size
-	 * @return true if parts exceed paper dimensions, false otherwise
-	 */
-	public boolean checkOverflow(List<Part> parts, SVGExportOptions options) {
-		if (parts.isEmpty()) {
-			return false;
-		}
-
-		double paperWidth = options.getPaperWidthM();
-		double paperHeight = options.getPaperHeightM();
-		double partSpacing = options.getPartSpacingM();
-
-		// If paper size is unlimited, no overflow
-		if (paperWidth >= Double.MAX_VALUE / 2 || paperHeight >= Double.MAX_VALUE / 2) {
-			return false;
-		}
-
-		// Calculate layout bounds
-		double maxWidth = 0;
-		double totalHeight = 0;
-		double currentRowWidth = 0;
-		double currentRowHeight = 0;
-		double labelHeight = options.isShowLabels() ? (LABEL_FONT_SIZE_MM / 1000.0) + LABEL_SPACING : 0;
-
-		for (Part part : parts) {
-			double width = part.width + (2 * PART_PADDING);
-			double height = part.height + (2 * PART_PADDING) + labelHeight;
-
-			// Check if part fits on current row
-			if (currentRowWidth > 0 && currentRowWidth + width + partSpacing > paperWidth) {
-				// Start new row
-				totalHeight += currentRowHeight + partSpacing;
-				currentRowWidth = 0;
-				currentRowHeight = 0;
-			}
-
-			// Add part to current row
-			currentRowWidth += width + (currentRowWidth > 0 ? partSpacing : 0);
-			currentRowHeight = Math.max(currentRowHeight, height);
-			maxWidth = Math.max(maxWidth, currentRowWidth);
-		}
-
-		// Add last row height
-		if (currentRowHeight > 0) {
-			totalHeight += currentRowHeight;
-		}
-
-		// Check for overflow
-		return maxWidth > paperWidth || totalHeight > paperHeight;
-	}
-
 	public void export(OpenRocketDocument document, File destination, SVGExportOptions options)
 			throws ParserConfigurationException, TransformerException {
 		List<Part> parts = collectParts(document);
@@ -115,19 +61,11 @@ public class SVGRocketPartsExporter {
 	}
 
 	private double calculateRowWidth(List<Part> parts, SVGExportOptions options) {
-		double paperWidth = options.getPaperWidthM();
-		
-		// If paper width is unlimited, use default calculation
-		if (paperWidth >= Double.MAX_VALUE / 2) {
-			double maxDimension = 0;
-			for (Part part : parts) {
-				maxDimension = Math.max(maxDimension, Math.max(part.width, part.height));
-			}
-			return Math.max(DEFAULT_ROW_WIDTH, maxDimension + (2 * PART_PADDING) + 0.05);
+		double maxDimension = 0;
+		for (Part part : parts) {
+			maxDimension = Math.max(maxDimension, Math.max(part.width, part.height));
 		}
-		
-		// Use paper width as row width
-		return paperWidth;
+		return Math.max(DEFAULT_ROW_WIDTH, maxDimension + (2 * PART_PADDING) + 0.05);
 	}
 
 	private void layoutParts(SVGBuilder builder, List<Part> parts, double rowWidth, SVGExportOptions options) {
