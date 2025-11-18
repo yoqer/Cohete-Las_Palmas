@@ -72,7 +72,7 @@ public class SvgOptionsDialog extends JDialog {
 				dispose();
 			}
 		});
-		ok.addActionListener(new ActionListener() {
+				ok.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// Check for overflow before confirming
@@ -91,6 +91,8 @@ public class SvgOptionsDialog extends JDialog {
 					}
 				}
 				
+				// Store preferences before closing
+				optionsPanel.storePreferences();
 				confirmed = true;
 				dispose();
 			}
@@ -161,6 +163,7 @@ public class SvgOptionsDialog extends JDialog {
 		optionsPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
 		optionsPanel.setShowLabels(prefs.isSVGShowLabels());
 		optionsPanel.setLabelColor(prefs.getSVGLabelColor());
+		// Page settings are loaded in SVGOptionPanel constructor
 	}
 
 	private boolean checkOverflow() {

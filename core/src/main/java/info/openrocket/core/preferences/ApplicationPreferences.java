@@ -184,6 +184,11 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
 	public static final String SVG_SHOW_LABELS = "SVGShowLabels";
 	public static final String SVG_LABEL_COLOR = "SVGLabelColor";
+	public static final String SVG_PAGE_SIZE = "SVGPageSize";
+	public static final String SVG_PAGE_ORIENTATION = "SVGPageOrientation";
+	public static final String SVG_CUSTOM_PAGE_WIDTH = "SVGCustomPageWidth";
+	public static final String SVG_CUSTOM_PAGE_HEIGHT = "SVGCustomPageHeight";
+	public static final String SVG_PART_SPACING = "SVGPartSpacing";
 	
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -1458,6 +1463,100 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGLabelColor(Color color) {
 		putColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(color));
+	}
+
+	/**
+	 * Returns the page size used for SVG exports.
+	 *
+	 * @return the page size name, or null if custom
+	 */
+	public String getSVGPageSize() {
+		return getString(SVG_PAGE_SIZE, null);
+	}
+
+	/**
+	 * Sets the page size used for SVG exports.
+	 *
+	 * @param pageSizeName the page size name (enum name), or null for custom
+	 */
+	public void setSVGPageSize(String pageSizeName) {
+		if (pageSizeName == null) {
+			putString(SVG_PAGE_SIZE, null);
+		} else {
+			putString(SVG_PAGE_SIZE, pageSizeName);
+		}
+	}
+
+	/**
+	 * Returns the page orientation used for SVG exports.
+	 *
+	 * @return the page orientation name (PORTRAIT or LANDSCAPE)
+	 */
+	public String getSVGPageOrientation() {
+		return getString(SVG_PAGE_ORIENTATION, "PORTRAIT");
+	}
+
+	/**
+	 * Sets the page orientation used for SVG exports.
+	 *
+	 * @param orientationName the orientation name (PORTRAIT or LANDSCAPE)
+	 */
+	public void setSVGPageOrientation(String orientationName) {
+		putString(SVG_PAGE_ORIENTATION, orientationName);
+	}
+
+	/**
+	 * Returns the custom page width used for SVG exports in meters.
+	 *
+	 * @return the custom page width in meters
+	 */
+	public double getSVGCustomPageWidth() {
+		return getDouble(SVG_CUSTOM_PAGE_WIDTH, 0.21); // Default A4 width
+	}
+
+	/**
+	 * Sets the custom page width used for SVG exports in meters.
+	 *
+	 * @param width the custom page width in meters
+	 */
+	public void setSVGCustomPageWidth(double width) {
+		putDouble(SVG_CUSTOM_PAGE_WIDTH, width);
+	}
+
+	/**
+	 * Returns the custom page height used for SVG exports in meters.
+	 *
+	 * @return the custom page height in meters
+	 */
+	public double getSVGCustomPageHeight() {
+		return getDouble(SVG_CUSTOM_PAGE_HEIGHT, 0.297); // Default A4 height
+	}
+
+	/**
+	 * Sets the custom page height used for SVG exports in meters.
+	 *
+	 * @param height the custom page height in meters
+	 */
+	public void setSVGCustomPageHeight(double height) {
+		putDouble(SVG_CUSTOM_PAGE_HEIGHT, height);
+	}
+
+	/**
+	 * Returns the part spacing used for SVG exports in meters.
+	 *
+	 * @return the part spacing in meters
+	 */
+	public double getSVGPartSpacing() {
+		return getDouble(SVG_PART_SPACING, 0.01); // Default 10mm
+	}
+
+	/**
+	 * Sets the part spacing used for SVG exports in meters.
+	 *
+	 * @param spacing the part spacing in meters
+	 */
+	public void setSVGPartSpacing(double spacing) {
+		putDouble(SVG_PART_SPACING, spacing);
 	}
 
 	/**

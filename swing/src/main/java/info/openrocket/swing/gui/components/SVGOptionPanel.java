@@ -84,6 +84,30 @@ public class SVGOptionPanel extends JPanel {
 	public SVGOptionPanel(boolean showCrosshairToggle) {
 		super(new MigLayout("insets 0", "[fill, grow][]1[fill, grow]", ""));
 		this.showCrosshairToggle = showCrosshairToggle;
+		
+		// Load page settings from preferences
+		String pageSizeName = prefs.getSVGPageSize();
+		if (pageSizeName != null && !pageSizeName.isEmpty()) {
+			try {
+				selectedPageSize = PaperSize.valueOf(pageSizeName);
+			} catch (IllegalArgumentException e) {
+				// Invalid enum name, use default
+				selectedPageSize = PaperSize.getDefault();
+			}
+		} else {
+			selectedPageSize = null; // Custom
+		}
+		
+		String orientationName = prefs.getSVGPageOrientation();
+		try {
+			pageOrientation = PaperOrientation.valueOf(orientationName);
+		} catch (IllegalArgumentException e) {
+			pageOrientation = PaperOrientation.PORTRAIT;
+		}
+		
+		customPageWidth = prefs.getSVGCustomPageWidth();
+		customPageHeight = prefs.getSVGCustomPageHeight();
+		partSpacing = prefs.getSVGPartSpacing();
 
 		// Left column: Stroke, Crosshair, and Label settings
 		JPanel leftPanel = new JPanel(new MigLayout());
@@ -167,7 +191,11 @@ public class SVGOptionPanel extends JPanel {
 		pageSizeModel.addElement(PAGE_SIZE_SEPARATOR);
 		pageSizeModel.addElement(CUSTOM_PAGE_SIZE);
 		pageSizeCombo = new JComboBox<>(pageSizeModel);
-		pageSizeCombo.setSelectedItem(selectedPageSize);
+		if (selectedPageSize != null) {
+			pageSizeCombo.setSelectedItem(selectedPageSize);
+		} else {
+			pageSizeCombo.setSelectedItem(CUSTOM_PAGE_SIZE);
+		}
 		pageSizeCombo.setToolTipText(trans.get("SVGOptionPanel.lbl.pageSize.ttip"));
 		pageSizeCombo.setRenderer(new PageSizeComboBoxRenderer(pageSizeCombo.getRenderer()));
 		pageSizeCombo.addActionListener(e -> {
@@ -208,16 +236,23 @@ public class SVGOptionPanel extends JPanel {
 		pageWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
 		pageWidthModel = new DoubleModel(this, "CustomPageWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
 
-		//// Initialize with default paper size dimensions (with orientation)
-		double[] initialDimensions = getOrientedPaperSizeDimensions(selectedPageSize, pageOrientation);
+		//// Initialize with paper size dimensions (with orientation) or custom dimensions
+		double[] initialDimensions;
+		if (selectedPageSize != null) {
+			initialDimensions = getOrientedPaperSizeDimensions(selectedPageSize, pageOrientation);
+		} else {
+			initialDimensions = new double[]{customPageWidth, customPageHeight};
+		}
 		pageWidthModel.setValue(initialDimensions[0]);
 		pageWidthSpinner = new JSpinner(pageWidthModel.getSpinnerModel());
 		pageWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
 		pageWidthSpinner.setEditor(new SpinnerEditor(pageWidthSpinner, 5));
 		pageWidthUnitSelector = new UnitSelector(pageWidthModel);
-		pageWidthSpinner.setEnabled(false);
-		pageWidthUnitSelector.setEnabled(false);
-		pageWidthLabel.setEnabled(false);
+		// Enable/disable based on whether custom size is selected
+		boolean isCustom = (selectedPageSize == null);
+		pageWidthSpinner.setEnabled(isCustom);
+		pageWidthUnitSelector.setEnabled(isCustom);
+		pageWidthLabel.setEnabled(isCustom);
 		rightPanel.add(pageWidthLabel);
 		rightPanel.add(pageWidthSpinner, "split 2");
 		rightPanel.add(pageWidthUnitSelector, "growx, wrap");
@@ -231,13 +266,18 @@ public class SVGOptionPanel extends JPanel {
 		pageHeightSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageHeight.ttip"));
 		pageHeightSpinner.setEditor(new SpinnerEditor(pageHeightSpinner, 5));
 		pageHeightUnitSelector = new UnitSelector(pageHeightModel);
-		pageHeightSpinner.setEnabled(false);
-		pageHeightUnitSelector.setEnabled(false);
-		pageHeightLabel.setEnabled(false);
+		pageHeightSpinner.setEnabled(isCustom);
+		pageHeightUnitSelector.setEnabled(isCustom);
+		pageHeightLabel.setEnabled(isCustom);
 		rightPanel.add(pageHeightLabel);
 		rightPanel.add(pageHeightSpinner, "split 2");
 		rightPanel.add(pageHeightUnitSelector, "growx, wrap para");
-
+		
+		// Enable/disable orientation controls based on whether custom size is selected
+		pageOrientationLabel.setEnabled(!isCustom);
+		portraitRadioButton.setEnabled(!isCustom);
+		landscapeRadioButton.setEnabled(!isCustom);
+		
 		// Part spacing
 		spacingLabel = new JLabel(trans.get("SVGOptionPanel.lbl.partSpacing"));
 		spacingLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.partSpacing.ttip"));
@@ -495,5 +535,20 @@ public class SVGOptionPanel extends JPanel {
 			landscapeRadioButton.setSelected(orientation == PaperOrientation.LANDSCAPE);
 		}
 		updatePageSizeControls();
+	}
+	
+	/**
+	 * Store the current page settings to user preferences.
+	 */
+	public void storePreferences() {
+		if (selectedPageSize != null) {
+			prefs.setSVGPageSize(selectedPageSize.name());
+		} else {
+			prefs.setSVGPageSize(null);
+		}
+		prefs.setSVGPageOrientation(pageOrientation.name());
+		prefs.setSVGCustomPageWidth(customPageWidth);
+		prefs.setSVGCustomPageHeight(customPageHeight);
+		prefs.setSVGPartSpacing(partSpacing);
 	}
 }
