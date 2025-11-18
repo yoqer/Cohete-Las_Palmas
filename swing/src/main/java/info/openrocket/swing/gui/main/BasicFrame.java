@@ -1817,21 +1817,24 @@ private static final Translator trans = Application.getTranslator();
 	 * @param components Components to export, or null to export all from document
 	 */
 	private void exportSvgProfilesAction(List<RocketComponent> components) {
+		// Get currently selected components from design (if components parameter is null)
+		List<RocketComponent> initiallySelected = components;
+		if (initiallySelected == null) {
+			initiallySelected = getSelectedComponents();
+			if (initiallySelected == null) {
+				initiallySelected = new ArrayList<>();
+			}
+		}
+		
 		// Show SVG options dialog first
-		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this, document);
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this, document, initiallySelected);
 		optionsDialog.setFromPreferences(prefs);
 		if (!optionsDialog.showDialog()) {
 			return; // User cancelled
 		}
 
-		// Get selected components from dialog (or use provided components if called from context menu)
+		// Get selected components from dialog
 		List<RocketComponent> selectedComponents = optionsDialog.getSelectedComponents();
-		if (selectedComponents.isEmpty()) {
-			// If nothing selected, use provided components if any, otherwise export all
-			if (components != null && !components.isEmpty()) {
-				selectedComponents = components;
-			}
-		}
 
 		// Get options from dialog (includes spacing)
 		SVGExportOptions options = optionsDialog.getExportOptions();

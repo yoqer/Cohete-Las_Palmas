@@ -33,19 +33,28 @@ public class SvgOptionsDialog extends JDialog {
 	private static final Translator trans = Application.getTranslator();
 	private final SVGOptionPanel optionsPanel;
 	private final SelectableComponentTree componentTree;
+	private final List<RocketComponent> exportableComponents;
 	private OpenRocketDocument document;
 	private boolean confirmed = false;
 
-	public SvgOptionsDialog(Frame owner, OpenRocketDocument document) {
+	public SvgOptionsDialog(Frame owner, OpenRocketDocument document, List<RocketComponent> initiallySelectedComponents) {
 		super(owner, "SVG Export Options", true);
 		this.document = document;
 		optionsPanel = new SVGOptionPanel(true);
 		
 		// Get all exportable components
-		List<RocketComponent> exportableComponents = SVGRocketPartsExporter.collectExportableComponents(document);
+		exportableComponents = SVGRocketPartsExporter.collectExportableComponents(document);
 
-		// Initially select all exportable components
-		List<RocketComponent> initialSelection = new ArrayList<>(exportableComponents);
+		// Filter initially selected components to only include exportable ones
+		List<RocketComponent> initialSelection = new ArrayList<>();
+		if (initiallySelectedComponents != null && !initiallySelectedComponents.isEmpty()) {
+			for (RocketComponent component : initiallySelectedComponents) {
+				if (exportableComponents.contains(component)) {
+					initialSelection.add(component);
+				}
+			}
+		}
+		
 		componentTree = new SelectableComponentTree(document, exportableComponents, initialSelection);
 		
 		initialize();
@@ -76,6 +85,17 @@ public class SvgOptionsDialog extends JDialog {
 				ok.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// Check if at least one component is selected
+				if (getSelectedComponents().isEmpty()) {
+					JOptionPane.showMessageDialog(
+							SvgOptionsDialog.this,
+							trans.get("SVGOptionPanel.noSelection.message"),
+							trans.get("SVGOptionPanel.noSelection.title"),
+							JOptionPane.WARNING_MESSAGE
+					);
+					return; // Don't close the dialog
+				}
+				
 				// Store preferences before closing
 				optionsPanel.storePreferences();
 				confirmed = true;

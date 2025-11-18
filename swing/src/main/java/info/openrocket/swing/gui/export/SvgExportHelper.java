@@ -16,6 +16,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import java.awt.Component;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -28,8 +30,10 @@ public final class SvgExportHelper {
 	private SvgExportHelper() {}
 
 	public static void exportSinglePart(Component parent, OpenRocketDocument document, RocketComponent component) {
-		// First: show options dialog
-		SvgOptionsDialog optionsDialog = new SvgOptionsDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(parent), document);
+		// First: show options dialog (pre-select the component being exported)
+		List<RocketComponent> initialSelection = new ArrayList<>();
+		initialSelection.add(component);
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(parent), document, initialSelection);
 		optionsDialog.setFromPreferences(prefs);
 		if (!optionsDialog.showDialog((javax.swing.JComponent) parent)) {
 			return;
