@@ -14,8 +14,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.SwingConstants;
 import java.awt.Color;
 
 public class SVGOptionPanel extends JPanel {
@@ -34,22 +36,22 @@ public class SVGOptionPanel extends JPanel {
 	private JCheckBox crosshairCheckbox;
 	private JCheckBox showLabelsCheckbox;
 	
-	// Paper size selection
-	private JComboBox<Object> paperSizeCombo;
-	private PaperSize selectedPaperSize = PaperSize.getDefault();
-	private static final String CUSTOM_PAPER_SIZE = "Custom";
+	// Page size selection
+	private JComboBox<Object> pageSizeCombo;
+	private PaperSize selectedPageSize = PaperSize.getDefault();
+	private static final String CUSTOM_PAGE_SIZE = "Custom";
 	
-	// Custom paper size
-	private double customPaperWidth = 0.21; // Default A4 width in meters
-	private double customPaperHeight = 0.297; // Default A4 height in meters
-	private DoubleModel customWidthModel;
-	private DoubleModel customHeightModel;
-	private JLabel customWidthLabel;
-	private JSpinner customWidthSpinner;
-	private UnitSelector customWidthUnitSelector;
-	private JLabel customHeightLabel;
-	private JSpinner customHeightSpinner;
-	private UnitSelector customHeightUnitSelector;
+	// Custom page size
+	private double customPageWidth = 0.21; // Default A4 width in meters
+	private double customPageHeight = 0.297; // Default A4 height in meters
+	private DoubleModel pageWidthModel;
+	private DoubleModel pageHeightModel;
+	private JLabel pageWidthLabel;
+	private JSpinner pageWidthSpinner;
+	private UnitSelector pageWidthUnitSelector;
+	private JLabel pageHeightLabel;
+	private JSpinner pageHeightSpinner;
+	private UnitSelector pageHeightUnitSelector;
 	
 	// Part spacing
 	private double partSpacing = 0.01; // Default 10mm spacing in meters
@@ -63,42 +65,45 @@ public class SVGOptionPanel extends JPanel {
 	}
 
 	public SVGOptionPanel(boolean showCrosshairToggle) {
-		super(new MigLayout());
+		super(new MigLayout("insets 0", "[fill, grow][]1[fill, grow]", ""));
 		this.showCrosshairToggle = showCrosshairToggle;
 
+		// Left column: Stroke, Crosshair, and Label settings
+		JPanel leftPanel = new JPanel(new MigLayout());
+		
 		// Stroke color
 		JLabel label = new JLabel(trans.get("SVGOptionPanel.lbl.strokeColor"));
 		label.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeColor.ttip"));
-		add(label);
+		leftPanel.add(label);
 		colorChooser = new ColorChooserButton(prefs.getSVGStrokeColor());
 		colorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeColor.ttip"));
-		add(colorChooser, "wrap");
+		leftPanel.add(colorChooser, "wrap");
 
 		// Stroke width
 		label = new JLabel(trans.get("SVGOptionPanel.lbl.strokeWidth"));
 		label.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeWidth.ttip"));
-		add(label);
+		leftPanel.add(label);
 		DoubleModel dm = new DoubleModel(this, "StrokeWidth", UnitGroup.UNITS_STROKE_WIDTH, 0.001, 10);
 		dm.setValue(prefs.getSVGStrokeWidth());
 		JSpinner spin = new JSpinner(dm.getSpinnerModel());
 		spin.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeWidth.ttip"));
 		spin.setEditor(new SpinnerEditor(spin, 5));
-		add(spin);
-		add(new UnitSelector(dm), "growx, wrap para");
+		leftPanel.add(spin);
+		leftPanel.add(new UnitSelector(dm), "growx, wrap para");
 
 		if (showCrosshairToggle) {
 			crosshairCheckbox = new JCheckBox(trans.get("SVGOptionPanel.lbl.crosshair"));
 			crosshairCheckbox.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshair.ttip"));
 			drawCrosshair = prefs.isSVGDrawCrosshair();
 			crosshairCheckbox.setSelected(drawCrosshair);
-			add(crosshairCheckbox, "span, wrap");
+			leftPanel.add(crosshairCheckbox, "span, wrap");
 
 			crosshairColorLabel = new JLabel(trans.get("SVGOptionPanel.lbl.crosshairColor"));
 			crosshairColorLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairColor.ttip"));
-			add(crosshairColorLabel);
+			leftPanel.add(crosshairColorLabel);
 			crosshairColorChooser = new ColorChooserButton(prefs.getSVGCrosshairColor());
 			crosshairColorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairColor.ttip"));
-			add(crosshairColorChooser, "wrap para");
+			leftPanel.add(crosshairColorChooser, "wrap para");
 
 			crosshairCheckbox.addActionListener(e -> {
 				drawCrosshair = crosshairCheckbox.isSelected();
@@ -112,15 +117,15 @@ public class SVGOptionPanel extends JPanel {
 		showLabelsCheckbox.setToolTipText(trans.get("SVGOptionPanel.lbl.showLabels.ttip"));
 		showLabels = prefs.isSVGShowLabels();
 		showLabelsCheckbox.setSelected(showLabels);
-		add(showLabelsCheckbox, "spanx, wrap");
+		leftPanel.add(showLabelsCheckbox, "spanx, wrap");
 
 		// Label color
 		labelColorLabel = new JLabel(trans.get("SVGOptionPanel.lbl.labelColor"));
 		labelColorLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.labelColor.ttip"));
-		add(labelColorLabel);
+		leftPanel.add(labelColorLabel);
 		labelColorChooser = new ColorChooserButton(prefs.getSVGLabelColor());
 		labelColorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.labelColor.ttip"));
-		add(labelColorChooser, "wrap");
+		leftPanel.add(labelColorChooser, "wrap");
 
 		// Enable/disable label color controls based on checkbox
 		showLabelsCheckbox.addActionListener(e -> {
@@ -132,45 +137,48 @@ public class SVGOptionPanel extends JPanel {
 		boolean labelsEnabled = showLabelsCheckbox.isSelected();
 		labelColorLabel.setEnabled(labelsEnabled);
 		labelColorChooser.setEnabled(labelsEnabled);
+
+		// Right column: Page size settings
+		JPanel rightPanel = new JPanel(new MigLayout());
 		
-		// Paper size selection
-		add(new JLabel(trans.get("SVGOptionPanel.lbl.paperSize")), "spanx, wrap para");
-		DefaultComboBoxModel<Object> paperSizeModel = new DefaultComboBoxModel<>();
+		// Page size selection
+		rightPanel.add(new JLabel(trans.get("SVGOptionPanel.lbl.pageSize")));
+		DefaultComboBoxModel<Object> pageSizeModel = new DefaultComboBoxModel<>();
 		for (PaperSize size : PaperSize.values()) {
-			paperSizeModel.addElement(size);
+			pageSizeModel.addElement(size);
 		}
-		paperSizeModel.addElement(CUSTOM_PAPER_SIZE);
-		paperSizeCombo = new JComboBox<>(paperSizeModel);
-		paperSizeCombo.setSelectedItem(selectedPaperSize);
-		paperSizeCombo.setToolTipText(trans.get("SVGOptionPanel.lbl.paperSize.ttip"));
-		paperSizeCombo.addActionListener(e -> updatePaperSizeControls());
-		add(paperSizeCombo, "growx, wrap para");
+		pageSizeModel.addElement(CUSTOM_PAGE_SIZE);
+		pageSizeCombo = new JComboBox<>(pageSizeModel);
+		pageSizeCombo.setSelectedItem(selectedPageSize);
+		pageSizeCombo.setToolTipText(trans.get("SVGOptionPanel.lbl.pageSize.ttip"));
+		rightPanel.add(pageSizeCombo, "growx, wrap para");
 		
-		// Custom paper size inputs (initially hidden)
-		customWidthLabel = new JLabel(trans.get("SVGOptionPanel.lbl.customPaperWidth"));
-		customWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperWidth.ttip"));
-		customWidthModel = new DoubleModel(this, "CustomPaperWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
-		customWidthModel.setValue(customPaperWidth);
-		customWidthSpinner = new JSpinner(customWidthModel.getSpinnerModel());
-		customWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperWidth.ttip"));
-		customWidthSpinner.setEditor(new SpinnerEditor(customWidthSpinner, 5));
-		customWidthUnitSelector = new UnitSelector(customWidthModel);
-		customWidthLabel.setVisible(false);
-		customWidthSpinner.setVisible(false);
-		customWidthUnitSelector.setVisible(false);
-		
-		customHeightLabel = new JLabel(trans.get("SVGOptionPanel.lbl.customPaperHeight"));
-		customHeightLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperHeight.ttip"));
-		customHeightModel = new DoubleModel(this, "CustomPaperHeight", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
-		customHeightModel.setValue(customPaperHeight);
-		customHeightSpinner = new JSpinner(customHeightModel.getSpinnerModel());
-		customHeightSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperHeight.ttip"));
-		customHeightSpinner.setEditor(new SpinnerEditor(customHeightSpinner, 5));
-		customHeightUnitSelector = new UnitSelector(customHeightModel);
-		customHeightLabel.setVisible(false);
-		customHeightSpinner.setVisible(false);
-		customHeightUnitSelector.setVisible(false);
-		
+		// Page width
+		pageWidthLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageWidth"));
+		pageWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
+		pageWidthModel = new DoubleModel(this, "CustomPageWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
+		pageWidthModel.setValue(customPageWidth);
+		pageWidthSpinner = new JSpinner(pageWidthModel.getSpinnerModel());
+		pageWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
+		pageWidthSpinner.setEditor(new SpinnerEditor(pageWidthSpinner, 5));
+		pageWidthUnitSelector = new UnitSelector(pageWidthModel);
+		rightPanel.add(pageWidthLabel);
+		rightPanel.add(pageWidthSpinner, "split 2");
+		rightPanel.add(pageWidthUnitSelector, "growx, wrap");
+
+		// Page height
+		pageHeightLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageHeight"));
+		pageHeightLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageHeight.ttip"));
+		pageHeightModel = new DoubleModel(this, "CustomPageHeight", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
+		pageHeightModel.setValue(customPageHeight);
+		pageHeightSpinner = new JSpinner(pageHeightModel.getSpinnerModel());
+		pageHeightSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageHeight.ttip"));
+		pageHeightSpinner.setEditor(new SpinnerEditor(pageHeightSpinner, 5));
+		pageHeightUnitSelector = new UnitSelector(pageHeightModel);
+		rightPanel.add(pageHeightLabel);
+		rightPanel.add(pageHeightSpinner, "split 2");
+		rightPanel.add(pageHeightUnitSelector, "growx, wrap para");
+
 		// Part spacing
 		spacingLabel = new JLabel(trans.get("SVGOptionPanel.lbl.partSpacing"));
 		spacingLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.partSpacing.ttip"));
@@ -180,48 +188,15 @@ public class SVGOptionPanel extends JPanel {
 		spacingSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.partSpacing.ttip"));
 		spacingSpinner.setEditor(new SpinnerEditor(spacingSpinner, 5));
 		spacingUnitSelector = new UnitSelector(spacingModel);
-		add(spacingLabel);
-		add(spacingSpinner);
-		add(spacingUnitSelector, "growx, wrap para");
+		rightPanel.add(spacingLabel);
+		rightPanel.add(spacingSpinner, "split 2");
+		rightPanel.add(spacingUnitSelector, "growx, wrap para");
 		
-		updatePaperSizeControls();
-	}
-	
-	private void updatePaperSizeControls() {
-		Object selected = paperSizeCombo.getSelectedItem();
-		boolean isCustom = CUSTOM_PAPER_SIZE.equals(selected);
-		
-		if (isCustom) {
-			// Show custom size inputs
-			if (customWidthLabel.getParent() == null) {
-				add(customWidthLabel);
-				add(customWidthSpinner);
-				add(customWidthUnitSelector, "growx, wrap para");
-			}
-			customWidthLabel.setVisible(true);
-			customWidthSpinner.setVisible(true);
-			customWidthUnitSelector.setVisible(true);
-			if (customHeightLabel.getParent() == null) {
-				add(customHeightLabel);
-				add(customHeightSpinner);
-				add(customHeightUnitSelector, "growx, wrap para");
-			}
-			customHeightLabel.setVisible(true);
-			customHeightSpinner.setVisible(true);
-			customHeightUnitSelector.setVisible(true);
-			selectedPaperSize = null;
-		} else if (selected instanceof PaperSize) {
-			// Hide custom size inputs
-			customWidthLabel.setVisible(false);
-			customWidthSpinner.setVisible(false);
-			customWidthUnitSelector.setVisible(false);
-			customHeightLabel.setVisible(false);
-			customHeightSpinner.setVisible(false);
-			customHeightUnitSelector.setVisible(false);
-			selectedPaperSize = (PaperSize) selected;
-		}
-		revalidate();
-		repaint();
+		// Add both panels to main panel with separator
+		add(leftPanel, "aligny top");
+		JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+		add(separator, "growy, spany, gaptop para, gapbottom para");
+		add(rightPanel, "aligny top");
 	}
 
 	public Color getStrokeColor() {
@@ -303,21 +278,45 @@ public class SVGOptionPanel extends JPanel {
 		}
 	}
 	
-	public boolean isCustomPaperSize() {
-		return selectedPaperSize == null;
+	public boolean isCustomPageSize() {
+		return selectedPageSize == null;
+	}
+	
+	// Getter methods required by DoubleModel (via reflection)
+	public double getCustomPageWidth() {
+		return customPageWidth;
+	}
+	
+	// Setter called by DoubleModel - just set the field, don't call the model to avoid infinite loop
+	public void setCustomPageWidth(double width) {
+		this.customPageWidth = width;
+	}
+	
+	public double getCustomPageHeight() {
+		return customPageHeight;
+	}
+	
+	// Setter called by DoubleModel - just set the field, don't call the model to avoid infinite loop
+	public void setCustomPageHeight(double height) {
+		this.customPageHeight = height;
 	}
 	
 	public double getPartSpacing() {
 		return partSpacing;
 	}
+	
+	// Setter called by DoubleModel - just set the field, don't call the model to avoid infinite loop
+	public void setPartSpacing(double spacing) {
+		this.partSpacing = spacing;
+	}
 
 	
-	// Get paper dimensions in meters (width, height)
-	public double[] getPaperDimensions() {
-		if (isCustomPaperSize()) {
-			return new double[]{customPaperWidth, customPaperHeight};
-		} else if (selectedPaperSize != null) {
-			com.itextpdf.text.Rectangle rect = selectedPaperSize.getSize();
+	// Get page dimensions in meters (width, height)
+	public double[] getPageDimensions() {
+		if (isCustomPageSize()) {
+			return new double[]{customPageWidth, customPageHeight};
+		} else if (selectedPageSize != null) {
+			com.itextpdf.text.Rectangle rect = selectedPageSize.getSize();
 			// Convert from points to meters
 			double width = PrintUnit.POINTS.toMeters(rect.getWidth());
 			double height = PrintUnit.POINTS.toMeters(rect.getHeight());

@@ -120,7 +120,7 @@ public class SvgOptionsDialog extends JDialog {
 	public Color getCrosshairColor() { return optionsPanel.getCrosshairColor(); }
 
 	public SVGExportOptions getExportOptions() {
-		double[] paperDimensions = optionsPanel.getPaperDimensions();
+		double[] paperDimensions = optionsPanel.getPageDimensions();
 		double paperWidth = paperDimensions[0];
 		double paperHeight = paperDimensions[1];
 		double partSpacing = optionsPanel.getPartSpacing();
