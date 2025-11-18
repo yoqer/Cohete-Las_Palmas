@@ -1395,7 +1395,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @return true if crosshairs should be drawn
 	 */
 	public boolean isSVGDrawCrosshair() {
-		return getBoolean(SVG_DRAW_CROSSHAIR, true);
+		return getBoolean(SVG_DRAW_CROSSHAIR, false);
 	}
 
 	/**
