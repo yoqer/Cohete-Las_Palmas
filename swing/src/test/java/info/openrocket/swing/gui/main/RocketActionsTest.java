@@ -43,7 +43,7 @@ public class RocketActionsTest {
      */
     @Test
     public void testCopyComponentsMaintainParent() {
-        
+
         // Create a list of RocketComponent objects
         List<RocketComponent> components = new ArrayList<>();
         BodyTube bodyTube = new BodyTube(0.5, 0.05);
@@ -55,6 +55,9 @@ public class RocketActionsTest {
         Parachute parachute = new Parachute();
         components.add(parachute);
 
-        // TODO: Copy the components and create asserts 
+        // Copy the components
+        List<RocketComponent> copiedComponents = RocketActions.copyComponentsMaintainParent(components);
+
+        // TODO: Add assertions to verify that the copied components are correct
     }
 }
