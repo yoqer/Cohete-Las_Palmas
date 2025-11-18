@@ -10,6 +10,7 @@ import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.rocketcomponent.BodyTube;
 import info.openrocket.core.rocketcomponent.Bulkhead;
 import info.openrocket.core.rocketcomponent.CenteringRing;
+import info.openrocket.core.rocketcomponent.ComponentAssembly;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.RailButton;
@@ -137,6 +138,8 @@ public class SVGRocketPartsExporter {
 
 	/**
 	 * Recursively collect exportable components.
+	 * Includes individual exportable components as well as ComponentAssemblies
+	 * (which export all their exportable children when selected).
 	 */
 	private static void collectExportableRecursive(RocketComponent component, List<RocketComponent> components) {
 		if (component == null) {
@@ -149,7 +152,8 @@ public class SVGRocketPartsExporter {
 			component instanceof NoseCone ||
 			component instanceof BodyTube ||
 			component instanceof Transition ||
-			component instanceof RailButton) {
+			component instanceof RailButton ||
+			component instanceof ComponentAssembly) {
 			components.add(component);
 		}
 
