@@ -1,5 +1,6 @@
 package info.openrocket.swing.gui.components;
 
+import com.itextpdf.text.Rectangle;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
@@ -13,11 +14,16 @@ import info.openrocket.swing.gui.print.PrintUnit;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
+import java.awt.Component;
+import java.awt.Font;
 import java.awt.Color;
 
 public class SVGOptionPanel extends JPanel {
@@ -40,6 +46,7 @@ public class SVGOptionPanel extends JPanel {
 	private JComboBox<Object> pageSizeCombo;
 	private PaperSize selectedPageSize = PaperSize.getDefault();
 	private static final String CUSTOM_PAGE_SIZE = "Custom";
+	private static final String PAGE_SIZE_SEPARATOR = "__PAGE_SIZE_SEPARATOR__";
 	
 	// Custom page size
 	private double customPageWidth = 0.21; // Default A4 width in meters
@@ -147,21 +154,37 @@ public class SVGOptionPanel extends JPanel {
 		for (PaperSize size : PaperSize.values()) {
 			pageSizeModel.addElement(size);
 		}
+		pageSizeModel.addElement(PAGE_SIZE_SEPARATOR);
 		pageSizeModel.addElement(CUSTOM_PAGE_SIZE);
 		pageSizeCombo = new JComboBox<>(pageSizeModel);
 		pageSizeCombo.setSelectedItem(selectedPageSize);
 		pageSizeCombo.setToolTipText(trans.get("SVGOptionPanel.lbl.pageSize.ttip"));
+		pageSizeCombo.setRenderer(new PageSizeComboBoxRenderer(pageSizeCombo.getRenderer()));
+		pageSizeCombo.addActionListener(e -> {
+			// Prevent separator from being selected
+			if (PAGE_SIZE_SEPARATOR.equals(pageSizeCombo.getSelectedItem())) {
+				pageSizeCombo.setSelectedItem(selectedPageSize);
+			} else {
+				updatePageSizeControls();
+			}
+		});
 		rightPanel.add(pageSizeCombo, "growx, wrap para");
 		
 		// Page width
 		pageWidthLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageWidth"));
 		pageWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
 		pageWidthModel = new DoubleModel(this, "CustomPageWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
-		pageWidthModel.setValue(customPageWidth);
+
+		//// Initialize with default paper size dimensions
+		double[] initialDimensions = getPaperSizeDimensions(selectedPageSize);
+		pageWidthModel.setValue(initialDimensions[0]);
 		pageWidthSpinner = new JSpinner(pageWidthModel.getSpinnerModel());
 		pageWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageWidth.ttip"));
 		pageWidthSpinner.setEditor(new SpinnerEditor(pageWidthSpinner, 5));
 		pageWidthUnitSelector = new UnitSelector(pageWidthModel);
+		pageWidthSpinner.setEnabled(false);
+		pageWidthUnitSelector.setEnabled(false);
+		pageWidthLabel.setEnabled(false);
 		rightPanel.add(pageWidthLabel);
 		rightPanel.add(pageWidthSpinner, "split 2");
 		rightPanel.add(pageWidthUnitSelector, "growx, wrap");
@@ -170,11 +193,14 @@ public class SVGOptionPanel extends JPanel {
 		pageHeightLabel = new JLabel(trans.get("SVGOptionPanel.lbl.pageHeight"));
 		pageHeightLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.pageHeight.ttip"));
 		pageHeightModel = new DoubleModel(this, "CustomPageHeight", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
-		pageHeightModel.setValue(customPageHeight);
+		pageHeightModel.setValue(initialDimensions[1]);
 		pageHeightSpinner = new JSpinner(pageHeightModel.getSpinnerModel());
 		pageHeightSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.pageHeight.ttip"));
 		pageHeightSpinner.setEditor(new SpinnerEditor(pageHeightSpinner, 5));
 		pageHeightUnitSelector = new UnitSelector(pageHeightModel);
+		pageHeightSpinner.setEnabled(false);
+		pageHeightUnitSelector.setEnabled(false);
+		pageHeightLabel.setEnabled(false);
 		rightPanel.add(pageHeightLabel);
 		rightPanel.add(pageHeightSpinner, "split 2");
 		rightPanel.add(pageHeightUnitSelector, "growx, wrap para");
@@ -197,6 +223,85 @@ public class SVGOptionPanel extends JPanel {
 		JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
 		add(separator, "growy, spany, gaptop para, gapbottom para");
 		add(rightPanel, "aligny top");
+	}
+	
+	private void updatePageSizeControls() {
+		Object selected = pageSizeCombo.getSelectedItem();
+		boolean isCustom = CUSTOM_PAGE_SIZE.equals(selected);
+		
+		if (isCustom) {
+			// Enable widgets for custom size
+			pageWidthLabel.setEnabled(true);
+			pageWidthSpinner.setEnabled(true);
+			pageWidthUnitSelector.setEnabled(true);
+			pageHeightLabel.setEnabled(true);
+			pageHeightSpinner.setEnabled(true);
+			pageHeightUnitSelector.setEnabled(true);
+			selectedPageSize = null;
+		} else if (selected instanceof PaperSize) {
+			// Disable widgets and update values to match selected paper size
+			selectedPageSize = (PaperSize) selected;
+			double[] dimensions = getPaperSizeDimensions(selectedPageSize);
+			pageWidthModel.setValue(dimensions[0]);
+			pageHeightModel.setValue(dimensions[1]);
+			pageWidthLabel.setEnabled(false);
+			pageWidthSpinner.setEnabled(false);
+			pageWidthUnitSelector.setEnabled(false);
+			pageHeightLabel.setEnabled(false);
+			pageHeightSpinner.setEnabled(false);
+			pageHeightUnitSelector.setEnabled(false);
+		}
+	}
+	
+	private double[] getPaperSizeDimensions(PaperSize paperSize) {
+		if (paperSize == null) {
+			// Fallback to A4
+			return new double[]{0.21, 0.297};
+		}
+		Rectangle rect = paperSize.getSize();
+
+		// Convert from points to meters
+		double width = PrintUnit.POINTS.toMeters(rect.getWidth());
+		double height = PrintUnit.POINTS.toMeters(rect.getHeight());
+		return new double[]{width, height};
+	}
+
+	/**
+	 * Custom combobox renderer that supports separators and italic text for "Custom" option.
+	 */
+	@SuppressWarnings("rawtypes")
+	private static class PageSizeComboBoxRenderer extends JLabel implements ListCellRenderer {
+		private static final long serialVersionUID = 1L;
+		private final JSeparator separator;
+		private final ListCellRenderer defaultRenderer;
+
+		public PageSizeComboBoxRenderer(ListCellRenderer defaultRenderer) {
+			this.defaultRenderer = defaultRenderer;
+			this.separator = new JSeparator(JSeparator.HORIZONTAL);
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList list, Object value, int index,
+													  boolean isSelected, boolean cellHasFocus) {
+			String str = (value == null) ? "" : value.toString();
+			// Handle separator
+			if (PAGE_SIZE_SEPARATOR.equals(str)) {
+				return separator;
+			}
+
+			// Use default renderer
+			Component component = defaultRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+			// Make "Custom" italic
+			if (CUSTOM_PAGE_SIZE.equals(str) && component instanceof JLabel label) {
+				Font font = label.getFont();
+				if (font != null) {
+					label.setFont(font.deriveFont(Font.ITALIC));
+				}
+			}
+
+			return component;
+		}
 	}
 
 	public Color getStrokeColor() {
@@ -316,11 +421,7 @@ public class SVGOptionPanel extends JPanel {
 		if (isCustomPageSize()) {
 			return new double[]{customPageWidth, customPageHeight};
 		} else if (selectedPageSize != null) {
-			com.itextpdf.text.Rectangle rect = selectedPageSize.getSize();
-			// Convert from points to meters
-			double width = PrintUnit.POINTS.toMeters(rect.getWidth());
-			double height = PrintUnit.POINTS.toMeters(rect.getHeight());
-			return new double[]{width, height};
+			return getPaperSizeDimensions(selectedPageSize);
 		} else {
 			// Fallback to A4
 			return new double[]{0.21, 0.297};
