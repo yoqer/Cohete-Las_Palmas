@@ -4,27 +4,26 @@ import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.FinSvgExporter;
 import info.openrocket.core.file.svg.export.ProfileSvgExporter;
 import info.openrocket.core.file.svg.export.RailButtonSvgExporter;
-import info.openrocket.core.file.svg.export.RingSvgExporter;
 import info.openrocket.core.file.svg.export.SVGBuilder;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.file.svg.export.TubeSvgExporter;
 import info.openrocket.core.rocketcomponent.BodyTube;
-import info.openrocket.core.rocketcomponent.Bulkhead;
-import info.openrocket.core.rocketcomponent.CenteringRing;
+import info.openrocket.core.rocketcomponent.Coaxial;
 import info.openrocket.core.rocketcomponent.ComponentAssembly;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.LaunchLug;
 import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.RailButton;
+import info.openrocket.core.rocketcomponent.RingComponent;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.rocketcomponent.Transition;
+import info.openrocket.core.rocketcomponent.TubeFinSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class SVGRocketPartsExporter {
@@ -148,14 +147,13 @@ public class SVGRocketPartsExporter {
 			return;
 		}
 
-		if (component instanceof CenteringRing ||
-			component instanceof Bulkhead ||
-			component instanceof FinSet ||
-			component instanceof NoseCone ||
+		if (component instanceof FinSet ||
 			component instanceof BodyTube ||
 			component instanceof Transition ||
 			component instanceof RailButton ||
 			component instanceof LaunchLug ||
+			component instanceof TubeFinSet ||
+			component instanceof RingComponent ||
 			component instanceof ComponentAssembly) {
 			components.add(component);
 		}
@@ -174,13 +172,8 @@ public class SVGRocketPartsExporter {
 			return;
 		}
 
-		if (component instanceof CenteringRing) {
-			CenteringRing ring = (CenteringRing) component;
-			List<RingSvgExporter.Hole> holes =
-					RingSvgExporter.holesFromMotorMounts(ComponentSvgExportService.findSupportingMotorMounts(ring));
-			parts.add(Part.fromRing(ring, holes));
-		} else if (component instanceof Bulkhead) {
-			parts.add(Part.fromBulkhead((Bulkhead) component));
+		if (component instanceof RingComponent ringComponent) {
+			parts.add(Part.fromTube(ringComponent));
 		} else if (component instanceof FinSet) {
 			parts.add(Part.fromFinSet((FinSet) component));
 		} else if (component instanceof NoseCone) {
@@ -189,6 +182,8 @@ public class SVGRocketPartsExporter {
 			parts.add(Part.fromTube((BodyTube) component));
 		} else if (component instanceof LaunchLug) {
 			parts.add(Part.fromTube((LaunchLug) component));
+		} else if (component instanceof TubeFinSet) {
+			parts.add(Part.fromTube((TubeFinSet) component));
 		} else if (component instanceof Transition) {
 			parts.add(Part.fromProfile((Transition) component));
 		} else if (component instanceof RailButton) {
@@ -221,28 +216,6 @@ public class SVGRocketPartsExporter {
 			this.label = label;
 		}
 
-		static Part fromRing(CenteringRing ring, List<RingSvgExporter.Hole> holes) {
-			double outerRadius = ring.getOuterRadius();
-			double innerRadius = ring.getInnerRadius();
-			List<RingSvgExporter.Hole> safeHoles = holes == null ? Collections.emptyList() : holes;
-			String label = ring.getName();
-			return new Part(outerRadius * 2, outerRadius * 2, (builder, originX, originY, options) -> {
-				double centerX = originX + outerRadius;
-				double centerY = originY + outerRadius;
-				RingSvgExporter.renderRing(builder, centerX, centerY, outerRadius, innerRadius, safeHoles, options);
-			}, label);
-		}
-
-		static Part fromBulkhead(Bulkhead bulkhead) {
-			double outerRadius = bulkhead.getOuterRadius();
-			String label = bulkhead.getName();
-			return new Part(outerRadius * 2, outerRadius * 2, (builder, originX, originY, options) -> {
-				double centerX = originX + outerRadius;
-				double centerY = originY + outerRadius;
-				RingSvgExporter.renderRing(builder, centerX, centerY, outerRadius, 0, Collections.emptyList(), options);
-			}, label);
-		}
-
 		static Part fromFinSet(FinSet finSet) {
 			FinSvgExporter.Bounds bounds = FinSvgExporter.calculateBounds(finSet);
 			double width = bounds.getWidth();
@@ -259,8 +232,8 @@ public class SVGRocketPartsExporter {
 
 		static Part fromProfile(SymmetricComponent comp) {
 			ProfileSvgExporter.Bounds b = ProfileSvgExporter.calculateBounds(comp);
-			double width = Math.max(0.001, b.getWidth());
-			double height = Math.max(0.001, b.getMaxAbsY() * 2.0); // accommodate top and bottom space
+			double width = b.getWidth();
+			double height = b.getMaxAbsY() * 2.0; // accommodate top and bottom space
 			String label = comp.getName();
 			return new Part(width, height, (builder, originX, originY, options) -> {
 				// center the full closed outline vertically within its tile
@@ -269,12 +242,12 @@ public class SVGRocketPartsExporter {
 			}, label);
 		}
 
-		static Part fromTube(info.openrocket.core.rocketcomponent.Coaxial tube) {
-			double length = ((info.openrocket.core.rocketcomponent.RocketComponent) tube).getLength();
+		static Part fromTube(Coaxial tube) {
+			double length = ((RocketComponent) tube).getLength();
 			TubeSvgExporter.Bounds bounds = TubeSvgExporter.calculateBounds(tube, length);
-			double width = Math.max(0.001, bounds.getWidth());
-			double height = Math.max(0.001, bounds.getHeight());
-			String label = ((info.openrocket.core.rocketcomponent.RocketComponent) tube).getName();
+			double width = bounds.getWidth();
+			double height = bounds.getHeight();
+			String label = ((RocketComponent) tube).getName();
 			
 			return new Part(width, height, (builder, originX, originY, options) -> {
 				// Center the profiles vertically within the tile
@@ -285,8 +258,8 @@ public class SVGRocketPartsExporter {
 
 		static Part fromRailButton(RailButton railButton) {
 			RailButtonSvgExporter.Bounds bounds = RailButtonSvgExporter.calculateBounds(railButton);
-			double width = Math.max(0.001, bounds.getWidth());
-			double height = Math.max(0.001, bounds.getHeight());
+			double width = bounds.getWidth();
+			double height = bounds.getHeight();
 			String label = railButton.getName();
 			return new Part(width, height, (builder, originX, originY, options) -> {
 				// Rail button reference point is center bottom, so adjust originY to account for bounds
