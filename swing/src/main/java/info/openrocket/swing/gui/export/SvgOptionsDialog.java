@@ -5,6 +5,7 @@ import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.swing.gui.components.SVGOptionPanel;
+import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.main.componenttree.SelectableComponentTree;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
@@ -13,6 +14,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.WindowConstants;
@@ -63,9 +65,23 @@ public class SvgOptionsDialog extends JDialog {
 	private void initialize() {
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		
-		// Create split pane with options on left and component tree on right
+		// Create panel for component tree with selection buttons
+		JPanel treePanel = new JPanel(new BorderLayout());
 		JScrollPane treeScrollPane = new JScrollPane(componentTree);
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, treeScrollPane);
+		treePanel.add(treeScrollPane, BorderLayout.CENTER);
+		
+		// Add Select All/None buttons below the tree
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JButton selectAllButton = new JButton(trans.get("SVGOptionPanel.btn.selectAll"));
+		JButton selectNoneButton = new JButton(trans.get("SVGOptionPanel.btn.selectNone"));
+		selectAllButton.addActionListener(e -> selectAllComponents());
+		selectNoneButton.addActionListener(e -> selectNoneComponents());
+		buttonPanel.add(selectAllButton);
+		buttonPanel.add(selectNoneButton);
+		treePanel.add(buttonPanel, BorderLayout.SOUTH);
+		
+		// Create split pane with options on left and component tree on right
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, treePanel);
 		splitPane.setDividerLocation(300);
 		splitPane.setResizeWeight(0.4);
 		
@@ -189,6 +205,21 @@ public class SvgOptionsDialog extends JDialog {
 			}
 		}
 		return selected;
+	}
+
+	/**
+	 * Select all exportable components in the tree.
+	 */
+	private void selectAllComponents() {
+		List<TreePath> paths = ComponentTreeModel.makeTreePaths(exportableComponents);
+		componentTree.getSelectionModel().setSelectionPaths(paths.toArray(new TreePath[0]));
+	}
+
+	/**
+	 * Deselect all components in the tree.
+	 */
+	private void selectNoneComponents() {
+		componentTree.getSelectionModel().clearSelection();
 	}
 }
 
