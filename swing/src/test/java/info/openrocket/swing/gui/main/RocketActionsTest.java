@@ -1,5 +1,8 @@
 package info.openrocket.swing.gui.main;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +11,11 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 
 import info.openrocket.core.plugin.PluginModule;
+import info.openrocket.core.rocketcomponent.BodyTube;
+import info.openrocket.core.rocketcomponent.NoseCone;
+import info.openrocket.core.rocketcomponent.Parachute;
+import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.core.rocketcomponent.TrapezoidFinSet;
 import info.openrocket.core.startup.Application;
 import info.openrocket.swing.ServicesForTesting;
 
@@ -35,6 +43,18 @@ public class RocketActionsTest {
      */
     @Test
     public void testCopyComponentsMaintainParent() {
-        //TODO: Test goes here...
+        
+        // Create a list of RocketComponent objects
+        List<RocketComponent> components = new ArrayList<>();
+        BodyTube bodyTube = new BodyTube(0.5, 0.05);
+        components.add(bodyTube);
+        NoseCone noseCone = new NoseCone(NoseCone.Shape.CONICAL, 6 * NoseCone.DEFAULT_RADIUS, NoseCone.DEFAULT_RADIUS);
+        components.add(noseCone);
+        TrapezoidFinSet trapezoidFinSet = new TrapezoidFinSet(3, 0.05, 0.05, 0.025, 0.03);
+        components.add(trapezoidFinSet);
+        Parachute parachute = new Parachute();
+        components.add(parachute);
+
+        // TODO: Copy the components and create asserts 
     }
 }
