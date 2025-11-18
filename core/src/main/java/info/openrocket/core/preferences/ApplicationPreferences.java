@@ -182,6 +182,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
 	public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
 	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
+	public static final String SVG_CROSSHAIR_SIZE = "SVGCrosshairSize";
 	public static final String SVG_SHOW_LABELS = "SVGShowLabels";
 	public static final String SVG_LABEL_COLOR = "SVGLabelColor";
 	public static final String SVG_PART_SPACING = "SVGPartSpacing";
@@ -1423,6 +1424,26 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGCrosshairColor(Color color) {
 		putColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(color));
+	}
+
+	/**
+	 * Returns the crosshair size used for SVG exports in mm.
+	 * This is the length of one full crosshair line.
+	 *
+	 * @return the crosshair size in mm
+	 */
+	public double getSVGCrosshairSize() {
+		return getDouble(SVG_CROSSHAIR_SIZE, 2.0); // Default 2mm
+	}
+
+	/**
+	 * Sets the crosshair size used for SVG exports in mm.
+	 * This is the length of one full crosshair line.
+	 *
+	 * @param size the crosshair size in mm
+	 */
+	public void setSVGCrosshairSize(double size) {
+		putDouble(SVG_CROSSHAIR_SIZE, size);
 	}
 
 	/**

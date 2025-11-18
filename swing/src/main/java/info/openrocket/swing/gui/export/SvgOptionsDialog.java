@@ -164,6 +164,7 @@ public class SvgOptionsDialog extends JDialog {
 	public double getStrokeWidth() { return optionsPanel.getStrokeWidth(); }
 	public boolean isDrawCrosshair() { return optionsPanel.isDrawCrosshair(); }
 	public Color getCrosshairColor() { return optionsPanel.getCrosshairColor(); }
+	public double getCrosshairSize() { return optionsPanel.getCrosshairSizeMm(); }
 
 	public SVGExportOptions getExportOptions() {
 		double partSpacing = optionsPanel.getPartSpacing();
@@ -173,6 +174,7 @@ public class SvgOptionsDialog extends JDialog {
 			getStrokeWidth(),
 			isDrawCrosshair(),
 			getCrosshairColor(),
+			getCrosshairSize(),
 			isShowLabels(),
 			getLabelColor(),
 			partSpacing
@@ -202,6 +204,7 @@ public class SvgOptionsDialog extends JDialog {
 		optionsPanel.setCrosshairColor(prefs.getSVGCrosshairColor());
 		optionsPanel.setShowLabels(prefs.isSVGShowLabels());
 		optionsPanel.setLabelColor(prefs.getSVGLabelColor());
+		// Crosshair size is loaded in SVGOptionPanel constructor
 	}
 
 	public SVGOptionPanel getOptionsPanel() {

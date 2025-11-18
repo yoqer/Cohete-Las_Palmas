@@ -1897,6 +1897,7 @@ private static final Translator trans = Application.getTranslator();
 		prefs.setSVGStrokeWidth(optionsDialog.getStrokeWidth());
 		prefs.setSVGDrawCrosshair(optionsDialog.isDrawCrosshair());
 		prefs.setSVGCrosshairColor(optionsDialog.getCrosshairColor());
+		prefs.setSVGCrosshairSize(optionsDialog.getCrosshairSize());
 		prefs.setSVGShowLabels(optionsDialog.isShowLabels());
 		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
 

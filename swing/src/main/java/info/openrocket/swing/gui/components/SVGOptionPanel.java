@@ -21,14 +21,19 @@ public class SVGOptionPanel extends JPanel {
 	private final ColorChooserButton colorChooser;
 	private ColorChooserButton crosshairColorChooser;
 	private JLabel crosshairColorLabel;
+	private JLabel crosshairSizeLabel;
 	private ColorChooserButton labelColorChooser;
 	private JLabel labelColorLabel;
 	private double strokeWidth = 0.1;
 	private boolean drawCrosshair = true;
+	private double crosshairSize = 2.0; // Default 2mm crosshair size in mm
 	private boolean showLabels = true;
 	private final boolean showCrosshairToggle;
 	private JCheckBox crosshairCheckbox;
 	private JCheckBox showLabelsCheckbox;
+	private DoubleModel crosshairSizeModel;
+	private JSpinner crosshairSizeSpinner;
+	private UnitSelector crosshairSizeUnitSelector;
 	
 	// Part spacing
 	private double partSpacing = 0.01; // Default 10mm spacing in meters
@@ -45,8 +50,9 @@ public class SVGOptionPanel extends JPanel {
 		super(new MigLayout());
 		this.showCrosshairToggle = showCrosshairToggle;
 		
-		// Load part spacing from preferences
+		// Load part spacing and crosshair size from preferences
 		partSpacing = prefs.getSVGPartSpacing();
+		crosshairSize = prefs.getSVGCrosshairSize();
 		
 		// Stroke color
 		JLabel label = new JLabel(trans.get("SVGOptionPanel.lbl.strokeColor"));
@@ -80,7 +86,20 @@ public class SVGOptionPanel extends JPanel {
 			add(crosshairColorLabel);
 			crosshairColorChooser = new ColorChooserButton(prefs.getSVGCrosshairColor());
 			crosshairColorChooser.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairColor.ttip"));
-			add(crosshairColorChooser, "wrap para");
+			add(crosshairColorChooser, "wrap");
+
+			// Crosshair size (in mm, length of one full crosshair line)
+			crosshairSizeLabel = new JLabel(trans.get("SVGOptionPanel.lbl.crosshairSize"));
+			crosshairSizeLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairSize.ttip"));
+			add(crosshairSizeLabel);
+			crosshairSizeModel = new DoubleModel(this, "CrosshairSize", UnitGroup.UNITS_LENGTH, 0.0001, 0.1); // 0.1mm to 100mm in meters
+			crosshairSizeModel.setValue(crosshairSize / 1000.0); // Convert mm to meters for model
+			crosshairSizeSpinner = new JSpinner(crosshairSizeModel.getSpinnerModel());
+			crosshairSizeSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.crosshairSize.ttip"));
+			crosshairSizeSpinner.setEditor(new SpinnerEditor(crosshairSizeSpinner, 5));
+			crosshairSizeUnitSelector = new UnitSelector(crosshairSizeModel);
+			add(crosshairSizeSpinner, "split 2");
+			add(crosshairSizeUnitSelector, "growx, wrap para");
 
 			crosshairCheckbox.addActionListener(e -> {
 				drawCrosshair = crosshairCheckbox.isSelected();
@@ -171,6 +190,26 @@ public class SVGOptionPanel extends JPanel {
 		}
 	}
 
+	public double getCrosshairSize() {
+		// DoubleModel expects SI units (meters), but we store in mm
+		// Return in meters for DoubleModel
+		return crosshairSize / 1000.0;
+	}
+
+	// Setter called by DoubleModel - receives value in meters, convert to mm and store
+	public void setCrosshairSize(double size) {
+		// DoubleModel passes value in SI units (meters), convert to mm
+		this.crosshairSize = size * 1000.0;
+	}
+	
+	/**
+	 * Get crosshair size in mm (for use in SVGExportOptions).
+	 * @return crosshair size in mm
+	 */
+	public double getCrosshairSizeMm() {
+		return crosshairSize;
+	}
+
 	public boolean isShowLabels() {
 		return showLabelsCheckbox != null ? showLabelsCheckbox.isSelected() : showLabels;
 	}
@@ -207,6 +246,15 @@ public class SVGOptionPanel extends JPanel {
 		if (crosshairColorChooser != null) {
 			crosshairColorChooser.setEnabled(enabled);
 		}
+		if (crosshairSizeLabel != null) {
+			crosshairSizeLabel.setEnabled(enabled);
+		}
+		if (crosshairSizeSpinner != null) {
+			crosshairSizeSpinner.setEnabled(enabled);
+		}
+		if (crosshairSizeUnitSelector != null) {
+			crosshairSizeUnitSelector.setEnabled(enabled);
+		}
 	}
 	
 	public double getPartSpacing() {
@@ -223,5 +271,8 @@ public class SVGOptionPanel extends JPanel {
 	 */
 	public void storePreferences() {
 		prefs.setSVGPartSpacing(partSpacing);
+		if (showCrosshairToggle) {
+			prefs.setSVGCrosshairSize(crosshairSize);
+		}
 	}
 }
