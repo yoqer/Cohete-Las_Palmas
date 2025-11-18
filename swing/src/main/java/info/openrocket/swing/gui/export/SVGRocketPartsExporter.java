@@ -7,11 +7,13 @@ import info.openrocket.core.file.svg.export.RailButtonSvgExporter;
 import info.openrocket.core.file.svg.export.RingSvgExporter;
 import info.openrocket.core.file.svg.export.SVGBuilder;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
+import info.openrocket.core.file.svg.export.TubeSvgExporter;
 import info.openrocket.core.rocketcomponent.BodyTube;
 import info.openrocket.core.rocketcomponent.Bulkhead;
 import info.openrocket.core.rocketcomponent.CenteringRing;
 import info.openrocket.core.rocketcomponent.ComponentAssembly;
 import info.openrocket.core.rocketcomponent.FinSet;
+import info.openrocket.core.rocketcomponent.LaunchLug;
 import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.RailButton;
 import info.openrocket.core.rocketcomponent.RocketComponent;
@@ -153,6 +155,7 @@ public class SVGRocketPartsExporter {
 			component instanceof BodyTube ||
 			component instanceof Transition ||
 			component instanceof RailButton ||
+			component instanceof LaunchLug ||
 			component instanceof ComponentAssembly) {
 			components.add(component);
 		}
@@ -183,7 +186,9 @@ public class SVGRocketPartsExporter {
 		} else if (component instanceof NoseCone) {
 			parts.add(Part.fromProfile((NoseCone) component));
 		} else if (component instanceof BodyTube) {
-			parts.add(Part.fromProfile((BodyTube) component));
+			parts.add(Part.fromTube((BodyTube) component));
+		} else if (component instanceof LaunchLug) {
+			parts.add(Part.fromTube((LaunchLug) component));
 		} else if (component instanceof Transition) {
 			parts.add(Part.fromProfile((Transition) component));
 		} else if (component instanceof RailButton) {
@@ -261,6 +266,20 @@ public class SVGRocketPartsExporter {
 				// center the full closed outline vertically within its tile
 				double midY = originY + (height / 2.0);
 				ProfileSvgExporter.drawClosedProfile(comp, builder, originX, midY, options);
+			}, label);
+		}
+
+		static Part fromTube(info.openrocket.core.rocketcomponent.Coaxial tube) {
+			double length = ((info.openrocket.core.rocketcomponent.RocketComponent) tube).getLength();
+			TubeSvgExporter.Bounds bounds = TubeSvgExporter.calculateBounds(tube, length);
+			double width = Math.max(0.001, bounds.getWidth());
+			double height = Math.max(0.001, bounds.getHeight());
+			String label = ((info.openrocket.core.rocketcomponent.RocketComponent) tube).getName();
+			
+			return new Part(width, height, (builder, originX, originY, options) -> {
+				// Center the profiles vertically within the tile
+				double centerY = originY + (height / 2.0);
+				TubeSvgExporter.drawTubeProfile(tube, length, builder, originX, centerY, options);
 			}, label);
 		}
 
