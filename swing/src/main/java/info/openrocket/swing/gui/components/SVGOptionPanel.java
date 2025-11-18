@@ -65,7 +65,7 @@ public class SVGOptionPanel extends JPanel {
 		JSpinner spin = new JSpinner(dm.getSpinnerModel());
 		spin.setToolTipText(trans.get("SVGOptionPanel.lbl.strokeWidth.ttip"));
 		spin.setEditor(new SpinnerEditor(spin, 5));
-		add(spin);
+		add(spin, "split 2");
 		add(new UnitSelector(dm), "growx, wrap para");
 
 		if (showCrosshairToggle) {

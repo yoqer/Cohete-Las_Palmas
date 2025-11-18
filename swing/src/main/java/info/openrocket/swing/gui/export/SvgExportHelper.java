@@ -29,7 +29,7 @@ public final class SvgExportHelper {
 
 	public static void exportSinglePart(Component parent, OpenRocketDocument document, RocketComponent component) {
 		// First: show options dialog
-		SvgOptionsDialog optionsDialog = new SvgOptionsDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(parent));
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(parent), document);
 		optionsDialog.setFromPreferences(prefs);
 		if (!optionsDialog.showDialog((javax.swing.JComponent) parent)) {
 			return;

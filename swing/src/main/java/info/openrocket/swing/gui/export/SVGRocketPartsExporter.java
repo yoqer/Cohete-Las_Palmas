@@ -121,6 +121,47 @@ public class SVGRocketPartsExporter {
 		return parts;
 	}
 
+	/**
+	 * Collect all exportable components from a document.
+	 * @param document The document to collect components from
+	 * @return List of exportable components
+	 */
+	public static List<RocketComponent> collectExportableComponents(OpenRocketDocument document) {
+		List<RocketComponent> components = new ArrayList<>();
+		if (document == null || document.getRocket() == null) {
+			return components;
+		}
+		collectExportableRecursive(document.getRocket(), components);
+		return components;
+	}
+
+	/**
+	 * Recursively collect exportable components.
+	 */
+	private static void collectExportableRecursive(RocketComponent component, List<RocketComponent> components) {
+		if (component == null) {
+			return;
+		}
+
+		if (component instanceof CenteringRing ||
+			component instanceof Bulkhead ||
+			component instanceof FinSet ||
+			component instanceof NoseCone ||
+			component instanceof BodyTube ||
+			component instanceof Transition ||
+			component instanceof RailButton) {
+			components.add(component);
+		}
+
+		List<RocketComponent> children = component.getChildren();
+		if (children == null || children.isEmpty()) {
+			return;
+		}
+		for (RocketComponent child : children) {
+			collectExportableRecursive(child, components);
+		}
+	}
+
 	private void collectRecursive(RocketComponent component, List<Part> parts) {
 		if (component == null) {
 			return;

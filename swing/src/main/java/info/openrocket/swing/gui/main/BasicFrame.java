@@ -1818,10 +1818,19 @@ private static final Translator trans = Application.getTranslator();
 	 */
 	private void exportSvgProfilesAction(List<RocketComponent> components) {
 		// Show SVG options dialog first
-		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this);
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this, document);
 		optionsDialog.setFromPreferences(prefs);
 		if (!optionsDialog.showDialog()) {
 			return; // User cancelled
+		}
+
+		// Get selected components from dialog (or use provided components if called from context menu)
+		List<RocketComponent> selectedComponents = optionsDialog.getSelectedComponents();
+		if (selectedComponents.isEmpty()) {
+			// If nothing selected, use provided components if any, otherwise export all
+			if (components != null && !components.isEmpty()) {
+				selectedComponents = components;
+			}
 		}
 
 		// Get options from dialog (includes spacing)
@@ -1877,8 +1886,8 @@ private static final Translator trans = Application.getTranslator();
 		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
 
 		try {
-			if (components != null && !components.isEmpty()) {
-				new SVGRocketPartsExporter().export(components, target, options);
+			if (!selectedComponents.isEmpty()) {
+				new SVGRocketPartsExporter().export(selectedComponents, target, options);
 			} else {
 				new SVGRocketPartsExporter().export(document, target, options);
 			}

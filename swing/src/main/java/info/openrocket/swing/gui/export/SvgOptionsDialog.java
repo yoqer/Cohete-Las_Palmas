@@ -1,8 +1,11 @@
 package info.openrocket.swing.gui.export;
 
+import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.preferences.ApplicationPreferences;
+import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.swing.gui.components.SVGOptionPanel;
+import info.openrocket.swing.gui.main.componenttree.SelectableComponentTree;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
 
@@ -10,39 +13,55 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.WindowConstants;
+import javax.swing.tree.TreePath;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Modal dialog wrapping the SVGOptionPanel with OK/Cancel actions.
+ * Modal dialog wrapping the SVGOptionPanel with component selection tree.
  */
 public class SvgOptionsDialog extends JDialog {
 	private static final Translator trans = Application.getTranslator();
 	private final SVGOptionPanel optionsPanel;
+	private final SelectableComponentTree componentTree;
+	private OpenRocketDocument document;
 	private boolean confirmed = false;
 
-	public SvgOptionsDialog(Frame owner) {
-		super(owner, "SVG Options", true);
+	public SvgOptionsDialog(Frame owner, OpenRocketDocument document) {
+		super(owner, "SVG Export Options", true);
+		this.document = document;
 		optionsPanel = new SVGOptionPanel(true);
-		initialize();
-	}
+		
+		// Get all exportable components
+		List<RocketComponent> exportableComponents = SVGRocketPartsExporter.collectExportableComponents(document);
 
-	public SvgOptionsDialog(Dialog owner) {
-		super(owner, "SVG Options", true);
-		optionsPanel = new SVGOptionPanel(true);
+		// Initially select all exportable components
+		List<RocketComponent> initialSelection = new ArrayList<>(exportableComponents);
+		componentTree = new SelectableComponentTree(document, exportableComponents, initialSelection);
+		
 		initialize();
 	}
 
 	private void initialize() {
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		
+		// Create split pane with options on left and component tree on right
+		JScrollPane treeScrollPane = new JScrollPane(componentTree);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, treeScrollPane);
+		splitPane.setDividerLocation(300);
+		splitPane.setResizeWeight(0.4);
+		
 		getContentPane().setLayout(new BorderLayout());
-		getContentPane().add(optionsPanel, BorderLayout.CENTER);
+		getContentPane().add(splitPane, BorderLayout.CENTER);
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton cancel = new JButton("Cancel");
@@ -68,6 +87,10 @@ public class SvgOptionsDialog extends JDialog {
 		getContentPane().add(buttons, BorderLayout.SOUTH);
 
 		pack();
+		// Set a wider initial size for the dialog
+		if (getWidth() < 600) {
+			setSize(Math.max(600, getWidth()), getHeight());
+		}
 		setLocationRelativeTo(getOwner());
 	}
 
@@ -128,6 +151,24 @@ public class SvgOptionsDialog extends JDialog {
 
 	public SVGOptionPanel getOptionsPanel() {
 		return optionsPanel;
+	}
+
+	/**
+	 * Get the selected components from the component tree.
+	 * @return List of selected components, or empty list if none selected
+	 */
+	public List<RocketComponent> getSelectedComponents() {
+		List<RocketComponent> selected = new ArrayList<>();
+		TreePath[] selectedPaths = componentTree.getSelectionPaths();
+		if (selectedPaths != null) {
+			for (TreePath path : selectedPaths) {
+				Object component = path.getLastPathComponent();
+				if (component instanceof RocketComponent) {
+					selected.add((RocketComponent) component);
+				}
+			}
+		}
+		return selected;
 	}
 }
 
