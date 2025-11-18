@@ -1910,10 +1910,8 @@ private static final Translator trans = Application.getTranslator();
 					new SVGRocketPartsExporter().export(document, target, options);
 				}
 				log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
-			} else if (selectedTab == SvgOptionsDialog.FIN_GUIDES_TAB) {
-				// Export fin guides (not yet implemented)
-				throw new UnsupportedOperationException("Fin guide SVG export is not yet implemented");
 			}
+			// TODO: other tabs here (e.g. fin guides)
 		} catch (UnsupportedOperationException ex) {
 			log.warn("Fin guide export not implemented", ex);
 			JOptionPane.showMessageDialog(BasicFrame.this,

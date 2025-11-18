@@ -3,7 +3,6 @@ package info.openrocket.swing.gui.export;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.preferences.ApplicationPreferences;
-import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.swing.gui.components.SVGOptionPanel;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
@@ -35,14 +34,11 @@ import java.util.List;
  */
 public class SvgOptionsDialog extends JDialog {
 	public static final int COMPONENTS_TAB = 0;
-	public static final int FIN_GUIDES_TAB = 1;
-	
+
 	private static final Translator trans = Application.getTranslator();
 	private final SVGOptionPanel optionsPanel;
 	private final SelectableComponentTree componentTree;
-	private final SelectableComponentTree finSetTree;
 	private final List<RocketComponent> exportableComponents;
-	private final List<FinSet> finSets;
 	private JTabbedPane tabbedPane;
 	private OpenRocketDocument document;
 	private boolean confirmed = false;
@@ -67,23 +63,6 @@ public class SvgOptionsDialog extends JDialog {
 		
 		componentTree = new SelectableComponentTree(document, exportableComponents, initialSelection);
 		
-		// Get all FinSet components
-		finSets = SVGRocketPartsExporter.collectFinSets(document);
-		
-		// Filter initially selected components to only include FinSets
-		List<RocketComponent> initialFinSetSelection = new ArrayList<>();
-		if (initiallySelectedComponents != null && !initiallySelectedComponents.isEmpty()) {
-			for (RocketComponent component : initiallySelectedComponents) {
-				if (component instanceof FinSet && finSets.contains(component)) {
-					initialFinSetSelection.add(component);
-				}
-			}
-		}
-		
-		// Convert List<FinSet> to List<RocketComponent> for SelectableComponentTree
-		List<RocketComponent> finSetsAsRocketComponents = new ArrayList<>(finSets);
-		finSetTree = new SelectableComponentTree(document, finSetsAsRocketComponents, initialFinSetSelection);
-		
 		initialize();
 	}
 
@@ -105,25 +84,10 @@ public class SvgOptionsDialog extends JDialog {
 		buttonPanel.add(selectNoneButton);
 		componentsTabPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
-		// Create panel for fin guides tab with fin set tree
-		JPanel finGuidesTabPanel = new JPanel(new BorderLayout());
-		JScrollPane finSetTreeScrollPane = new JScrollPane(finSetTree);
-		finGuidesTabPanel.add(finSetTreeScrollPane, BorderLayout.CENTER);
-		
-		// Add Select All/None buttons below the fin set tree
-		JPanel finSetButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		JButton selectAllFinSetsButton = new JButton(trans.get("SVGOptionPanel.btn.selectAll"));
-		JButton selectNoneFinSetsButton = new JButton(trans.get("SVGOptionPanel.btn.selectNone"));
-		selectAllFinSetsButton.addActionListener(e -> selectAllFinSets());
-		selectNoneFinSetsButton.addActionListener(e -> selectNoneFinSets());
-		finSetButtonPanel.add(selectAllFinSetsButton);
-		finSetButtonPanel.add(selectNoneFinSetsButton);
-		finGuidesTabPanel.add(finSetButtonPanel, BorderLayout.SOUTH);
-		
 		// Create tabbed pane with Components and Fin Guides tabs
 		tabbedPane = new JTabbedPane();
 		tabbedPane.addTab(trans.get("SVGOptionPanel.tab.components"), componentsTabPanel);
-		tabbedPane.addTab(trans.get("SVGOptionPanel.tab.finGuides"), finGuidesTabPanel);
+		// TODO: add other tabs here (e.g. Fin Guides)
 		
 		// Create split pane with options on left and tabbed pane on right
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, tabbedPane);
@@ -159,18 +123,8 @@ public class SvgOptionsDialog extends JDialog {
 						);
 						return; // Don't close the dialog
 					}
-				} else if (selectedTab == FIN_GUIDES_TAB) {
-					// Fin Guides tab - check if at least one fin set is selected
-					if (getSelectedFinSets().isEmpty()) {
-						JOptionPane.showMessageDialog(
-								SvgOptionsDialog.this,
-								trans.get("SVGOptionPanel.noFinSetSelection.message"),
-								trans.get("SVGOptionPanel.noFinSetSelection.title"),
-								JOptionPane.WARNING_MESSAGE
-						);
-						return; // Don't close the dialog
-					}
 				}
+				// TODO: other tabs here (e.g. fin guides)
 				
 				// Store preferences before closing
 				optionsPanel.storePreferences();
@@ -280,40 +234,6 @@ public class SvgOptionsDialog extends JDialog {
 	 */
 	private void selectNoneComponents() {
 		componentTree.getSelectionModel().clearSelection();
-	}
-
-	/**
-	 * Get the selected fin sets from the fin set tree.
-	 * @return List of selected fin sets, or empty list if none selected
-	 */
-	public List<FinSet> getSelectedFinSets() {
-		List<FinSet> selected = new ArrayList<>();
-		TreePath[] selectedPaths = finSetTree.getSelectionPaths();
-		if (selectedPaths != null) {
-			for (TreePath path : selectedPaths) {
-				Object component = path.getLastPathComponent();
-				if (component instanceof FinSet) {
-					selected.add((FinSet) component);
-				}
-			}
-		}
-		return selected;
-	}
-
-	/**
-	 * Select all fin sets in the tree.
-	 */
-	private void selectAllFinSets() {
-		List<RocketComponent> finSetsAsRocketComponents = new ArrayList<>(finSets);
-		List<TreePath> paths = ComponentTreeModel.makeTreePaths(finSetsAsRocketComponents);
-		finSetTree.getSelectionModel().setSelectionPaths(paths.toArray(new TreePath[0]));
-	}
-
-	/**
-	 * Deselect all fin sets in the tree.
-	 */
-	private void selectNoneFinSets() {
-		finSetTree.getSelectionModel().clearSelection();
 	}
 
 	/**
