@@ -19,6 +19,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreePath;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -72,6 +75,8 @@ public class SvgOptionsDialog extends JDialog {
 		// Create panel for component tree with selection buttons
 		JPanel componentsTabPanel = new JPanel(new BorderLayout());
 		JScrollPane treeScrollPane = new JScrollPane(componentTree);
+		Border originalBorder = treeScrollPane.getBorder();
+		treeScrollPane.setBorder(new CompoundBorder(new EmptyBorder(0, 0, 0, 10), originalBorder));
 		componentsTabPanel.add(treeScrollPane, BorderLayout.CENTER);
 		
 		// Add Select All/None buttons below the tree
