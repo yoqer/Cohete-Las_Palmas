@@ -1818,13 +1818,13 @@ private static final Translator trans = Application.getTranslator();
 	 */
 	private void exportSvgProfilesAction(List<RocketComponent> components) {
 		// Show SVG options dialog first
-		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this);
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this, document, components);
 		optionsDialog.setFromPreferences(prefs);
 		if (!optionsDialog.showDialog()) {
 			return; // User cancelled
 		}
 
-		// Get options from dialog
+		// Get options from dialog (includes paper size and spacing)
 		SVGExportOptions options = optionsDialog.getExportOptions();
 
 		// Now show file chooser

@@ -7,11 +7,15 @@ import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
+import info.openrocket.swing.gui.print.PaperSize;
+import info.openrocket.swing.gui.print.PrintUnit;
 
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.DefaultComboBoxModel;
 import java.awt.Color;
 
 public class SVGOptionPanel extends JPanel {
@@ -29,6 +33,30 @@ public class SVGOptionPanel extends JPanel {
 	private final boolean showCrosshairToggle;
 	private JCheckBox crosshairCheckbox;
 	private JCheckBox showLabelsCheckbox;
+	
+	// Paper size selection
+	private JComboBox<Object> paperSizeCombo;
+	private PaperSize selectedPaperSize = PaperSize.getDefault();
+	private static final String CUSTOM_PAPER_SIZE = "Custom";
+	
+	// Custom paper size
+	private double customPaperWidth = 0.21; // Default A4 width in meters
+	private double customPaperHeight = 0.297; // Default A4 height in meters
+	private DoubleModel customWidthModel;
+	private DoubleModel customHeightModel;
+	private JLabel customWidthLabel;
+	private JSpinner customWidthSpinner;
+	private UnitSelector customWidthUnitSelector;
+	private JLabel customHeightLabel;
+	private JSpinner customHeightSpinner;
+	private UnitSelector customHeightUnitSelector;
+	
+	// Part spacing
+	private double partSpacing = 0.01; // Default 10mm spacing in meters
+	private DoubleModel spacingModel;
+	private JLabel spacingLabel;
+	private JSpinner spacingSpinner;
+	private UnitSelector spacingUnitSelector;
 
 	public SVGOptionPanel() {
 		this(false);
@@ -104,6 +132,96 @@ public class SVGOptionPanel extends JPanel {
 		boolean labelsEnabled = showLabelsCheckbox.isSelected();
 		labelColorLabel.setEnabled(labelsEnabled);
 		labelColorChooser.setEnabled(labelsEnabled);
+		
+		// Paper size selection
+		add(new JLabel(trans.get("SVGOptionPanel.lbl.paperSize")), "spanx, wrap para");
+		DefaultComboBoxModel<Object> paperSizeModel = new DefaultComboBoxModel<>();
+		for (PaperSize size : PaperSize.values()) {
+			paperSizeModel.addElement(size);
+		}
+		paperSizeModel.addElement(CUSTOM_PAPER_SIZE);
+		paperSizeCombo = new JComboBox<>(paperSizeModel);
+		paperSizeCombo.setSelectedItem(selectedPaperSize);
+		paperSizeCombo.setToolTipText(trans.get("SVGOptionPanel.lbl.paperSize.ttip"));
+		paperSizeCombo.addActionListener(e -> updatePaperSizeControls());
+		add(paperSizeCombo, "growx, wrap para");
+		
+		// Custom paper size inputs (initially hidden)
+		customWidthLabel = new JLabel(trans.get("SVGOptionPanel.lbl.customPaperWidth"));
+		customWidthLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperWidth.ttip"));
+		customWidthModel = new DoubleModel(this, "CustomPaperWidth", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
+		customWidthModel.setValue(customPaperWidth);
+		customWidthSpinner = new JSpinner(customWidthModel.getSpinnerModel());
+		customWidthSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperWidth.ttip"));
+		customWidthSpinner.setEditor(new SpinnerEditor(customWidthSpinner, 5));
+		customWidthUnitSelector = new UnitSelector(customWidthModel);
+		customWidthLabel.setVisible(false);
+		customWidthSpinner.setVisible(false);
+		customWidthUnitSelector.setVisible(false);
+		
+		customHeightLabel = new JLabel(trans.get("SVGOptionPanel.lbl.customPaperHeight"));
+		customHeightLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperHeight.ttip"));
+		customHeightModel = new DoubleModel(this, "CustomPaperHeight", UnitGroup.UNITS_LENGTH, 0.001, 10.0);
+		customHeightModel.setValue(customPaperHeight);
+		customHeightSpinner = new JSpinner(customHeightModel.getSpinnerModel());
+		customHeightSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.customPaperHeight.ttip"));
+		customHeightSpinner.setEditor(new SpinnerEditor(customHeightSpinner, 5));
+		customHeightUnitSelector = new UnitSelector(customHeightModel);
+		customHeightLabel.setVisible(false);
+		customHeightSpinner.setVisible(false);
+		customHeightUnitSelector.setVisible(false);
+		
+		// Part spacing
+		spacingLabel = new JLabel(trans.get("SVGOptionPanel.lbl.partSpacing"));
+		spacingLabel.setToolTipText(trans.get("SVGOptionPanel.lbl.partSpacing.ttip"));
+		spacingModel = new DoubleModel(this, "PartSpacing", UnitGroup.UNITS_LENGTH, 0.0, 1.0);
+		spacingModel.setValue(partSpacing);
+		spacingSpinner = new JSpinner(spacingModel.getSpinnerModel());
+		spacingSpinner.setToolTipText(trans.get("SVGOptionPanel.lbl.partSpacing.ttip"));
+		spacingSpinner.setEditor(new SpinnerEditor(spacingSpinner, 5));
+		spacingUnitSelector = new UnitSelector(spacingModel);
+		add(spacingLabel);
+		add(spacingSpinner);
+		add(spacingUnitSelector, "growx, wrap para");
+		
+		updatePaperSizeControls();
+	}
+	
+	private void updatePaperSizeControls() {
+		Object selected = paperSizeCombo.getSelectedItem();
+		boolean isCustom = CUSTOM_PAPER_SIZE.equals(selected);
+		
+		if (isCustom) {
+			// Show custom size inputs
+			if (customWidthLabel.getParent() == null) {
+				add(customWidthLabel);
+				add(customWidthSpinner);
+				add(customWidthUnitSelector, "growx, wrap para");
+			}
+			customWidthLabel.setVisible(true);
+			customWidthSpinner.setVisible(true);
+			customWidthUnitSelector.setVisible(true);
+			if (customHeightLabel.getParent() == null) {
+				add(customHeightLabel);
+				add(customHeightSpinner);
+				add(customHeightUnitSelector, "growx, wrap para");
+			}
+			customHeightLabel.setVisible(true);
+			customHeightSpinner.setVisible(true);
+			customHeightUnitSelector.setVisible(true);
+			selectedPaperSize = null;
+		} else if (selected instanceof PaperSize) {
+			// Hide custom size inputs
+			customWidthLabel.setVisible(false);
+			customWidthSpinner.setVisible(false);
+			customWidthUnitSelector.setVisible(false);
+			customHeightLabel.setVisible(false);
+			customHeightSpinner.setVisible(false);
+			customHeightUnitSelector.setVisible(false);
+			selectedPaperSize = (PaperSize) selected;
+		}
+		revalidate();
+		repaint();
 	}
 
 	public Color getStrokeColor() {
@@ -182,6 +300,31 @@ public class SVGOptionPanel extends JPanel {
 		}
 		if (crosshairColorChooser != null) {
 			crosshairColorChooser.setEnabled(enabled);
+		}
+	}
+	
+	public boolean isCustomPaperSize() {
+		return selectedPaperSize == null;
+	}
+	
+	public double getPartSpacing() {
+		return partSpacing;
+	}
+
+	
+	// Get paper dimensions in meters (width, height)
+	public double[] getPaperDimensions() {
+		if (isCustomPaperSize()) {
+			return new double[]{customPaperWidth, customPaperHeight};
+		} else if (selectedPaperSize != null) {
+			com.itextpdf.text.Rectangle rect = selectedPaperSize.getSize();
+			// Convert from points to meters
+			double width = PrintUnit.POINTS.toMeters(rect.getWidth());
+			double height = PrintUnit.POINTS.toMeters(rect.getHeight());
+			return new double[]{width, height};
+		} else {
+			// Fallback to A4
+			return new double[]{0.21, 0.297};
 		}
 	}
 }
