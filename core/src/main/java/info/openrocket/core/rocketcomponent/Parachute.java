@@ -22,6 +22,7 @@ public class Parachute extends RecoveryDevice {
 	private final double DEFAULT_LINE_LENGTH = 0.3;
 	private double lineLength;
 
+
 	public Parachute() {
 		this.diameter = DEFAULT_DIAMETER;
 		lineCount = DEFAULT_LINE_COUNT;

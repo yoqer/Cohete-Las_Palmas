@@ -166,9 +166,15 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 				ComponentPreset.LINE_COUNT,
 				ComponentPreset.LINE_LENGTH,
 				ComponentPreset.LINE_MATERIAL,
-				ComponentPreset.CD,
+				ComponentPreset.CD, //
 				ComponentPreset.PACKED_DIAMETER,
-				ComponentPreset.PACKED_LENGTH });
+				ComponentPreset.PACKED_LENGTH,
+                ComponentPreset.MASS, //ajout de la masse
+
+
+
+
+               });
 
 		TypedKey<?>[] displayedColumns;
 
@@ -240,9 +246,12 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 	public final static TypedKey<Double> SPILL_DIA = new TypedKey<>("SpillDia", Double.class,
 			UnitGroup.UNITS_LENGTH);
 	public final static TypedKey<Double> SURFACE_AREA = new TypedKey<>("SurfaceArea", Double.class,
-			UnitGroup.UNITS_LENGTH);
+			UnitGroup.UNITS_AREA);
 
-	// Parachute canopy material declaration see: MATERIAL
+
+
+
+    // Parachute canopy material declaration see: MATERIAL
 	public final static TypedKey<Integer> SIDES = new TypedKey<>("Sides", Integer.class);
 	public final static TypedKey<Integer> LINE_COUNT = new TypedKey<>("LineCount", Integer.class);
 	public final static TypedKey<Double> LINE_LENGTH = new TypedKey<>("LineLength", Double.class,
@@ -285,7 +294,11 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 			SCREW_MASS,
 			NUT_MASS,
 			FINISH,
-			MATERIAL));
+			MATERIAL,
+            CD,
+            SURFACE_AREA,
+            PACKED_LENGTH,
+            PACKED_DIAMETER));
 
 	// package scope constructor to encourage use of factory.
 	ComponentPreset() {
