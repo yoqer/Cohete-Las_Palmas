@@ -212,6 +212,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private CaliperLine draggingCaliperLine = null;  // Which caliper line is being dragged
 	private JSpinner caliperDistanceSpinner = null;
 	private UnitSelector caliperUnitSelector = null;
+	private IconToggleButton caliperToggle = null;
+	private JPanel caliperDisplayPanel = null;
+	private boolean caliperWasEnabledBefore3d = false;
 
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
@@ -474,6 +477,23 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (is3d)
 			return;
 		is3d = true;
+		
+		// Remember caliper state and disable caliper UI in 3D
+		caliperWasEnabledBefore3d = caliperEnabled;
+		if (caliperEnabled) {
+			caliperEnabled = false;
+			if (caliperToggle != null) {
+				caliperToggle.setSelected(false);
+			}
+		}
+		if (caliperToggle != null) {
+			caliperToggle.setEnabled(false);
+		}
+		if (caliperDisplayPanel != null) {
+			caliperDisplayPanel.setVisible(false);
+			caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
+		}
+		
 		figureHolder.remove(scrollPane);
 		figureHolder.add(figure3d, BorderLayout.CENTER);
 		rotationControl.setEnabled(false);
@@ -492,6 +512,22 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (!is3d)
 			return;
 		is3d = false;
+		
+		if (caliperToggle != null) {
+			caliperToggle.setEnabled(true);
+		}
+		if (caliperWasEnabledBefore3d) {
+			caliperEnabled = true;
+			if (caliperToggle != null) {
+				caliperToggle.setSelected(true);
+			}
+			if (caliperDisplayPanel != null) {
+				caliperDisplayPanel.setVisible(true);
+				caliperDisplayPanel.setPreferredSize(null);
+			}
+		}
+		caliperWasEnabledBefore3d = false;
+		
 		figureHolder.remove(figure3d);
 		figureHolder.add(scrollPane, BorderLayout.CENTER);
 		rotationControl.setEnabled(true);
@@ -587,7 +623,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		});
 
 		// Caliper tool toggle button
-		IconToggleButton caliperToggle = new IconToggleButton();
+		caliperToggle = new IconToggleButton();
 		caliperToggle.setSelectedIcon(Icons.RULER);
 		caliperToggle.setToolTipText(trans.get("RocketPanel.btn.Caliper"));
 		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
@@ -609,7 +645,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		caliperUnitSelector.setOpaque(false);
 
 		// Panel containing spinner + unit selector with colored border
-		final JPanel caliperDisplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		caliperDisplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		caliperDisplayPanel.setOpaque(false);
 		Border caliperBorder = new LineBorder(caliperColor, 1);
 		caliperDisplayPanel.setBorder(caliperBorder);
