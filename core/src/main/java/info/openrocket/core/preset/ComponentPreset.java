@@ -170,10 +170,7 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 				ComponentPreset.PACKED_DIAMETER,
 				ComponentPreset.PACKED_LENGTH,
                 ComponentPreset.MASS, //ajout de la masse
-
-
-
-
+                ComponentPreset.CD_AREA
                });
 
 		TypedKey<?>[] displayedColumns;
@@ -247,9 +244,8 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 			UnitGroup.UNITS_LENGTH);
 	public final static TypedKey<Double> SURFACE_AREA = new TypedKey<>("SurfaceArea", Double.class,
 			UnitGroup.UNITS_AREA);
-
-
-
+    public final static TypedKey<Double> CD_AREA = new TypedKey<>("CdArea", Double.class,
+            UnitGroup.UNITS_AREA);
 
     // Parachute canopy material declaration see: MATERIAL
 	public final static TypedKey<Integer> SIDES = new TypedKey<>("Sides", Integer.class);
@@ -298,7 +294,8 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
             CD,
             SURFACE_AREA,
             PACKED_LENGTH,
-            PACKED_DIAMETER));
+            PACKED_DIAMETER,
+            CD_AREA));
 
 	// package scope constructor to encourage use of factory.
 	ComponentPreset() {

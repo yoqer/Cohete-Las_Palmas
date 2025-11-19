@@ -75,21 +75,38 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
                 value = (Double) rawValue;
             }
 
-            // Si AREA n'existe pas mais DIAMETER existe, calculer AREA à partir de DIAMETER
+            // If AREA does not exist but DIAMETER exists, calculate AREA from DIAMETER
             if (value == null && key == ComponentPreset.SURFACE_AREA && preset.has(ComponentPreset.DIAMETER)) {
                 double diameter = preset.get(ComponentPreset.DIAMETER);
                 value = Math.PI * Math.pow(diameter / 2.0, 2.0);
             }
 
-            if ( value != null ) {
+            // Se for CD_AREA, calcula a partir de SURFACE_AREA e Cd
+            if (value == null && preset.has(ComponentPreset.CD)) {
+                Double area = null;
+                Double cd = preset.get(ComponentPreset.CD);
+
+                // Pega area
+                if (preset.has(ComponentPreset.SURFACE_AREA)) {
+                    area = preset.get(ComponentPreset.SURFACE_AREA);
+                } else if (preset.has(ComponentPreset.DIAMETER)) {
+                    double diameter = preset.get(ComponentPreset.DIAMETER);
+                    area = Math.PI * Math.pow(diameter / 2.0, 2.0);
+                }
+
+                // Calcula CD_AREA
+                if (area != null && cd != null) {
+                    value = area * cd;
+                }
+            }
+
+            // Retorna Value com unidade
+            if (value != null) {
                 return new Value(value, selectedUnit);
             } else {
                 return null;
             }
         }
-
-
-
     }
 
 }
