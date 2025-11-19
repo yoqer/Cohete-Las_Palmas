@@ -41,11 +41,17 @@ import info.openrocket.swing.gui.figureelements.CGCaret;
 import info.openrocket.swing.gui.figureelements.CPCaret;
 import info.openrocket.swing.gui.figureelements.Caret;
 import info.openrocket.swing.gui.figureelements.RocketInfo;
+import info.openrocket.swing.gui.figureelements.CaliperLine;
+import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.simulation.SimulationWorker;
 import info.openrocket.swing.gui.util.GUIUtil;
+import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.widgets.IconToggleButton;
 import info.openrocket.swing.utils.CustomClickCountListener;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -60,10 +66,17 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.JSpinner;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.JTextField;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.FlowLayout;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -189,6 +202,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private Caret extraCG = null;
 	private RocketInfo extraText = null;
 
+	/* Caliper tool */
+	private boolean caliperEnabled = false;
+	private CaliperLine leftCaliperLine = null;
+	private CaliperLine rightCaliperLine = null;
+	private DoubleModel caliperDistanceModel = null;
+	private double leftCaliperX = Double.NaN;
+	private double rightCaliperX = Double.NaN;
+	private CaliperLine draggingCaliperLine = null;  // Which caliper line is being dragged
+	private JSpinner caliperDistanceSpinner = null;
+	private UnitSelector caliperUnitSelector = null;
+
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
 	private double cpMach = Double.NaN;
@@ -268,15 +292,129 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				}
 				mousePressedLoc = e.getPoint();
 				originalFigureRotation = figure.getRotation();
+				
+				// Check if clicking on a caliper handle
+				if (caliperEnabled && e.getButton() == MouseEvent.BUTTON1) {
+					Point p0 = e.getPoint();
+					Point p1 = getViewport().getViewPosition();
+					int x = p0.x + p1.x;
+					int y = p0.y + p1.y;
+					
+					// Convert to model coordinates
+					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, y);
+					if (modelPoint != null) {
+						// Check if click is near a caliper line
+						// Use X proximity only - user can click anywhere along the line to drag it
+						double handleTolerance = 0.01; // 1 cm tolerance in model coordinates
+						
+						if (Math.abs(modelPoint.x - leftCaliperX) < handleTolerance) {
+							draggingCaliperLine = leftCaliperLine;
+							return;
+						}
+						if (Math.abs(modelPoint.x - rightCaliperX) < handleTolerance) {
+							draggingCaliperLine = rightCaliperLine;
+							return;
+						}
+					}
+				}
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				if (caliperEnabled && draggingCaliperLine != null && e.getButton() == MouseEvent.BUTTON1) {
+					// Dragging a caliper line
+					Point p0 = e.getPoint();
+					Point p1 = getViewport().getViewPosition();
+					int x = p0.x + p1.x;
+					
+					// Convert to model coordinates
+					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, p0.y + p1.y);
+					if (modelPoint != null) {
+						double newX = modelPoint.x;
+						
+						if (draggingCaliperLine == leftCaliperLine) {
+							leftCaliperX = newX;
+							leftCaliperLine.setX(newX);
+						} else if (draggingCaliperLine == rightCaliperLine) {
+							rightCaliperX = newX;
+							rightCaliperLine.setX(newX);
+						}
+						
+						updateCaliperDistance();
+						updateFigures();
+					}
+				} else {
+					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				}
+			}
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (draggingCaliperLine != null) {
+					draggingCaliperLine = null;
+				}
+				super.mouseReleased(e);
+			}
+			
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				if (caliperEnabled && !is3d && leftCaliperLine != null && rightCaliperLine != null) {
+					Point p0 = e.getPoint();
+					Point p1 = getViewport().getViewPosition();
+					int x = p0.x + p1.x;
+					int y = p0.y + p1.y;
+					
+					// Convert to model coordinates
+					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, y);
+					if (modelPoint != null) {
+						// Check if mouse is near a caliper line (use same tolerance as click detection)
+						// Only check X proximity - the handle extends along the line, so we check the whole line
+						// but with a tighter tolerance to match click detection
+						double hoverTolerance = 0.01; // 1 cm tolerance - same as click detection for X
+						
+						boolean nearLeft = Math.abs(modelPoint.x - leftCaliperX) < hoverTolerance;
+						boolean nearRight = Math.abs(modelPoint.x - rightCaliperX) < hoverTolerance;
+						
+						// Update hover state
+						boolean leftWasHovered = leftCaliperLine.isHovered();
+						boolean rightWasHovered = rightCaliperLine.isHovered();
+						
+						leftCaliperLine.setHovered(nearLeft);
+						rightCaliperLine.setHovered(nearRight);
+						
+						// Repaint if hover state changed
+						if (leftWasHovered != nearLeft || rightWasHovered != nearRight) {
+							updateFigures();
+						}
+					}
+				}
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// Clear hover state when mouse leaves
+				if (caliperEnabled && leftCaliperLine != null && rightCaliperLine != null) {
+					boolean wasHovered = leftCaliperLine.isHovered() || rightCaliperLine.isHovered();
+					leftCaliperLine.setHovered(false);
+					rightCaliperLine.setHovered(false);
+					if (wasHovered) {
+						updateFigures();
+					}
+				}
+			}
+			
+			/**
+			 * Convert screen coordinates to model coordinates.
+			 */
+			private java.awt.geom.Point2D.Double screenToModel(int screenX, int screenY) {
+				return figure.screenToModel(screenX, screenY);
 			}
 		};
 		scrollPane.getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
 		scrollPane.setFitting(true);
+
+		// Initialize caliper distance model early so it can be used in createPanel()
+		caliperDistanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
 
 		createPanel();
 
@@ -341,6 +479,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		rotationControl.setEnabled(false);
 		scaleSelector.setEnabled(false);
 
+		// Caliper is only available in 2D views
+		updateCaliperElements();
+
 		revalidate();
 		figureHolder.revalidate();
 
@@ -355,6 +496,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figureHolder.add(scrollPane, BorderLayout.CENTER);
 		rotationControl.setEnabled(true);
 		scaleSelector.setEnabled(true);
+		
+		// Caliper is available in 2D views
+		updateCaliperElements();
+		
 		scrollPane.revalidate();
 		scrollPane.repaint();
 		revalidate();
@@ -400,6 +545,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					figure.setType(v);
 					updateExtras(); // when switching from side view to back view, need to clear CP & CG markers
 					go2D();
+					// Update caliper elements when switching between 2D views
+					updateCaliperElements();
 				}
 			}
 		};
@@ -439,26 +586,84 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			}
 		});
 
+		// Caliper tool toggle button
+		IconToggleButton caliperToggle = new IconToggleButton();
+		caliperToggle.setSelectedIcon(Icons.RULER);
+		caliperToggle.setToolTipText(trans.get("RocketPanel.btn.Caliper"));
+		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
+		ribbon.add(caliperToggle, "cell 5 1, gapleft para");
+		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
+		
+		// Caliper distance spinner (non-editable)
+		caliperDistanceSpinner = new JSpinner(caliperDistanceModel.getSpinnerModel());
+		caliperDistanceSpinner.setEnabled(false);  // Disable spinner controls
+		JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) caliperDistanceSpinner.getEditor();
+		JTextField textField = editor.getTextField();
+		textField.setEditable(false);
+		textField.setEnabled(true);
+		textField.setBackground(ribbon.getBackground());  // Match background
+		textField.setForeground(caliperColor);  // Use caliper line color for text
+
+		// Caliper unit selector
+		caliperUnitSelector = new UnitSelector(caliperDistanceModel);
+		caliperUnitSelector.setOpaque(false);
+
+		// Panel containing spinner + unit selector with colored border
+		final JPanel caliperDisplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		caliperDisplayPanel.setOpaque(false);
+		Border caliperBorder = new LineBorder(caliperColor, 1);
+		caliperDisplayPanel.setBorder(caliperBorder);
+		caliperDisplayPanel.add(caliperDistanceSpinner);
+		caliperDisplayPanel.add(caliperUnitSelector);
+		caliperDisplayPanel.setVisible(false);
+		caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
+		ribbon.add(caliperDisplayPanel, "cell 5 1, gapleft 5, wmin 0, wmax 160");
+
+		// Update visibility when caliper is toggled
+		caliperToggle.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				caliperEnabled = caliperToggle.isSelected();
+				if (caliperEnabled) {
+					// Initialize positions if not already set
+					if (Double.isNaN(leftCaliperX) || Double.isNaN(rightCaliperX)) {
+						initializeCaliperPositions();
+					}
+					// Show panel containing spinner + unit selector
+					caliperDisplayPanel.setVisible(true);
+					caliperDisplayPanel.setPreferredSize(null);  // Reset to default size
+				} else {
+					// Hide panel when caliper disabled
+					caliperDisplayPanel.setVisible(false);
+					caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
+				}
+				updateCaliperElements();
+				updateFigures();
+				ribbon.revalidate();
+				ribbon.repaint();
+			}
+		});
+
 		// Vertical separator
 		JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
 		Dimension d_sep = sep.getPreferredSize();
 		d_sep.height = (int) (0.7 * ribbon.getPreferredSize().height);
 		sep.setPreferredSize(d_sep);
-		ribbon.add(sep, "cell 5 0, spany 2, gapleft para, gapright para");
+		ribbon.add(sep, "cell 6 0, spany 2, gapleft para, gapright para");
 
 		// Stage selector
 		StageSelector stageSelector = new StageSelector( rkt );
 		rkt.addChangeListener(stageSelector);
-		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Stages")), "cell 6 0, pushx");
-		ribbon.add(stageSelector, "cell 6 1, pushx");
+		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Stages")), "cell 7 0, pushx");
+		ribbon.add(stageSelector, "cell 7 1, pushx");
 
 		// Flight configuration selector
 		//// Flight configuration:
 		JLabel label = new JLabel(trans.get("RocketPanel.lbl.Flightcfg"));
-		ribbon.add(label, "cell 7 0");
+		ribbon.add(label, "cell 8 0");
 
 		final ConfigurationComboBox configComboBox = new ConfigurationComboBox(rkt);
-		ribbon.add(configComboBox, "cell 7 1, width 16%, wmin 100");
+		ribbon.add(configComboBox, "cell 8 1, width 16%, wmin 100");
 
 		add(ribbon, "growx, span, wrap");
 
@@ -1149,18 +1354,76 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		extraCP = new CPCaret(0, 0);
 		extraText = new RocketInfo(curConfig);
 		
+		// Initialize caliper components (caliperDistanceModel is already initialized in constructor)
+		if (caliperDistanceModel == null) {
+			caliperDistanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
+		}
+		leftCaliperLine = new CaliperLine(0.0);
+		leftCaliperLine.setHandleLabel("1");
+		rightCaliperLine = new CaliperLine(0.0);
+		rightCaliperLine.setHandleLabel("2");
+		
 		updateExtras();
 
+		updateCaliperElements();
+	}
+	
+	/**
+	 * Updates the caliper elements in the figure based on caliperEnabled state.
+	 */
+	private void updateCaliperElements() {
 		figure.clearRelativeExtra();
 		figure.addRelativeExtra(extraCP);
 		figure.addRelativeExtra(extraCG);
 		figure.addAbsoluteExtra(extraText);
+		
+		if (caliperEnabled && !is3d) {
+			figure.addRelativeExtra(leftCaliperLine);
+			figure.addRelativeExtra(rightCaliperLine);
+		}
 
 		figure3d.clearRelativeExtra();
 		//figure3d.addRelativeExtra(extraCP);
 		//figure3d.addRelativeExtra(extraCG);
 		figure3d.addAbsoluteExtra(extraText);
-
+	}
+	
+	/**
+	 * Calculate and update the caliper distance.
+	 */
+	private void updateCaliperDistance() {
+		if (!caliperEnabled || Double.isNaN(leftCaliperX) || Double.isNaN(rightCaliperX)) {
+			return;
+		}
+		
+		double distance = Math.abs(rightCaliperX - leftCaliperX);
+		caliperDistanceModel.setValue(distance);
+	}
+	
+	/**
+	 * Initialize caliper positions based on rocket bounds.
+	 */
+	private void initializeCaliperPositions() {
+		FlightConfiguration curConfig = document.getSelectedConfiguration();
+		info.openrocket.core.util.BoundingBox bounds = curConfig.getBoundingBox();
+		
+		if (bounds == null || bounds.span().getX() <= 0) {
+			// Default positions if bounds are invalid
+			leftCaliperX = 0.0;
+			rightCaliperX = 0.1;
+		} else {
+			leftCaliperX = bounds.min.getX();
+			rightCaliperX = bounds.max.getX();
+		}
+		
+		if (leftCaliperLine != null) {
+			leftCaliperLine.setX(leftCaliperX);
+		}
+		if (rightCaliperLine != null) {
+			rightCaliperLine.setX(rightCaliperX);
+		}
+		
+		updateCaliperDistance();
 	}
 
 	/**

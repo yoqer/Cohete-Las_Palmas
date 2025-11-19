@@ -419,6 +419,26 @@ public class RocketFigure extends AbstractScaleFigure {
 		return l.toArray(new RocketComponent[0]);
 	}
 	
+	/**
+	 * Convert screen coordinates to model coordinates.
+	 * 
+	 * @param screenX the x coordinate in screen pixels
+	 * @param screenY the y coordinate in screen pixels
+	 * @return the point in model coordinates, or null if transformation fails
+	 */
+	public Point2D.Double screenToModel(double screenX, double screenY) {
+		Point2D.Double p = new Point2D.Double(screenX, screenY);
+		try {
+			if (projection != null) {
+				projection.inverseTransform(p, p);
+				return p;
+			}
+		} catch (NoninvertibleTransformException e) {
+			// Ignore
+		}
+		return null;
+	}
+	
 	private void updateShapes(PriorityQueue<RocketComponentShapes> allShapes) {
 		// source input
 		final FlightConfiguration config = rocket.getSelectedConfiguration();

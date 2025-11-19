@@ -112,6 +112,7 @@ public class UITheme {
 
         Color getCGColor();
         Color getCPColor();
+        Color getCaliperColor();
 
         Color getURLColor();
 
@@ -403,6 +404,11 @@ public class UITheme {
             @Override
             public Color getCPColor() {
                 return Color.RED;
+            }
+
+            @Override
+            public Color getCaliperColor() {
+                return new Color(255, 100, 255);
             }
 
             @Override
@@ -827,6 +833,11 @@ public class UITheme {
             }
 
             @Override
+            public Color getCaliperColor() {
+                return new Color(255, 120, 255);
+            }
+
+            @Override
             public Color getURLColor() {
                 return new Color(150, 167, 255);
             }
@@ -1245,6 +1256,11 @@ public class UITheme {
             @Override
             public Color getCPColor() {
                 return new Color(255, 72, 106);
+            }
+
+            @Override
+            public Color getCaliperColor() {
+                return new Color(255, 120, 255);
             }
 
             @Override
@@ -1685,6 +1701,11 @@ public class UITheme {
             @Override
             public Color getCPColor() {
                 return getCurrentTheme().getCPColor();
+            }
+
+            @Override
+            public Color getCaliperColor() {
+                return getCurrentTheme().getCaliperColor();
             }
 
             @Override
