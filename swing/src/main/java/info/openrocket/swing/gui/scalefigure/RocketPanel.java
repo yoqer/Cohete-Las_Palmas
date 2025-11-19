@@ -185,7 +185,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private boolean is3d;
 	private final RocketFigure figure;
 	private final RocketFigure3d figure3d;
-	private VIEW_TYPE currentView = null;
+	private VIEW_TYPE currentView = VIEW_TYPE.getDefaultViewType();
 
 	private final ScaleScrollPane scrollPane;
 
@@ -498,6 +498,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					return;
 				}
 
+				// Save caliper state before switching views
 				if (caliperManager != null) {
 					caliperManager.saveCurrentCaliperState();
 				}
