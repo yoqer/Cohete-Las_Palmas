@@ -43,6 +43,7 @@ import info.openrocket.swing.gui.figureelements.CPCaret;
 import info.openrocket.swing.gui.figureelements.Caret;
 import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.figureelements.CaliperLine;
+import info.openrocket.swing.gui.figureelements.HorizontalCaliperLine;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.components.EditableSpinner;
@@ -210,19 +211,34 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private static final class CaliperState {
 		double caliper1X = Double.NaN;
 		double caliper2X = Double.NaN;
+		double caliper1Y = Double.NaN;
+		double caliper2Y = Double.NaN;
 	}
 
 	/* Caliper tool */
+	public enum CaliperMode {
+		VERTICAL,
+		HORIZONTAL
+	}
+	
 	private boolean caliperEnabled = false;
+	private CaliperMode caliperMode = CaliperMode.VERTICAL;
 	private CaliperLine caliper1Line = null;
 	private CaliperLine caliper2Line = null;
+	private HorizontalCaliperLine caliper1HorizontalLine = null;
+	private HorizontalCaliperLine caliper2HorizontalLine = null;
 	private DoubleModel caliperDistanceModel = null;
+	private DoubleModel caliperHorizontalDistanceModel = null;
 	private double caliper1X = Double.NaN;
 	private double caliper2X = Double.NaN;
-	private CaliperLine draggingCaliperLine = null;  // Which caliper line is being dragged
+	private double caliper1Y = Double.NaN;
+	private double caliper2Y = Double.NaN;
+	private CaliperLine draggingCaliperLine = null;  // Which vertical caliper line is being dragged
+	private HorizontalCaliperLine draggingHorizontalCaliperLine = null;  // Which horizontal caliper line is being dragged
 	private JSpinner caliperDistanceSpinner = null;
 	private UnitSelector caliperUnitSelector = null;
 	private IconToggleButton caliperToggle = null;
+	private JButton caliperModeButton = null;
 	private JPanel caliperDisplayPanel = null;
 	private boolean caliperWasEnabledBefore3d = false;
 	private DoubleModel caliper1PositionModel = null;
@@ -324,16 +340,29 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, y);
 					if (modelPoint != null) {
 						// Check if click is near a caliper line
-						// Use X proximity only - user can click anywhere along the line to drag it
+						// Use proximity check - user can click anywhere along the line to drag it
 						double handleTolerance = 0.01; // 1 cm tolerance in model coordinates
 						
-						if (Math.abs(modelPoint.x - caliper1X) < handleTolerance) {
-							draggingCaliperLine = caliper1Line;
-							return;
-						}
-						if (Math.abs(modelPoint.x - caliper2X) < handleTolerance) {
-							draggingCaliperLine = caliper2Line;
-							return;
+						if (caliperMode == CaliperMode.VERTICAL) {
+							// Check vertical caliper lines (X proximity)
+							if (Math.abs(modelPoint.x - caliper1X) < handleTolerance) {
+								draggingCaliperLine = caliper1Line;
+								return;
+							}
+							if (Math.abs(modelPoint.x - caliper2X) < handleTolerance) {
+								draggingCaliperLine = caliper2Line;
+								return;
+							}
+						} else {
+							// Check horizontal caliper lines (Y proximity)
+							if (Math.abs(modelPoint.y - caliper1Y) < handleTolerance) {
+								draggingHorizontalCaliperLine = caliper1HorizontalLine;
+								return;
+							}
+							if (Math.abs(modelPoint.y - caliper2Y) < handleTolerance) {
+								draggingHorizontalCaliperLine = caliper2HorizontalLine;
+								return;
+							}
 						}
 					}
 				}
@@ -341,24 +370,40 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				if (caliperEnabled && draggingCaliperLine != null && e.getButton() == MouseEvent.BUTTON1) {
-					// Dragging a caliper line
+				if (caliperEnabled && e.getButton() == MouseEvent.BUTTON1) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
+					int y = p0.y + p1.y;
 					
 					// Convert to model coordinates
-					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, p0.y + p1.y);
+					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, y);
 					if (modelPoint != null) {
-						double newX = modelPoint.x;
+						// Dragging a vertical caliper line
+						if (draggingCaliperLine != null) {
+							double newX = modelPoint.x;
+							if (draggingCaliperLine == caliper1Line) {
+								setCaliperLinePosition(true, newX);
+							} else if (draggingCaliperLine == caliper2Line) {
+								setCaliperLinePosition(false, newX);
+							}
+							return;
+						}
 						
-						if (draggingCaliperLine == caliper1Line) {
-							setCaliperLinePosition(true, newX);
-						} else if (draggingCaliperLine == caliper2Line) {
-							setCaliperLinePosition(false, newX);
+						// Dragging a horizontal caliper line
+						if (draggingHorizontalCaliperLine != null) {
+							double newY = modelPoint.y;
+							if (draggingHorizontalCaliperLine == caliper1HorizontalLine) {
+								setHorizontalCaliperLinePosition(true, newY);
+							} else if (draggingHorizontalCaliperLine == caliper2HorizontalLine) {
+								setHorizontalCaliperLinePosition(false, newY);
+							}
+							return;
 						}
 					}
-				} else {
+				}
+				
+				if (draggingCaliperLine == null && draggingHorizontalCaliperLine == null) {
 					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
 				}
 			}
@@ -368,12 +413,15 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (draggingCaliperLine != null) {
 					draggingCaliperLine = null;
 				}
+				if (draggingHorizontalCaliperLine != null) {
+					draggingHorizontalCaliperLine = null;
+				}
 				super.mouseReleased(e);
 			}
 			
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				if (caliperEnabled && !is3d && caliper1Line != null && caliper2Line != null) {
+				if (caliperEnabled && !is3d) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
@@ -383,22 +431,40 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					java.awt.geom.Point2D.Double modelPoint = screenToModel(x, y);
 					if (modelPoint != null) {
 						// Check if mouse is near a caliper line (use same tolerance as click detection)
-						// Only check X proximity - the handle extends along the line, so we check the whole line
-						// but with a tighter tolerance to match click detection
-						double hoverTolerance = 0.01; // 1 cm tolerance - same as click detection for X
+						double hoverTolerance = 0.01; // 1 cm tolerance - same as click detection
 						
-						boolean nearCal1 = Math.abs(modelPoint.x - caliper1X) < hoverTolerance;
-						boolean nearCal2 = Math.abs(modelPoint.x - caliper2X) < hoverTolerance;
+						boolean repaintNeeded = false;
 						
-						// Update hover state
-						boolean cal1WasHovered = caliper1Line.isHovered();
-						boolean cal2WasHovered = caliper2Line.isHovered();
-						
-						caliper1Line.setHovered(nearCal1);
-						caliper2Line.setHovered(nearCal2);
+						if (caliperMode == CaliperMode.VERTICAL && caliper1Line != null && caliper2Line != null) {
+							// Check vertical caliper lines (X proximity)
+							boolean nearCal1X = Math.abs(modelPoint.x - caliper1X) < hoverTolerance;
+							boolean nearCal2X = Math.abs(modelPoint.x - caliper2X) < hoverTolerance;
+							
+							// Update hover state for vertical calipers
+							boolean cal1XWasHovered = caliper1Line.isHovered();
+							boolean cal2XWasHovered = caliper2Line.isHovered();
+							
+							caliper1Line.setHovered(nearCal1X);
+							caliper2Line.setHovered(nearCal2X);
+							
+							repaintNeeded = (cal1XWasHovered != nearCal1X || cal2XWasHovered != nearCal2X);
+						} else if (caliperMode == CaliperMode.HORIZONTAL && caliper1HorizontalLine != null && caliper2HorizontalLine != null) {
+							// Check horizontal caliper lines (Y proximity)
+							boolean nearCal1Y = Math.abs(modelPoint.y - caliper1Y) < hoverTolerance;
+							boolean nearCal2Y = Math.abs(modelPoint.y - caliper2Y) < hoverTolerance;
+							
+							// Update hover state for horizontal calipers
+							boolean cal1YWasHovered = caliper1HorizontalLine.isHovered();
+							boolean cal2YWasHovered = caliper2HorizontalLine.isHovered();
+							
+							caliper1HorizontalLine.setHovered(nearCal1Y);
+							caliper2HorizontalLine.setHovered(nearCal2Y);
+							
+							repaintNeeded = (cal1YWasHovered != nearCal1Y || cal2YWasHovered != nearCal2Y);
+						}
 						
 						// Repaint if hover state changed
-						if (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2) {
+						if (repaintNeeded) {
 							updateFigures();
 						}
 					}
@@ -408,10 +474,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			@Override
 			public void mouseExited(MouseEvent e) {
 				// Clear hover state when mouse leaves
-				if (caliperEnabled && caliper1Line != null && caliper2Line != null) {
-					boolean wasHovered = caliper1Line.isHovered() || caliper2Line.isHovered();
-					caliper1Line.setHovered(false);
-					caliper2Line.setHovered(false);
+				if (caliperEnabled) {
+					boolean wasHovered = false;
+					if (caliperMode == CaliperMode.VERTICAL && caliper1Line != null && caliper2Line != null) {
+						wasHovered = caliper1Line.isHovered() || caliper2Line.isHovered();
+						caliper1Line.setHovered(false);
+						caliper2Line.setHovered(false);
+					} else if (caliperMode == CaliperMode.HORIZONTAL && caliper1HorizontalLine != null && caliper2HorizontalLine != null) {
+						wasHovered = caliper1HorizontalLine.isHovered() || caliper2HorizontalLine.isHovered();
+						caliper1HorizontalLine.setHovered(false);
+						caliper2HorizontalLine.setHovered(false);
+					}
 					if (wasHovered) {
 						updateFigures();
 					}
@@ -663,6 +736,43 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		caliperToggle.setToolTipText(trans.get("RocketPanel.btn.Caliper"));
 		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
 		ribbon.add(caliperToggle, "cell 5 1, gapleft para");
+		
+		// Caliper mode toggle button (Vertical/Horizontal)
+		caliperModeButton = new JButton("V");
+		caliperModeButton.setToolTipText("Switch to horizontal calipers");
+		caliperModeButton.setEnabled(false);
+		caliperModeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// Toggle between VERTICAL and HORIZONTAL
+				if (caliperMode == CaliperMode.VERTICAL) {
+					caliperMode = CaliperMode.HORIZONTAL;
+					caliperModeButton.setText("H");
+					caliperModeButton.setToolTipText("Switch to vertical calipers");
+					// Switch distance model to horizontal
+					if (caliperHorizontalDistanceModel != null) {
+						caliperDistanceSpinner.setModel(caliperHorizontalDistanceModel.getSpinnerModel());
+						caliperUnitSelector.setModel(caliperHorizontalDistanceModel);
+					}
+				} else {
+					caliperMode = CaliperMode.VERTICAL;
+					caliperModeButton.setText("V");
+					caliperModeButton.setToolTipText("Switch to horizontal calipers");
+					// Switch distance model to vertical
+					if (caliperDistanceModel != null) {
+						caliperDistanceSpinner.setModel(caliperDistanceModel.getSpinnerModel());
+						caliperUnitSelector.setModel(caliperDistanceModel);
+					}
+				}
+				updateCaliperElements();
+				updateCaliperPositionModelsFromState();
+				updateCaliperDistance();
+				updateCaliperHorizontalDistance();
+				updateFigures();
+			}
+		});
+		ribbon.add(caliperModeButton, "cell 5 1, gapleft 2");
+		
 		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
 
 		// Caliper panel
@@ -700,7 +810,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (updatingCaliperPositionModels) {
 					return;
 				}
-				setCaliperLinePosition(true, caliper1PositionModel.getValue());
+				if (caliperMode == CaliperMode.VERTICAL) {
+					setCaliperLinePosition(true, caliper1PositionModel.getValue());
+				} else {
+					setHorizontalCaliperLinePosition(true, caliper1PositionModel.getValue());
+				}
 			}
 		});
 		
@@ -710,7 +824,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (updatingCaliperPositionModels) {
 					return;
 				}
-				setCaliperLinePosition(false, caliper2PositionModel.getValue());
+				if (caliperMode == CaliperMode.VERTICAL) {
+					setCaliperLinePosition(false, caliper2PositionModel.getValue());
+				} else {
+					setHorizontalCaliperLinePosition(false, caliper2PositionModel.getValue());
+				}
 			}
 		});
 		
@@ -751,13 +869,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				caliperEnabled = caliperToggle.isSelected();
+				if (caliperModeButton != null) {
+					caliperModeButton.setEnabled(caliperEnabled);
+				}
 				if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
 					caliper1PositionSpinner.setEnabled(caliperEnabled);
 					caliper2PositionSpinner.setEnabled(caliperEnabled);
 				}
 				if (caliperEnabled) {
 					// Initialize positions if not already set
-					if (Double.isNaN(caliper1X) || Double.isNaN(caliper2X)) {
+					if ((caliperMode == CaliperMode.VERTICAL && (Double.isNaN(caliper1X) || Double.isNaN(caliper2X))) ||
+							(caliperMode == CaliperMode.HORIZONTAL && (Double.isNaN(caliper1Y) || Double.isNaN(caliper2Y)))) {
 						initializeCaliperPositions();
 					}
 					// Show panel
@@ -1488,10 +1610,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperDistanceModel == null) {
 			caliperDistanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
 		}
+		if (caliperHorizontalDistanceModel == null) {
+			caliperHorizontalDistanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
+		}
 		caliper1Line = new CaliperLine(0.0);
 		caliper1Line.setHandleLabel("1");
 		caliper2Line = new CaliperLine(0.0);
 		caliper2Line.setHandleLabel("2");
+		caliper1HorizontalLine = new HorizontalCaliperLine(0.0);
+		caliper1HorizontalLine.setHandleLabel("1");
+		caliper2HorizontalLine = new HorizontalCaliperLine(0.0);
+		caliper2HorizontalLine.setHandleLabel("2");
 		loadCaliperStateForView(getCurrentViewType());
 		
 		updateExtras();
@@ -1510,8 +1639,13 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figure.addAbsoluteExtra(extraText);
 		
 		if (caliperEnabled && !is3d) {
-			figure.addRelativeExtra(caliper1Line);
-			figure.addRelativeExtra(caliper2Line);
+			if (caliperMode == CaliperMode.VERTICAL) {
+				figure.addRelativeExtra(caliper1Line);
+				figure.addRelativeExtra(caliper2Line);
+			} else {
+				figure.addRelativeExtra(caliper1HorizontalLine);
+				figure.addRelativeExtra(caliper2HorizontalLine);
+			}
 		}
 
 		figure3d.clearRelativeExtra();
@@ -1530,6 +1664,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		
 		double distance = Math.abs(caliper2X - caliper1X);
 		caliperDistanceModel.setValue(distance);
+	}
+
+	private void updateCaliperHorizontalDistance() {
+		if (Double.isNaN(caliper1Y) || Double.isNaN(caliper2Y)) {
+			return;
+		}
+		
+		double distance = Math.abs(caliper2Y - caliper1Y);
+		if (caliperHorizontalDistanceModel != null) {
+			caliperHorizontalDistanceModel.setValue(distance);
+		}
 	}
 	
 	private void setCaliperLinePosition(boolean cal1Handle, double position) {
@@ -1552,6 +1697,27 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		saveCurrentCaliperState();
 		updateFigures();
 	}
+
+	private void setHorizontalCaliperLinePosition(boolean cal1Handle, double position) {
+		if (Double.isNaN(position)) {
+			return;
+		}
+		if (cal1Handle) {
+			caliper1Y = position;
+			if (caliper1HorizontalLine != null) {
+				caliper1HorizontalLine.setY(position);
+			}
+		} else {
+			caliper2Y = position;
+			if (caliper2HorizontalLine != null) {
+				caliper2HorizontalLine.setY(position);
+			}
+		}
+		updateCaliperHorizontalDistance();
+		updateCaliperPositionModelsFromState();
+		saveCurrentCaliperState();
+		updateFigures();
+	}
 	
 	private void updateCaliperPositionModelsFromState() {
 		if (caliper1PositionModel == null || caliper2PositionModel == null) {
@@ -1559,11 +1725,20 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		updatingCaliperPositionModels = true;
 		try {
-			if (!Double.isNaN(caliper1X)) {
-				caliper1PositionModel.setValue(caliper1X);
-			}
-			if (!Double.isNaN(caliper2X)) {
-				caliper2PositionModel.setValue(caliper2X);
+			if (caliperMode == CaliperMode.VERTICAL) {
+				if (!Double.isNaN(caliper1X)) {
+					caliper1PositionModel.setValue(caliper1X);
+				}
+				if (!Double.isNaN(caliper2X)) {
+					caliper2PositionModel.setValue(caliper2X);
+				}
+			} else {
+				if (!Double.isNaN(caliper1Y)) {
+					caliper1PositionModel.setValue(caliper1Y);
+				}
+				if (!Double.isNaN(caliper2Y)) {
+					caliper2PositionModel.setValue(caliper2Y);
+				}
 			}
 		} finally {
 			updatingCaliperPositionModels = false;
@@ -1586,6 +1761,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		state.caliper1X = caliper1X;
 		state.caliper2X = caliper2X;
+		state.caliper1Y = caliper1Y;
+		state.caliper2Y = caliper2Y;
 	}
 
 	private void loadCaliperStateForView(VIEW_TYPE viewType) {
@@ -1595,9 +1772,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		caliper1X = state.caliper1X;
 		caliper2X = state.caliper2X;
+		caliper1Y = state.caliper1Y;
+		caliper2Y = state.caliper2Y;
 		
 		// If state is uninitialized (NaN), initialize it for this view
-		if (Double.isNaN(caliper1X) || Double.isNaN(caliper2X)) {
+		if (Double.isNaN(caliper1X) || Double.isNaN(caliper2X) || 
+				Double.isNaN(caliper1Y) || Double.isNaN(caliper2Y)) {
 			initializeCaliperPositions();
 			return;
 		}
@@ -1608,8 +1788,15 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliper2Line != null) {
 			caliper2Line.setX(caliper2X);
 		}
+		if (caliper1HorizontalLine != null) {
+			caliper1HorizontalLine.setY(caliper1Y);
+		}
+		if (caliper2HorizontalLine != null) {
+			caliper2HorizontalLine.setY(caliper2Y);
+		}
 		updateCaliperPositionModelsFromState();
 		updateCaliperDistance();
+		updateCaliperHorizontalDistance();
 	}
 	
 	/**
@@ -1628,11 +1815,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				// Default symmetric positions if bounds are invalid
 				caliper1X = -0.1;
 				caliper2X = 0.1;
+				caliper1Y = -0.1;
+				caliper2Y = 0.1;
 			} else {
-				// Use symmetric positions based on rocket height (Y dimension in back view)
-				double halfSpan = bounds.span().getY() / 2.0;
-				caliper1X = -halfSpan;
-				caliper2X = halfSpan;
+				// Use symmetric positions based on rocket dimensions
+				double halfSpanX = bounds.span().getY() / 2.0;  // Y dimension in back view
+				double halfSpanY = bounds.span().getZ() / 2.0;  // Z dimension in back view
+				caliper1X = -halfSpanX;
+				caliper2X = halfSpanX;
+				caliper1Y = -halfSpanY;
+				caliper2Y = halfSpanY;
 			}
 		} else {
 			// For side/top views, use fractional positions of rocket length (X dimension)
@@ -1645,11 +1837,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				// Default absolute positions if bounds are invalid or empty (no components)
 				caliper1X = 0.15;
 				caliper2X = 0.85;
+				caliper1Y = -0.1;
+				caliper2Y = 0.1;
 			} else {
-				// Use 15% and 85% of rocket length
+				// Use 15% and 85% of rocket length for X
 				double length = bounds.span().getX();
 				caliper1X = bounds.min.getX() + 0.15 * length;
 				caliper2X = bounds.min.getX() + 0.85 * length;
+				// Use symmetric positions for Y based on rocket height
+				double halfSpanY = bounds.span().getY() / 2.0;
+				caliper1Y = -halfSpanY;
+				caliper2Y = halfSpanY;
 			}
 		}
 		
@@ -1659,8 +1857,15 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliper2Line != null) {
 			caliper2Line.setX(caliper2X);
 		}
+		if (caliper1HorizontalLine != null) {
+			caliper1HorizontalLine.setY(caliper1Y);
+		}
+		if (caliper2HorizontalLine != null) {
+			caliper2HorizontalLine.setY(caliper2Y);
+		}
 		
 		updateCaliperDistance();
+		updateCaliperHorizontalDistance();
 		updateCaliperPositionModelsFromState();
 		saveCurrentCaliperState();
 	}
