@@ -44,6 +44,8 @@ import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.figureelements.CaliperLine;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.EditableSpinner;
+import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
@@ -69,10 +71,13 @@ import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
+import javax.swing.SpinnerModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.Font;
 import java.awt.Color;
@@ -215,6 +220,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private IconToggleButton caliperToggle = null;
 	private JPanel caliperDisplayPanel = null;
 	private boolean caliperWasEnabledBefore3d = false;
+	private DoubleModel leftCaliperPositionModel = null;
+	private DoubleModel rightCaliperPositionModel = null;
+	private JSpinner leftCaliperPositionSpinner = null;
+	private JSpinner rightCaliperPositionSpinner = null;
+	private JPanel caliperPositionPanel = null;
+	private boolean updatingCaliperPositionModels = false;
 
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
@@ -336,15 +347,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 						double newX = modelPoint.x;
 						
 						if (draggingCaliperLine == leftCaliperLine) {
-							leftCaliperX = newX;
-							leftCaliperLine.setX(newX);
+							setCaliperLinePosition(true, newX);
 						} else if (draggingCaliperLine == rightCaliperLine) {
-							rightCaliperX = newX;
-							rightCaliperLine.setX(newX);
+							setCaliperLinePosition(false, newX);
 						}
-						
-						updateCaliperDistance();
-						updateFigures();
 					}
 				} else {
 					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
@@ -491,7 +497,13 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		if (caliperDisplayPanel != null) {
 			caliperDisplayPanel.setVisible(false);
-			caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
+		}
+		if (caliperPositionPanel != null) {
+			caliperPositionPanel.setVisible(false);
+		}
+		if (leftCaliperPositionSpinner != null && rightCaliperPositionSpinner != null) {
+			leftCaliperPositionSpinner.setEnabled(false);
+			rightCaliperPositionSpinner.setEnabled(false);
 		}
 		
 		figureHolder.remove(scrollPane);
@@ -525,6 +537,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				caliperDisplayPanel.setVisible(true);
 				caliperDisplayPanel.setPreferredSize(null);
 			}
+			if (caliperPositionPanel != null) {
+				caliperPositionPanel.setVisible(true);
+			}
+			if (leftCaliperPositionSpinner != null && rightCaliperPositionSpinner != null) {
+				leftCaliperPositionSpinner.setEnabled(true);
+				rightCaliperPositionSpinner.setEnabled(true);
+			}
+			updateCaliperPositionModelsFromState();
 		}
 		caliperWasEnabledBefore3d = false;
 		
@@ -561,7 +581,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		setPreferredSize(new Dimension(800, 300));
 
-		JPanel ribbon = new JPanel(new MigLayout("insets 0, fill"));
+		JPanel ribbon = new JPanel(new MigLayout("insets 0, fill, hidemode 2"));
 
 		// View Type drop-down
 		ComboBoxModel<VIEW_TYPE> cm = new ViewTypeComboBoxModel(VIEW_TYPE.values(), VIEW_TYPE.getDefaultViewType()) {
@@ -643,23 +663,87 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Caliper unit selector
 		caliperUnitSelector = new UnitSelector(caliperDistanceModel);
 		caliperUnitSelector.setOpaque(false);
+		
+		// Caliper position models (share same unit group as caliper distance)
+		leftCaliperPositionModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
+		rightCaliperPositionModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
+		leftCaliperPositionModel.setCurrentUnit(caliperDistanceModel.getCurrentUnit());
+		rightCaliperPositionModel.setCurrentUnit(caliperDistanceModel.getCurrentUnit());
+		
+		leftCaliperPositionModel.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				if (updatingCaliperPositionModels) {
+					return;
+				}
+				setCaliperLinePosition(true, leftCaliperPositionModel.getValue());
+			}
+		});
+		
+		rightCaliperPositionModel.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				if (updatingCaliperPositionModels) {
+					return;
+				}
+				setCaliperLinePosition(false, rightCaliperPositionModel.getValue());
+			}
+		});
+		
+		// Keep position models in sync with unit selector
+		caliperUnitSelector.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					Unit selected = caliperUnitSelector.getSelectedUnit();
+					if (leftCaliperPositionModel != null && rightCaliperPositionModel != null) {
+						leftCaliperPositionModel.setCurrentUnit(selected);
+						rightCaliperPositionModel.setCurrentUnit(selected);
+						updateCaliperPositionModelsFromState();
+					}
+				}
+			}
+		});
 
 		// Panel containing spinner + unit selector with colored border
-		caliperDisplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		caliperDisplayPanel = new JPanel(new MigLayout("ins 0"));
 		caliperDisplayPanel.setOpaque(false);
 		Border caliperBorder = new LineBorder(caliperColor, 1);
-		caliperDisplayPanel.setBorder(caliperBorder);
-		caliperDisplayPanel.add(caliperDistanceSpinner);
-		caliperDisplayPanel.add(caliperUnitSelector);
+		caliperDisplayPanel.setBorder(new CompoundBorder(caliperBorder,
+				new EmptyBorder(1, 3, 1, 3)));
+		caliperDisplayPanel.add(caliperDistanceSpinner, "split 2, alignx center");
+		caliperDisplayPanel.add(caliperUnitSelector, "wrap");
 		caliperDisplayPanel.setVisible(false);
-		caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
-		ribbon.add(caliperDisplayPanel, "cell 5 1, gapleft 5, wmin 0, wmax 160");
+		ribbon.add(caliperDisplayPanel, "cell 5 1, gapleft 5");
+		
+		// Position spinners for each caliper handle
+		SpinnerModel leftPositionSpinnerModel = leftCaliperPositionModel.getSpinnerModel();
+		SpinnerModel rightPositionSpinnerModel = rightCaliperPositionModel.getSpinnerModel();
+		leftCaliperPositionSpinner = new EditableSpinner(leftPositionSpinnerModel);
+		rightCaliperPositionSpinner = new EditableSpinner(rightPositionSpinnerModel);
+		JSpinner.DefaultEditor leftPosEditor = (JSpinner.DefaultEditor) leftCaliperPositionSpinner.getEditor();
+		leftPosEditor.getTextField().setColumns(3);
+		JSpinner.DefaultEditor rightPosEditor = (JSpinner.DefaultEditor) rightCaliperPositionSpinner.getEditor();
+		rightPosEditor.getTextField().setColumns(3);
+		
+		caliperPositionPanel = new JPanel(new MigLayout("insets 0"));
+		caliperPositionPanel.setOpaque(false);
+		caliperPositionPanel.add(new JLabel("1:"));
+		caliperPositionPanel.add(leftCaliperPositionSpinner);
+		caliperPositionPanel.add(new JLabel("2:"), "gapleft unrel");
+		caliperPositionPanel.add(rightCaliperPositionSpinner, "wrap");
+		caliperPositionPanel.setVisible(false);
+		caliperDisplayPanel.add(caliperPositionPanel);
 
 		// Update visibility when caliper is toggled
 		caliperToggle.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				caliperEnabled = caliperToggle.isSelected();
+				if (leftCaliperPositionSpinner != null && rightCaliperPositionSpinner != null) {
+					leftCaliperPositionSpinner.setEnabled(caliperEnabled);
+					rightCaliperPositionSpinner.setEnabled(caliperEnabled);
+				}
 				if (caliperEnabled) {
 					// Initialize positions if not already set
 					if (Double.isNaN(leftCaliperX) || Double.isNaN(rightCaliperX)) {
@@ -667,11 +751,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					}
 					// Show panel containing spinner + unit selector
 					caliperDisplayPanel.setVisible(true);
-					caliperDisplayPanel.setPreferredSize(null);  // Reset to default size
+					if (caliperPositionPanel != null) {
+						caliperPositionPanel.setVisible(true);
+					}
+					updateCaliperPositionModelsFromState();
 				} else {
-					// Hide panel when caliper disabled
+					// Hide panels when caliper disabled
 					caliperDisplayPanel.setVisible(false);
-					caliperDisplayPanel.setPreferredSize(new Dimension(0, 0));
+					if (caliperPositionPanel != null) {
+						caliperPositionPanel.setVisible(false);
+					}
 				}
 				updateCaliperElements();
 				updateFigures();
@@ -1402,6 +1491,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		updateExtras();
 
 		updateCaliperElements();
+		updateCaliperPositionModelsFromState();
 	}
 	
 	/**
@@ -1428,12 +1518,49 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 * Calculate and update the caliper distance.
 	 */
 	private void updateCaliperDistance() {
-		if (!caliperEnabled || Double.isNaN(leftCaliperX) || Double.isNaN(rightCaliperX)) {
+		if (Double.isNaN(leftCaliperX) || Double.isNaN(rightCaliperX)) {
 			return;
 		}
 		
 		double distance = Math.abs(rightCaliperX - leftCaliperX);
 		caliperDistanceModel.setValue(distance);
+	}
+	
+	private void setCaliperLinePosition(boolean leftHandle, double position) {
+		if (Double.isNaN(position)) {
+			return;
+		}
+		if (leftHandle) {
+			leftCaliperX = position;
+			if (leftCaliperLine != null) {
+				leftCaliperLine.setX(position);
+			}
+		} else {
+			rightCaliperX = position;
+			if (rightCaliperLine != null) {
+				rightCaliperLine.setX(position);
+			}
+		}
+		updateCaliperDistance();
+		updateCaliperPositionModelsFromState();
+		updateFigures();
+	}
+	
+	private void updateCaliperPositionModelsFromState() {
+		if (leftCaliperPositionModel == null || rightCaliperPositionModel == null) {
+			return;
+		}
+		updatingCaliperPositionModels = true;
+		try {
+			if (!Double.isNaN(leftCaliperX)) {
+				leftCaliperPositionModel.setValue(leftCaliperX);
+			}
+			if (!Double.isNaN(rightCaliperX)) {
+				rightCaliperPositionModel.setValue(rightCaliperX);
+			}
+		} finally {
+			updatingCaliperPositionModels = false;
+		}
 	}
 	
 	/**
@@ -1460,6 +1587,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		
 		updateCaliperDistance();
+		updateCaliperPositionModelsFromState();
 	}
 
 	/**
