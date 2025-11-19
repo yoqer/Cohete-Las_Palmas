@@ -1595,10 +1595,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		caliper1X = state.caliper1X;
 		caliper2X = state.caliper2X;
-		if (!Double.isNaN(caliper1X) && caliper1Line != null) {
+		
+		// If state is uninitialized (NaN), initialize it for this view
+		if (Double.isNaN(caliper1X) || Double.isNaN(caliper2X)) {
+			initializeCaliperPositions();
+			return;
+		}
+		
+		if (caliper1Line != null) {
 			caliper1Line.setX(caliper1X);
 		}
-		if (!Double.isNaN(caliper2X) && caliper2Line != null) {
+		if (caliper2Line != null) {
 			caliper2Line.setX(caliper2X);
 		}
 		updateCaliperPositionModelsFromState();
@@ -1607,18 +1614,36 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	
 	/**
 	 * Initialize caliper positions based on rocket bounds.
+	 * For side/top views, positions are set to rocket bounds.
+	 * For back view, positions are set symmetrically around 0 (center of screen).
 	 */
 	private void initializeCaliperPositions() {
 		FlightConfiguration curConfig = document.getSelectedConfiguration();
 		BoundingBox bounds = curConfig.getBoundingBox();
+		VIEW_TYPE currentView = getCurrentViewType();
 		
-		if (bounds == null || bounds.span().getX() <= 0) {
-			// Default positions if bounds are invalid
-			caliper1X = 0.0;
-			caliper2X = 0.1;
+		if (currentView == VIEW_TYPE.BackView) {
+			// For back view, use symmetric positions around 0 (center of screen)
+			if (bounds == null || bounds.span().getY() <= 0) {
+				// Default symmetric positions if bounds are invalid
+				caliper1X = -0.1;
+				caliper2X = 0.1;
+			} else {
+				// Use symmetric positions based on rocket height (Y dimension in back view)
+				double halfSpan = bounds.span().getY() / 2.0;
+				caliper1X = -halfSpan;
+				caliper2X = halfSpan;
+			}
 		} else {
-			caliper1X = bounds.min.getX();
-			caliper2X = bounds.max.getX();
+			// For side/top views, use rocket length (X dimension)
+			if (bounds == null || bounds.span().getX() <= 0) {
+				// Default positions if bounds are invalid
+				caliper1X = 0.15;
+				caliper2X = 0.85;
+			} else {
+				caliper1X = bounds.min.getX();
+				caliper2X = bounds.max.getX();
+			}
 		}
 		
 		if (caliper1Line != null) {
