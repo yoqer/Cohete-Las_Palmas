@@ -184,6 +184,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private boolean is3d;
 	private final RocketFigure figure;
 	private final RocketFigure3d figure3d;
+	private VIEW_TYPE currentView = null;
 
 	private final ScaleScrollPane scrollPane;
 
@@ -206,6 +207,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private Caret extraCG = null;
 	private RocketInfo extraText = null;
 
+	private static final class CaliperState {
+		double caliper1X = Double.NaN;
+		double caliper2X = Double.NaN;
+	}
+
 	/* Caliper tool */
 	private boolean caliperEnabled = false;
 	private CaliperLine caliper1Line = null;
@@ -225,6 +231,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private JSpinner caliper2PositionSpinner = null;
 	private JPanel caliperPositionPanel = null;
 	private boolean updatingCaliperPositionModels = false;
+	private final CaliperState sideViewCaliperState = new CaliperState();
+	private final CaliperState backViewCaliperState = new CaliperState();
 
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
@@ -481,6 +489,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private void go3D() {
 		if (is3d)
 			return;
+		saveCurrentCaliperState();
 		is3d = true;
 		
 		// Remember caliper state and disable caliper UI in 3D
@@ -563,6 +572,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	}
 
 	/**
+	 * Get the current view type.
+	 * @return the current VIEW_TYPE
+	 */
+	public VIEW_TYPE getCurrentViewType() {
+		return currentView;
+	}
+
+	/**
 	 * Creates the layout and components of the panel.
 	 */
 	private void createPanel() {
@@ -592,12 +609,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					return;
 				}
 
+				saveCurrentCaliperState();
+
 				super.setSelectedItem(o);
+				currentView = v;
 				if (v.is3d) {
 					figure3d.setType(v.type);
 					go3D();
 				} else {
 					figure.setType(v);
+					loadCaliperStateForView(getCurrentViewType());
 					updateExtras(); // when switching from side view to back view, need to clear CP & CG markers
 					go2D();
 					// Update caliper elements when switching between 2D views
@@ -720,6 +741,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		SpinnerModel caliper2SpinnerModel = caliper2PositionModel.getSpinnerModel();
 		caliper1PositionSpinner = new EditableSpinner(caliper1SpinnerModel);
 		caliper2PositionSpinner = new EditableSpinner(caliper2SpinnerModel);
+		caliper1PositionSpinner.setEnabled(false);
+		caliper2PositionSpinner.setEnabled(false);
 		JSpinner.DefaultEditor caliper1Editor = (JSpinner.DefaultEditor) caliper1PositionSpinner.getEditor();
 		caliper1Editor.getTextField().setColumns(3);
 		JSpinner.DefaultEditor caliper2Editor = (JSpinner.DefaultEditor) caliper2PositionSpinner.getEditor();
@@ -1486,6 +1509,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		caliper1Line.setHandleLabel("1");
 		caliper2Line = new CaliperLine(0.0);
 		caliper2Line.setHandleLabel("2");
+		loadCaliperStateForView(getCurrentViewType());
 		
 		updateExtras();
 
@@ -1542,6 +1566,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		updateCaliperDistance();
 		updateCaliperPositionModelsFromState();
+		saveCurrentCaliperState();
 		updateFigures();
 	}
 	
@@ -1560,6 +1585,41 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		} finally {
 			updatingCaliperPositionModels = false;
 		}
+	}
+
+	private CaliperState getCaliperStateForView(VIEW_TYPE viewType) {
+		if (viewType == VIEW_TYPE.BackView) {
+			return backViewCaliperState;
+		} else if (viewType == VIEW_TYPE.TopView || viewType == VIEW_TYPE.SideView) {
+			return sideViewCaliperState;
+		}
+		return null;
+	}
+
+	private void saveCurrentCaliperState() {
+		CaliperState state = getCaliperStateForView(getCurrentViewType());
+		if (state == null) {
+			return;
+		}
+		state.caliper1X = caliper1X;
+		state.caliper2X = caliper2X;
+	}
+
+	private void loadCaliperStateForView(VIEW_TYPE viewType) {
+		CaliperState state = getCaliperStateForView(viewType);
+		if (state == null) {
+			return;
+		}
+		caliper1X = state.caliper1X;
+		caliper2X = state.caliper2X;
+		if (!Double.isNaN(caliper1X) && caliper1Line != null) {
+			caliper1Line.setX(caliper1X);
+		}
+		if (!Double.isNaN(caliper2X) && caliper2Line != null) {
+			caliper2Line.setX(caliper2X);
+		}
+		updateCaliperPositionModelsFromState();
+		updateCaliperDistance();
 	}
 	
 	/**
@@ -1587,6 +1647,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		
 		updateCaliperDistance();
 		updateCaliperPositionModelsFromState();
+		saveCurrentCaliperState();
 	}
 
 	/**
