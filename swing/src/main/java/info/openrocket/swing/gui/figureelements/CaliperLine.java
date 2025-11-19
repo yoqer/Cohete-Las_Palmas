@@ -140,70 +140,70 @@ public class CaliperLine implements FigureElement {
 		Point2D.Double screenPoint = new Point2D.Double();
 		transform.transform(modelPoint, screenPoint);
 		
-		// Save the current transform
-		AffineTransform savedTransform = g2.getTransform();
-		
-		// Reset transform to identity so we draw in screen coordinates (pixels)
-		g2.setTransform(new AffineTransform());
+		// Use a graphics copy for screen-space drawing to avoid altering the main context
+		Graphics2D g2Screen = (Graphics2D) g2.create();
+		try {
+			g2Screen.setTransform(new AffineTransform());
+			g2Screen.setClip(null);
 		
 		// Position handle at the very top of the visible area
 		// Account for viewport position if visible rectangle is provided
-		double handleX_screen = screenPoint.x;
-		double handleY_screen = 0.0;  // Start at the very top
-		if (visible != null) {
-			// Adjust for the visible rectangle's position (viewport offset)
-			handleY_screen = visible.y;  // At the very top of visible area
-		}
+			double handleX_screen = screenPoint.x;
+			double handleY_screen = 0.0;  // Start at the very top
+			if (visible != null) {
+				// Adjust for the visible rectangle's position (viewport offset)
+				handleY_screen = visible.y;
+			}
 		
 		// Draw marker handle as one continuous path: elongated rectangle at top, inverted triangle below
 		// Create a single manifold path for the entire marker shape
-		Path2D.Double marker = new Path2D.Double();
+			Path2D.Double marker = new Path2D.Double();
 		
-		double rectLeft = handleX_screen - HANDLE_RECT_WIDTH / 2;
-		double rectRight = handleX_screen + HANDLE_RECT_WIDTH / 2;
-		double rectTop = handleY_screen;
-		double rectBottom = handleY_screen + HANDLE_RECT_HEIGHT;
-		double triangleBaseY = rectBottom + HANDLE_TRIANGLE_HEIGHT;
+			double rectLeft = handleX_screen - HANDLE_RECT_WIDTH / 2;
+			double rectRight = handleX_screen + HANDLE_RECT_WIDTH / 2;
+			double rectTop = handleY_screen;
+			double rectBottom = handleY_screen + HANDLE_RECT_HEIGHT;
+			double triangleBaseY = rectBottom + HANDLE_TRIANGLE_HEIGHT;
 		
 		// Marker shape path
-		marker.moveTo(rectLeft, rectTop);		// Top-left of rectangle
-		marker.lineTo(rectRight, rectTop);		// Top-right of rectangle
-		marker.lineTo(rectRight, rectBottom);	// Bottom-right of rectangle
-		marker.lineTo(handleX_screen, triangleBaseY);	// Point of triangle
-		marker.lineTo(rectLeft, rectBottom);	// Bottom-left of rectangle
-		marker.closePath();
+			marker.moveTo(rectLeft, rectTop);		// Top-left of rectangle
+			marker.lineTo(rectRight, rectTop);		// Top-right of rectangle
+			marker.lineTo(rectRight, rectBottom);	// Bottom-right of rectangle
+			marker.lineTo(handleX_screen, triangleBaseY);	// Point of triangle
+			marker.lineTo(rectLeft, rectBottom);	// Bottom-left of rectangle
+			marker.closePath();
 		
 		// Fill the entire marker shape
-		g2.setColor(handleColor);
-		g2.fill(marker);
+			g2Screen.setColor(handleColor);
+			g2Screen.fill(marker);
 		
 		// Draw darker border around the entire marker shape
-		Color borderColor = new Color(
-			Math.max(0, lineColor.getRed() - 100),
-			Math.max(0, lineColor.getGreen() - 100),
-			Math.max(0, lineColor.getBlue() - 100),
-			255
-		);
-		g2.setColor(borderColor);
-		g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		g2.draw(marker);
+			Color borderColor = new Color(
+				Math.max(0, lineColor.getRed() - 100),
+				Math.max(0, lineColor.getGreen() - 100),
+				Math.max(0, lineColor.getBlue() - 100),
+				255
+			);
+			g2Screen.setColor(borderColor);
+			g2Screen.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g2Screen.draw(marker);
 		
 		// Draw label (1 or 2) inside the handle rectangle if provided
-		if (handleLabel != null && !handleLabel.isEmpty()) {
-			g2.setFont(HANDLE_LABEL_FONT);
-			FontRenderContext frc = g2.getFontRenderContext();
-			Rectangle2D textBounds = HANDLE_LABEL_FONT.getStringBounds(handleLabel, frc);
-			double textWidth = textBounds.getWidth();
-			double textHeight = textBounds.getHeight();
-			double textX = handleX_screen - textWidth / 2.0;
-			// Position text vertically centered within rectangle
-			double textY = rectTop + (HANDLE_RECT_HEIGHT / 2.0) + textHeight / 4.0;
-			g2.setColor(Color.BLACK);
-			g2.drawString(handleLabel, (float) textX, (float) textY);
+			if (handleLabel != null && !handleLabel.isEmpty()) {
+				g2Screen.setFont(HANDLE_LABEL_FONT);
+				FontRenderContext frc = g2Screen.getFontRenderContext();
+				Rectangle2D textBounds = HANDLE_LABEL_FONT.getStringBounds(handleLabel, frc);
+				double textWidth = textBounds.getWidth();
+				double textHeight = textBounds.getHeight();
+				double textX = handleX_screen - textWidth / 2.0;
+				// Position text vertically centered within rectangle
+				double textY = rectTop + (HANDLE_RECT_HEIGHT / 2.0) + textHeight / 4.0;
+				g2Screen.setColor(Color.BLACK);
+				g2Screen.drawString(handleLabel, (float) textX, (float) textY);
+			}
+		} finally {
+			g2Screen.dispose();
 		}
-		
-		// Restore the transform
-		g2.setTransform(savedTransform);
 	}
 }
 
