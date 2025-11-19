@@ -229,7 +229,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private DoubleModel caliper2PositionModel = null;
 	private JSpinner caliper1PositionSpinner = null;
 	private JSpinner caliper2PositionSpinner = null;
-	private JPanel caliperPositionPanel = null;
 	private boolean updatingCaliperPositionModels = false;
 	private final CaliperState sideViewCaliperState = new CaliperState();
 	private final CaliperState backViewCaliperState = new CaliperState();
@@ -506,9 +505,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperDisplayPanel != null) {
 			caliperDisplayPanel.setVisible(false);
 		}
-		if (caliperPositionPanel != null) {
-			caliperPositionPanel.setVisible(false);
-		}
 		if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
 			caliper1PositionSpinner.setEnabled(false);
 			caliper2PositionSpinner.setEnabled(false);
@@ -544,9 +540,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			if (caliperDisplayPanel != null) {
 				caliperDisplayPanel.setVisible(true);
 				caliperDisplayPanel.setPreferredSize(null);
-			}
-			if (caliperPositionPanel != null) {
-				caliperPositionPanel.setVisible(true);
 			}
 			if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
 				caliper1PositionSpinner.setEnabled(true);
@@ -671,6 +664,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
 		ribbon.add(caliperToggle, "cell 5 1, gapleft para");
 		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
+
+		// Caliper panel
+		caliperDisplayPanel = new JPanel(new MigLayout("ins 0"));
+		caliperDisplayPanel.setOpaque(false);
+		Border caliperBorder = new LineBorder(caliperColor, 1);
+		caliperDisplayPanel.setBorder(new CompoundBorder(caliperBorder, new EmptyBorder(5, 5, 5, 5)));
+		caliperDisplayPanel.setVisible(false);
+		ribbon.add(caliperDisplayPanel, "cell 5 1, gapleft 5");
 		
 		// Caliper distance spinner (non-editable)
 		caliperDistanceSpinner = new JSpinner(caliperDistanceModel.getSpinnerModel());
@@ -681,10 +682,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		textField.setEnabled(true);
 		textField.setBackground(ribbon.getBackground());  // Match background
 		textField.setForeground(caliperColor);  // Use caliper line color for text
+		caliperDisplayPanel.add(caliperDistanceSpinner, "split 2, aligny center");
 
 		// Caliper unit selector
 		caliperUnitSelector = new UnitSelector(caliperDistanceModel);
-		caliperUnitSelector.setOpaque(false);
+		caliperDisplayPanel.add(caliperUnitSelector, "gapright unrel");
 		
 		// Caliper position models (share same unit group as caliper distance)
 		caliper1PositionModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
@@ -726,17 +728,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				}
 			}
 		});
-
-		// Panel containing spinner + unit selector with colored border
-		caliperDisplayPanel = new JPanel(new MigLayout("ins 0"));
-		caliperDisplayPanel.setOpaque(false);
-		Border caliperBorder = new LineBorder(caliperColor, 1);
-		caliperDisplayPanel.setBorder(new CompoundBorder(caliperBorder,
-				new EmptyBorder(1, 3, 1, 3)));
-		caliperDisplayPanel.add(caliperDistanceSpinner, "split 2, alignx center");
-		caliperDisplayPanel.add(caliperUnitSelector, "wrap");
-		caliperDisplayPanel.setVisible(false);
-		ribbon.add(caliperDisplayPanel, "cell 5 1, gapleft 5");
 		
 		// Position spinners for each caliper handle
 		SpinnerModel caliper1SpinnerModel = caliper1PositionModel.getSpinnerModel();
@@ -746,18 +737,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		caliper1PositionSpinner.setEnabled(false);
 		caliper2PositionSpinner.setEnabled(false);
 		JSpinner.DefaultEditor caliper1Editor = (JSpinner.DefaultEditor) caliper1PositionSpinner.getEditor();
-		caliper1Editor.getTextField().setColumns(3);
+		caliper1Editor.getTextField().setColumns(2);
 		JSpinner.DefaultEditor caliper2Editor = (JSpinner.DefaultEditor) caliper2PositionSpinner.getEditor();
-		caliper2Editor.getTextField().setColumns(3);
-		
-		caliperPositionPanel = new JPanel(new MigLayout("insets 0"));
-		caliperPositionPanel.setOpaque(false);
-		caliperPositionPanel.add(new JLabel("1:"));
-		caliperPositionPanel.add(caliper1PositionSpinner);
-		caliperPositionPanel.add(new JLabel("2:"), "gapleft unrel");
-		caliperPositionPanel.add(caliper2PositionSpinner, "wrap");
-		caliperPositionPanel.setVisible(false);
-		caliperDisplayPanel.add(caliperPositionPanel);
+		caliper2Editor.getTextField().setColumns(2);
+
+		caliperDisplayPanel.add(new JLabel("1:"));
+		caliperDisplayPanel.add(caliper1PositionSpinner);
+		caliperDisplayPanel.add(new JLabel("2:"), "gapleft rel");
+		caliperDisplayPanel.add(caliper2PositionSpinner);
 
 		// Update visibility when caliper is toggled
 		caliperToggle.addActionListener(new ActionListener() {
@@ -773,18 +760,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					if (Double.isNaN(caliper1X) || Double.isNaN(caliper2X)) {
 						initializeCaliperPositions();
 					}
-					// Show panel containing spinner + unit selector
+					// Show panel
 					caliperDisplayPanel.setVisible(true);
-					if (caliperPositionPanel != null) {
-						caliperPositionPanel.setVisible(true);
-					}
 					updateCaliperPositionModelsFromState();
 				} else {
-					// Hide panels when caliper disabled
+					// Hide panel
 					caliperDisplayPanel.setVisible(false);
-					if (caliperPositionPanel != null) {
-						caliperPositionPanel.setVisible(false);
-					}
 				}
 				updateCaliperElements();
 				updateFigures();
