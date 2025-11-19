@@ -616,6 +616,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (v.is3d) {
 					figure3d.setType(v.type);
 					go3D();
+					updateRulers();
 				} else {
 					figure.setType(v);
 					loadCaliperStateForView(getCurrentViewType());
@@ -623,6 +624,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					go2D();
 					// Update caliper elements when switching between 2D views
 					updateCaliperElements();
+					updateRulers();
 				}
 			}
 		};
