@@ -1635,14 +1635,21 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				caliper2X = halfSpan;
 			}
 		} else {
-			// For side/top views, use rocket length (X dimension)
-			if (bounds == null || bounds.span().getX() <= 0) {
-				// Default positions if bounds are invalid
+			// For side/top views, use fractional positions of rocket length (X dimension)
+			// Check if bounds are invalid or if this is the default empty bounding box (0 to 1)
+			boolean isEmptyBounds = bounds == null || 
+				bounds.span().getX() <= 0 || 
+				(MathUtil.equals(bounds.min.getX(), 0.0) && MathUtil.equals(bounds.max.getX(), 1.0));
+			
+			if (isEmptyBounds) {
+				// Default absolute positions if bounds are invalid or empty (no components)
 				caliper1X = 0.15;
 				caliper2X = 0.85;
 			} else {
-				caliper1X = bounds.min.getX();
-				caliper2X = bounds.max.getX();
+				// Use 15% and 85% of rocket length
+				double length = bounds.span().getX();
+				caliper1X = bounds.min.getX() + 0.15 * length;
+				caliper2X = bounds.min.getX() + 0.85 * length;
 			}
 		}
 		
