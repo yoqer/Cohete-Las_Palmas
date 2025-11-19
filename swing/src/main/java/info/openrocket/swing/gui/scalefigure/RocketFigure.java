@@ -22,6 +22,8 @@ import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+import javax.swing.SwingUtilities;
+
 import info.openrocket.core.rocketcomponent.AxialStage;
 import info.openrocket.core.rocketcomponent.ParallelStage;
 import info.openrocket.core.rocketcomponent.PodSet;
@@ -195,6 +197,10 @@ public class RocketFigure extends AbstractScaleFigure {
 		this.currentViewType = type;
 		updateFigure();
         fireChangeEvent();
+		
+		// Trigger a repaint after view type change is complete to ensure getVisibleRect() returns correct values
+		// This fixes issues where paint() is called before the visible rectangle is properly updated
+		SwingUtilities.invokeLater(this::repaint);
 	}
 		
 	
