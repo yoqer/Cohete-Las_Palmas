@@ -19,7 +19,7 @@ import java.awt.geom.Rectangle2D;
  * A horizontal line element for the caliper measurement tool.
  * Draws a horizontal line with a draggable handle on the left side.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class HorizontalCaliperLine implements FigureElement {
 

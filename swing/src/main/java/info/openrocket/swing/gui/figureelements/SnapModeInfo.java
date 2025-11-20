@@ -17,7 +17,7 @@ import info.openrocket.swing.gui.theme.UITheme;
  * A FigureElement that displays a snap mode instruction message.
  * Shows "Select the edge or point to snap caliper %d to" when in snap mode.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class SnapModeInfo implements FigureElement {
 

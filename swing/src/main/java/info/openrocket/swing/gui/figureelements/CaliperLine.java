@@ -19,7 +19,7 @@ import java.awt.geom.Rectangle2D;
  * A vertical line element for the caliper measurement tool.
  * Draws a vertical line with a draggable handle at the top.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class CaliperLine implements FigureElement {
 

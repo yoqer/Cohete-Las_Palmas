@@ -1,3 +1,5 @@
+import info.openrocket.swing.gui.scalefigure.caliper.snap.CoaxialSnapProvider;
+
 open module info.openrocket.swing {
 	requires transitive info.openrocket.core;
 
@@ -57,5 +59,5 @@ open module info.openrocket.swing {
 			info.openrocket.swing.gui.rocketfigure.TubeFinSetShapes,
 			info.openrocket.swing.gui.rocketfigure.TubeShapes;
 	provides info.openrocket.swing.gui.scalefigure.caliper.snap.ComponentSnapProvider with
-			info.openrocket.swing.gui.scalefigure.caliper.snap.BodyTubeSnapProvider;
+			CoaxialSnapProvider;
 }

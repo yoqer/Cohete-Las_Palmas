@@ -16,7 +16,7 @@ import java.util.ServiceLoader;
  * Similar to RocketComponentShapeProvider, finds the appropriate snap provider
  * for a given component class.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class CaliperSnapRegistry {
 	

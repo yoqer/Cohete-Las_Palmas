@@ -56,7 +56,7 @@ import java.util.Map;
  * Manages the caliper measurement tool for the rocket panel.
  * Handles all caliper-related state, UI components, and interactions.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class CaliperManager {
 	private static final Logger log = LoggerFactory.getLogger(CaliperManager.class);

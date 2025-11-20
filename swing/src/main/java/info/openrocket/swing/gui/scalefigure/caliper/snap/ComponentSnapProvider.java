@@ -11,7 +11,7 @@ import java.util.List;
  * Interface for components to provide snap targets for caliper lines.
  * Implementations should provide geometry edges and points that caliper lines can snap to.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public interface ComponentSnapProvider {
 	

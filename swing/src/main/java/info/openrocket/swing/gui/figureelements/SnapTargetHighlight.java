@@ -19,7 +19,7 @@ import java.awt.geom.Point2D;
  * Figure element for highlighting snap targets when hovering in snap mode.
  * Draws highlighted lines or points to show where caliper lines can snap.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class SnapTargetHighlight implements FigureElement {
 

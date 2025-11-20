@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * Represents a snap target for caliper lines - either a point or a line edge.
  * Snap targets are geometry features (edges, corners, points) that caliper lines can snap to.
  *
- * @author OpenRocket Team
+ * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class CaliperSnapTarget {
 	
