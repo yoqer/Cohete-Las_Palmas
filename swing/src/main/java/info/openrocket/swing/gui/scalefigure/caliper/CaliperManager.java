@@ -884,16 +884,18 @@ public class CaliperManager {
 				// Default symmetric positions if bounds are invalid
 				caliper1X = -0.1;
 				caliper2X = 0.1;
-				caliper1Y = -0.1;
-				caliper2Y = 0.1;
+				// For horizontal caliper: cal 1 at top (positive Y), cal 2 at bottom (negative Y)
+				caliper1Y = 0.1;
+				caliper2Y = -0.1;
 			} else {
 				// Use symmetric positions based on rocket dimensions
 				double halfSpanX = bounds.span().getY() / 2.0;  // Y dimension in back view
 				double halfSpanY = bounds.span().getZ() / 2.0;  // Z dimension in back view
 				caliper1X = -halfSpanX;
 				caliper2X = halfSpanX;
-				caliper1Y = -halfSpanY;
-				caliper2Y = halfSpanY;
+				// For horizontal caliper: cal 1 at top (positive Y), cal 2 at bottom (negative Y)
+				caliper1Y = halfSpanY;
+				caliper2Y = -halfSpanY;
 			}
 		} else {
 			// For side/top views, use fractional positions of rocket length (X dimension)
@@ -904,19 +906,22 @@ public class CaliperManager {
 
 			if (isEmptyBounds) {
 				// Default absolute positions if bounds are invalid or empty (no components)
-				caliper1X = 0.15;
-				caliper2X = 0.85;
-				caliper1Y = -0.1;
-				caliper2Y = 0.1;
+				// Use positions that are more likely to be visible (closer to center)
+				caliper1X = 0.0;
+				caliper2X = 0.2;
+				// For horizontal caliper: cal 1 at top (positive Y), cal 2 at bottom (negative Y)
+				caliper1Y = 0.05;
+				caliper2Y = -0.05;
 			} else {
 				// Use 15% and 85% of rocket length for X
 				double length = bounds.span().getX();
 				caliper1X = bounds.min.getX() + 0.15 * length;
 				caliper2X = bounds.min.getX() + 0.85 * length;
 				// Use symmetric positions for Y based on rocket height
+				// For horizontal caliper: cal 1 at top (positive Y), cal 2 at bottom (negative Y)
 				double halfSpanY = bounds.span().getY() / 2.0;
-				caliper1Y = -halfSpanY;
-				caliper2Y = halfSpanY;
+				caliper1Y = halfSpanY;
+				caliper2Y = -halfSpanY;
 			}
 		}
 
