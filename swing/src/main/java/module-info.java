@@ -56,4 +56,6 @@ open module info.openrocket.swing {
 			info.openrocket.swing.gui.rocketfigure.TransitionShapes,
 			info.openrocket.swing.gui.rocketfigure.TubeFinSetShapes,
 			info.openrocket.swing.gui.rocketfigure.TubeShapes;
+	provides info.openrocket.swing.gui.scalefigure.caliper.snap.ComponentSnapProvider with
+			info.openrocket.swing.gui.scalefigure.caliper.snap.BodyTubeSnapProvider;
 }
