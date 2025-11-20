@@ -32,6 +32,7 @@ public class CaliperLine implements FigureElement {
 
 	private double x;  // X position in model coordinates
 	private boolean isHovered = false;  // Whether the mouse is hovering over this line
+	private boolean isSnapMode = false;  // Whether we're in snap mode (affects transparency)
 	private String handleLabel = "";
 
 	private static Color lineColor;
@@ -76,6 +77,15 @@ public class CaliperLine implements FigureElement {
 	 */
 	public void setX(double x) {
 		this.x = x;
+	}
+
+	/**
+	 * Set whether this line is in snap mode (affects transparency).
+	 *
+	 * @param snapMode true if in snap mode
+	 */
+	public void setSnapMode(boolean snapMode) {
+		this.isSnapMode = snapMode;
 	}
 
 	/**
@@ -145,7 +155,13 @@ public class CaliperLine implements FigureElement {
 			// The clip will ensure it doesn't draw outside the viewport
 			Line2D.Double screenLine = new Line2D.Double(handleX_screen, 0, handleX_screen, 20000);
 			g2Screen.setStroke(new BasicStroke(isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g2Screen.setColor(lineColor);
+			
+			// Apply 50% transparency in snap mode
+			Color drawColor = lineColor;
+			if (isSnapMode) {
+				drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);  // 50% alpha
+			}
+			g2Screen.setColor(drawColor);
 			g2Screen.draw(screenLine);
 
 			// Draw marker handle as one continuous path: elongated rectangle at top, inverted triangle below
@@ -167,7 +183,11 @@ public class CaliperLine implements FigureElement {
 			marker.closePath();
 
 			// Fill the entire marker shape
-			g2Screen.setColor(handleColor);
+			Color drawHandleColor = handleColor;
+			if (isSnapMode) {
+				drawHandleColor = new Color(handleColor.getRed(), handleColor.getGreen(), handleColor.getBlue(), 128);  // 50% alpha
+			}
+			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 
 			// Draw darker border around the entire marker shape

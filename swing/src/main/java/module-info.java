@@ -6,6 +6,7 @@ open module info.openrocket.swing {
 	uses javax.script.Bindings;
 	uses javax.script.ScriptContext;
 	uses info.openrocket.swing.gui.rocketfigure.RocketComponentShapeService;
+	uses info.openrocket.swing.gui.scalefigure.caliper.snap.ComponentSnapProvider;
 
 	// Libraries
 	requires org.slf4j;

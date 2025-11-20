@@ -32,6 +32,7 @@ public class HorizontalCaliperLine implements FigureElement {
 
 	private double y;  // Y position in model coordinates
 	private boolean isHovered = false;  // Whether the mouse is hovering over this line
+	private boolean isSnapMode = false;  // Whether we're in snap mode (affects transparency)
 	private String handleLabel = "";
 
 	private static Color lineColor;
@@ -76,6 +77,15 @@ public class HorizontalCaliperLine implements FigureElement {
 	 */
 	public void setY(double y) {
 		this.y = y;
+	}
+
+	/**
+	 * Set whether this line is in snap mode (affects transparency).
+	 *
+	 * @param snapMode true if in snap mode
+	 */
+	public void setSnapMode(boolean snapMode) {
+		this.isSnapMode = snapMode;
 	}
 
 	/**
@@ -148,7 +158,13 @@ public class HorizontalCaliperLine implements FigureElement {
 			double lineRight = visible != null ? (visible.x + visible.width) : 20000;
 			Line2D.Double screenLine = new Line2D.Double(lineLeft, handleY_screen, lineRight, handleY_screen);
 			g2Screen.setStroke(new BasicStroke(isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			g2Screen.setColor(lineColor);
+			
+			// Apply 50% transparency in snap mode
+			Color drawColor = lineColor;
+			if (isSnapMode) {
+				drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);  // 50% alpha
+			}
+			g2Screen.setColor(drawColor);
 			g2Screen.draw(screenLine);
 
 			// Draw marker handle as one continuous path: elongated rectangle on left, triangle to the right
@@ -170,7 +186,11 @@ public class HorizontalCaliperLine implements FigureElement {
 			marker.closePath();
 
 			// Fill the entire marker shape
-			g2Screen.setColor(handleColor);
+			Color drawHandleColor = handleColor;
+			if (isSnapMode) {
+				drawHandleColor = new Color(handleColor.getRed(), handleColor.getGreen(), handleColor.getBlue(), 128);  // 50% alpha
+			}
+			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 
 			// Draw darker border around the entire marker shape

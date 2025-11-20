@@ -18,9 +18,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.swing.SwingUtilities;
 
@@ -481,6 +484,53 @@ public class RocketFigure extends AbstractScaleFigure {
 				allShapes = addThisShape(allShapes, this.currentViewType, comp, currentTransform);
 			}
 		}
+	}
+
+	/**
+	 * Get component transformations for all visible components.
+	 * Used for calculating snap targets.
+	 *
+	 * @return map of component to list of transformations (one per instance)
+	 */
+	public Map<RocketComponent, List<Transformation>> getComponentTransformations() {
+		Map<RocketComponent, List<Transformation>> result = new java.util.HashMap<>();
+		final FlightConfiguration config = rocket.getSelectedConfiguration();
+		
+		Consumer<Set<Entry<RocketComponent, ArrayList<InstanceContext>>>> addTransforms = entries -> {
+			for (Entry<RocketComponent, ArrayList<InstanceContext>> entry : entries) {
+				final RocketComponent comp = entry.getKey();
+				if (!comp.isVisible()) {
+					continue;
+				}
+				
+				// Only include pod sets and boosters when they are selected
+				if (preferences.isShowMarkers() && (comp instanceof PodSet || comp instanceof ParallelStage)) {
+					boolean selected = false;
+					for (RocketComponent component : selection) {
+						if (comp == component) {
+							selected = true;
+							break;
+						}
+					}
+					if (!selected) continue;
+				}
+				
+				final ArrayList<InstanceContext> contextList = entry.getValue();
+				List<Transformation> transforms = new ArrayList<>();
+				for (InstanceContext context : contextList) {
+					final Transformation currentTransform = getFigureRotation().applyTransformation(context.transform);
+					transforms.add(currentTransform);
+				}
+				if (!transforms.isEmpty()) {
+					result.put(comp, transforms);
+				}
+			}
+		};
+		
+		addTransforms.accept(config.getActiveInstances().entrySet());
+		addTransforms.accept(config.getExtraRenderInstances().entrySet());
+		
+		return result;
 	}
 
 	/**

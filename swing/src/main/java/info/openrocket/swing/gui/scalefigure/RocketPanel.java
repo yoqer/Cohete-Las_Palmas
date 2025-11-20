@@ -26,7 +26,6 @@ import info.openrocket.core.simulation.listeners.SimulationListener;
 import info.openrocket.core.simulation.listeners.system.GroundHitListener;
 import info.openrocket.core.simulation.listeners.system.InterruptListener;
 import info.openrocket.core.startup.Application;
-import info.openrocket.core.util.BoundingBox;
 import info.openrocket.core.util.ChangeSource;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
@@ -42,20 +41,13 @@ import info.openrocket.swing.gui.figureelements.CGCaret;
 import info.openrocket.swing.gui.figureelements.CPCaret;
 import info.openrocket.swing.gui.figureelements.Caret;
 import info.openrocket.swing.gui.figureelements.RocketInfo;
-import info.openrocket.swing.gui.figureelements.CaliperLine;
-import info.openrocket.swing.gui.figureelements.HorizontalCaliperLine;
-import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.UnitSelector;
-import info.openrocket.swing.gui.components.EditableSpinner;
-import info.openrocket.core.unit.Unit;
-import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
+import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
+import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.simulation.SimulationWorker;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.util.SwingPreferences;
-import info.openrocket.swing.gui.widgets.IconToggleButton;
 import info.openrocket.swing.utils.CustomClickCountListener;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
@@ -70,18 +62,10 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import javax.swing.JSpinner;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
-import javax.swing.SpinnerModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.JTextField;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import java.awt.Color;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -280,6 +264,18 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 			@Override
 			public void mouseClicked(MouseEvent event) {
+				// Check if snap mode is active - if so, only handle snap mode click, disable normal behavior
+				if (caliperManager != null && caliperManager.isSnapModeActive()) {
+					Point p0 = event.getPoint();
+					Point p1 = getViewport().getViewPosition();
+					int x = p0.x + p1.x;
+					int y = p0.y + p1.y;
+					
+					// Try to snap, but don't process normal click regardless of whether snap occurred
+					caliperManager.handleSnapModeMouseClicked(x, y, (p) -> screenToModel(p.x, p.y));
+					return;  // Always return - don't process normal click behavior in snap mode
+				}
+				
 				clickCountListener.click();
 				handleMouseClick(event, clickCountListener.getClickCount());
 			}
@@ -288,6 +284,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (is3d) {
 					return;
 				}
+				
+				// In snap mode, disable normal mouse press behavior (component selection, etc.)
+				if (caliperManager != null && caliperManager.isSnapModeActive()) {
+					return;  // Don't process normal mouse press in snap mode
+				}
+				
 				mousePressedLoc = e.getPoint();
 				originalFigureRotation = figure.getRotation();
 				
@@ -306,6 +308,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
+				// In snap mode, disable rotation dragging
+				if (caliperManager != null && caliperManager.isSnapModeActive()) {
+					return;  // Don't process rotation dragging in snap mode
+				}
+				
 				if (caliperManager != null && e.getButton() == MouseEvent.BUTTON1) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
@@ -336,7 +343,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
 					
-					caliperManager.handleMouseMoved(x, y, (p) -> screenToModel(p.x, p.y));
+					// Handle snap mode mouse move first
+					if (caliperManager.isSnapModeActive()) {
+						caliperManager.handleSnapModeMouseMoved(x, y, (p) -> screenToModel(p.x, p.y));
+					} else {
+						caliperManager.handleMouseMoved(x, y, (p) -> screenToModel(p.x, p.y));
+					}
 				}
 			}
 			
@@ -355,6 +367,22 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				return figure.screenToModel(screenX, screenY);
 			}
 		};
+		
+		// Add key listener for Escape key to exit snap mode
+		// Make scrollPane focusable and request focus when snap mode is entered
+		scrollPane.setFocusable(true);
+		scrollPane.addKeyListener(new java.awt.event.KeyAdapter() {
+			@Override
+			public void keyPressed(java.awt.event.KeyEvent e) {
+				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) {
+					if (caliperManager != null && caliperManager.isSnapModeActive()) {
+						caliperManager.exitSnapMode();
+						e.consume();  // Consume the event
+					}
+				}
+			}
+		});
+		
 		scrollPane.getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
 		scrollPane.setFitting(true);
 
@@ -364,6 +392,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				() -> {
 					updateCaliperElements();
 					updateFigures();
+				},
+				() -> {
+					// Request focus on scrollPane when entering snap mode
+					if (!is3d && scrollPane != null) {
+						scrollPane.requestFocusInWindow();
+					}
 				});
 
 		createPanel();
@@ -513,6 +547,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					figure.setType(v);
 					if (caliperManager != null) {
 						caliperManager.loadCaliperStateForView(getCurrentViewType());
+						// Update snap targets when view type changes
+						if (caliperManager.isSnapModeActive()) {
+							caliperManager.updateSnapTargets();
+						}
 					}
 					updateExtras(); // when switching from side view to back view, need to clear CP & CG markers
 					go2D();
@@ -782,6 +820,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	public static final int CYCLE_SELECTION_MODIFIER = InputEvent.SHIFT_DOWN_MASK;
 
 	private void handleMouseClick(MouseEvent event, int clickCount) {
+		// Don't process normal clicks when in snap mode
+		if (caliperManager != null && caliperManager.isSnapModeActive()) {
+			return;
+		}
+		
 		// Get the component that is clicked on
 		Point p0 = event.getPoint();
 		Point p1 = scrollPane.getViewport().getViewPosition();
@@ -911,6 +954,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	}
 
 	private void handleMouseDragged(MouseEvent event, Point originalDragLocation, double originalRotation) {
+		// Don't allow rotation dragging when in snap mode
+		if (caliperManager != null && caliperManager.isSnapModeActive()) {
+			return;
+		}
 		if (originalDragLocation == null || is3d || rotationControl.isDragRotationLocked()) {
 			return;
 		}
@@ -1287,15 +1334,43 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 */
 	void updateCaliperElements() {
 		figure.clearRelativeExtra();
-		figure.addRelativeExtra(extraCP);
-		figure.addRelativeExtra(extraCG);
-		figure.addAbsoluteExtra(extraText);
+		figure.clearAbsoluteExtra();
+		
+		// Check if we're in snap mode
+		boolean inSnapMode = caliperManager != null && caliperManager.isSnapModeActive() && !is3d;
+		
+		if (inSnapMode) {
+			// In snap mode: show snap mode message instead of RocketInfo
+			Integer activeCaliper = caliperManager.getActiveSnapCaliper();
+			if (activeCaliper != null) {
+				info.openrocket.swing.gui.figureelements.SnapModeInfo snapInfo =
+						new info.openrocket.swing.gui.figureelements.SnapModeInfo(activeCaliper);
+				figure.addAbsoluteExtra(snapInfo);
+			}
+		} else {
+			// Normal mode: show CP, CG, and RocketInfo
+			figure.addRelativeExtra(extraCP);
+			figure.addRelativeExtra(extraCG);
+			figure.addAbsoluteExtra(extraText);
+		}
 		
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
 			caliperManager.updateCaliperElements();
+			
+			// Add snap target highlight if in snap mode and hovering over a target
+			if (inSnapMode) {
+				CaliperSnapTarget hoveredTarget =
+						caliperManager.getHoveredSnapTarget();
+				if (hoveredTarget != null) {
+					info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
+							new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(hoveredTarget, figure.getCurrentViewType());
+					figure.addRelativeExtra(highlight);
+				}
+			}
 		}
 
 		figure3d.clearRelativeExtra();
+		figure3d.clearAbsoluteExtra();
 		//figure3d.addRelativeExtra(extraCP);
 		//figure3d.addRelativeExtra(extraCG);
 		figure3d.addAbsoluteExtra(extraText);

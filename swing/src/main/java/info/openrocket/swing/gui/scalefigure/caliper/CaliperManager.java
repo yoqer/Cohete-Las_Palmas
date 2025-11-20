@@ -1,23 +1,31 @@
-package info.openrocket.swing.gui.scalefigure;
+package info.openrocket.swing.gui.scalefigure.caliper;
 
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
+import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.BoundingBox;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.StateChangeListener;
+import info.openrocket.core.util.Transformation;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.components.EditableSpinner;
 import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.figureelements.CaliperLine;
 import info.openrocket.swing.gui.figureelements.HorizontalCaliperLine;
+import info.openrocket.swing.gui.scalefigure.RocketFigure;
+import info.openrocket.swing.gui.scalefigure.RocketPanel;
+import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapRegistry;
+import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.widgets.IconToggleButton;
 import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.l10n.Translator;
 import net.miginfocom.swing.MigLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -36,7 +44,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.EventObject;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Manages the caliper measurement tool for the rocket panel.
@@ -45,8 +56,10 @@ import java.util.EventObject;
  * @author OpenRocket Team
  */
 public class CaliperManager {
-
+	private static final Logger log = LoggerFactory.getLogger(CaliperManager.class);
 	private static final Translator trans = Application.getTranslator();
+
+	private static final double SNAP_PIXEL_TOLERANCE = 8.0; // Tolerance in pixels for snap target detection
 
 	/**
 	 * Caliper mode: VERTICAL for measuring horizontal distances, HORIZONTAL for measuring vertical distances.
@@ -71,6 +84,7 @@ public class CaliperManager {
 	private final OpenRocketDocument document;
 	private final ViewTypeProvider viewTypeProvider;
 	private final Runnable figureUpdateCallback;
+	private final Runnable focusRequestCallback;
 
 	// Caliper state
 	private boolean enabled = false;
@@ -101,6 +115,8 @@ public class CaliperManager {
 	private UnitSelector unitSelector;
 	private JSpinner caliper1PositionSpinner;
 	private JSpinner caliper2PositionSpinner;
+	private IconToggleButton caliper1SnapButton;
+	private IconToggleButton caliper2SnapButton;
 
 	// Models
 	private final DoubleModel distanceModel;
@@ -112,6 +128,12 @@ public class CaliperManager {
 	// State per view type
 	private final CaliperState sideViewCaliperState = new CaliperState();
 	private final CaliperState backViewCaliperState = new CaliperState();
+
+	// Snap mode state
+	private boolean snapModeActive = false;
+	private Integer activeSnapCaliper = null;  // 1 or 2, or null if not in snap mode
+	private CaliperSnapTarget hoveredSnapTarget = null;
+	private final List<CaliperSnapTarget> currentSnapTargets = new ArrayList<>();
 
 	/**
 	 * Interface for getting the current view type from the panel.
@@ -127,13 +149,16 @@ public class CaliperManager {
 	 * @param document the document containing the rocket
 	 * @param viewTypeProvider provider for the current view type
 	 * @param figureUpdateCallback callback to update the figure when caliper state changes
+	 * @param focusRequestCallback callback to request focus when entering snap mode
 	 */
 	public CaliperManager(RocketFigure figure, OpenRocketDocument document,
-						  ViewTypeProvider viewTypeProvider, Runnable figureUpdateCallback) {
+						  ViewTypeProvider viewTypeProvider, Runnable figureUpdateCallback,
+						  Runnable focusRequestCallback) {
 		this.figure = figure;
 		this.document = document;
 		this.viewTypeProvider = viewTypeProvider;
 		this.figureUpdateCallback = figureUpdateCallback;
+		this.focusRequestCallback = focusRequestCallback;
 
 		// Initialize models
 		distanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
@@ -195,7 +220,7 @@ public class CaliperManager {
 		// Caliper tool toggle button
 		toggleButton = new IconToggleButton();
 		toggleButton.setSelectedIcon(Icons.RULER);
-		toggleButton.setToolTipText(trans.get("RocketPanel.btn.Caliper"));
+		toggleButton.setToolTipText(trans.get("CaliperManager.btn.Caliper"));
 
 		// Caliper mode toggle button (Vertical/Horizontal)
 		modeButton = new JButton("V");
@@ -259,8 +284,41 @@ public class CaliperManager {
 
 		displayPanel.add(new JLabel("1:"));
 		displayPanel.add(caliper1PositionSpinner);
+		
+		// Snap mode button for caliper 1
+		caliper1SnapButton = new IconToggleButton();
+		caliper1SnapButton.setIcon(Icons.SNAP);
+		caliper1SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 1));
+		caliper1SnapButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 1) {
+					exitSnapMode();
+				} else {
+					enterSnapMode(1);
+				}
+			}
+		});
+		displayPanel.add(caliper1SnapButton, "gapleft rel");
+		
 		displayPanel.add(new JLabel("2:"), "gapleft rel");
 		displayPanel.add(caliper2PositionSpinner);
+		
+		// Snap mode button for caliper 2
+		caliper2SnapButton = new IconToggleButton();
+		caliper2SnapButton.setIcon(Icons.SNAP);
+		caliper2SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 2));
+		caliper2SnapButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 2) {
+					exitSnapMode();
+				} else {
+					enterSnapMode(2);
+				}
+			}
+		});
+		displayPanel.add(caliper2SnapButton, "gapleft rel");
 
 		// Update visibility when caliper is toggled
 		toggleButton.addActionListener(new ActionListener() {
@@ -368,6 +426,10 @@ public class CaliperManager {
 				distanceSpinner.setModel(distanceModel.getSpinnerModel());
 				unitSelector.setModel(distanceModel);
 			}
+		}
+		// Update snap targets if in snap mode
+		if (snapModeActive) {
+			updateSnapTargets();
 		}
 		updateCaliperElements();
 		updateCaliperPositionModelsFromState();
@@ -572,6 +634,15 @@ public class CaliperManager {
 	 */
 	public void updateCaliperElements() {
 		if (enabled) {
+			// Only set snap mode (transparency) on the active snap caliper
+			boolean caliper1IsActive = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 1;
+			boolean caliper2IsActive = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 2;
+			
+			caliper1Line.setSnapMode(caliper1IsActive);
+			caliper2Line.setSnapMode(caliper2IsActive);
+			caliper1HorizontalLine.setSnapMode(caliper1IsActive);
+			caliper2HorizontalLine.setSnapMode(caliper2IsActive);
+			
 			if (mode == CaliperMode.VERTICAL) {
 				figure.addRelativeExtra(caliper1Line);
 				figure.addRelativeExtra(caliper2Line);
@@ -866,6 +937,240 @@ public class CaliperManager {
 		updateCaliperHorizontalDistance();
 		updateCaliperPositionModelsFromState();
 		saveCurrentCaliperState();
+	}
+
+	/**
+	 * Enter snap mode for the specified caliper.
+	 *
+	 * @param caliperNumber 1 or 2
+	 */
+	public void enterSnapMode(int caliperNumber) {
+		if (caliperNumber != 1 && caliperNumber != 2) {
+			throw new IllegalArgumentException("Caliper number must be 1 or 2");
+		}
+		snapModeActive = true;
+		activeSnapCaliper = caliperNumber;
+		hoveredSnapTarget = null;
+		updateSnapTargets();
+		updateSnapButtonStates();
+		figureUpdateCallback.run();
+		
+		// Request focus on the scroll pane so Escape key works
+		if (focusRequestCallback != null) {
+			focusRequestCallback.run();
+		}
+	}
+
+	/**
+	 * Exit snap mode.
+	 */
+	public void exitSnapMode() {
+		snapModeActive = false;
+		activeSnapCaliper = null;
+		if (hoveredSnapTarget != null) {
+			hoveredSnapTarget = null;
+			figureUpdateCallback.run();  // Update to clear highlight
+		}
+		currentSnapTargets.clear();
+		updateSnapButtonStates();
+		figureUpdateCallback.run();
+	}
+
+	/**
+	 * Check if snap mode is currently active.
+	 *
+	 * @return true if snap mode is active
+	 */
+	public boolean isSnapModeActive() {
+		return snapModeActive;
+	}
+
+	/**
+	 * Get the currently active snap caliper (1 or 2), or null if not in snap mode.
+	 *
+	 * @return the active snap caliper number, or null
+	 */
+	public Integer getActiveSnapCaliper() {
+		return activeSnapCaliper;
+	}
+
+	/**
+	 * Get the currently hovered snap target, or null if none.
+	 *
+	 * @return the hovered snap target, or null
+	 */
+	public CaliperSnapTarget getHoveredSnapTarget() {
+		return hoveredSnapTarget;
+	}
+
+	/**
+	 * Update snap button visual states.
+	 */
+	private void updateSnapButtonStates() {
+		if (caliper1SnapButton != null) {
+			boolean selected = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 1;
+			caliper1SnapButton.setSelected(selected);
+		}
+		if (caliper2SnapButton != null) {
+			boolean selected = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 2;
+			caliper2SnapButton.setSelected(selected);
+		}
+	}
+
+	/**
+	 * Update the list of snap targets based on current view type and caliper mode.
+	 */
+	public void updateSnapTargets() {
+		currentSnapTargets.clear();
+		
+		if (!enabled) {
+			return;
+		}
+		if (!snapModeActive) {
+			return;
+		}
+
+		RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+		if (viewType == null) {
+			return;
+		}
+		if (viewType.is3d) {
+			return;
+		}
+
+		// Get component transformations from the figure
+		Map<RocketComponent, List<Transformation>> componentTransforms =
+				figure.getComponentTransformations();
+
+		// Get snap targets from the registry
+		CaliperSnapRegistry registry = CaliperSnapRegistry.getInstance();
+		
+		for (Map.Entry<RocketComponent, List<Transformation>> entry :
+				componentTransforms.entrySet()) {
+			RocketComponent component = entry.getKey();
+			List<Transformation> transforms = entry.getValue();
+			
+			for (Transformation transform : transforms) {
+				List<CaliperSnapTarget> targets = registry.getSnapTargets(
+						component, viewType, mode, transform);
+				currentSnapTargets.addAll(targets);
+			}
+		}
+	}
+
+	/**
+	 * Find the nearest snap target to the given screen coordinates.
+	 *
+	 * @param screenX screen X coordinate
+	 * @param screenY screen Y coordinate
+	 * @param screenToModel function to convert screen to model coordinates
+	 * @return the nearest compatible snap target, or null if none within tolerance
+	 */
+	public CaliperSnapTarget findNearestSnapTarget(int screenX, int screenY,
+												   java.util.function.Function<Point, Point2D.Double> screenToModel) {
+		if (!snapModeActive) {
+			return null;
+		}
+		if (currentSnapTargets.isEmpty()) {
+			return null;
+		}
+
+		Point screenPoint = new Point(screenX, screenY);
+		Point2D.Double modelPoint = screenToModel.apply(screenPoint);
+		if (modelPoint == null) {
+			return null;
+		}
+
+		RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+		
+		// Convert to Coordinate for distance calculation
+		// In back view, screen X maps to model Z, screen Y maps to model Y
+		// In side/top view, screen X maps to model X, screen Y maps to model Y
+		info.openrocket.core.util.Coordinate point;
+		if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+			// Back view: modelPoint.x is actually Z coordinate
+			point = new info.openrocket.core.util.Coordinate(0, modelPoint.y, modelPoint.x);
+		} else {
+			// Side/Top view: modelPoint.x is X coordinate
+			point = new info.openrocket.core.util.Coordinate(modelPoint.x, modelPoint.y, 0);
+		}
+
+		// Fixed pixel tolerance: 8 pixels
+		// Convert pixel tolerance to model coordinates using the figure's scale
+		double scale = figure.getAbsoluteScale();
+		double modelTolerance = SNAP_PIXEL_TOLERANCE / scale;
+
+		CaliperSnapTarget nearest = null;
+		double minDistance = Double.MAX_VALUE;
+
+		for (CaliperSnapTarget target : currentSnapTargets) {
+			if (!target.isCompatibleWith(mode)) {
+				continue;
+			}
+
+			double distance = target.getDistanceToPoint(point, viewType);
+			if (distance < modelTolerance && distance < minDistance) {
+				minDistance = distance;
+				nearest = target;
+			}
+		}
+
+		return nearest;
+	}
+
+	/**
+	 * Handle mouse move in snap mode - update hovered target.
+	 *
+	 * @param screenX screen X coordinate
+	 * @param screenY screen Y coordinate
+	 * @param screenToModel function to convert screen to model coordinates
+	 */
+	public void handleSnapModeMouseMoved(int screenX, int screenY,
+										java.util.function.Function<Point, Point2D.Double> screenToModel) {
+		if (!snapModeActive) {
+			return;
+		}
+
+		CaliperSnapTarget nearest = findNearestSnapTarget(screenX, screenY, screenToModel);
+		if (nearest != hoveredSnapTarget) {
+			hoveredSnapTarget = nearest;
+			figureUpdateCallback.run();
+		}
+	}
+
+	/**
+	 * Handle mouse click in snap mode - snap to the nearest target.
+	 *
+	 * @param screenX screen X coordinate
+	 * @param screenY screen Y coordinate
+	 * @param screenToModel function to convert screen to model coordinates
+	 * @return true if snapping occurred, false otherwise
+	 */
+	public boolean handleSnapModeMouseClicked(int screenX, int screenY,
+											  java.util.function.Function<Point, Point2D.Double> screenToModel) {
+		if (!snapModeActive || activeSnapCaliper == null) {
+			return false;
+		}
+
+		CaliperSnapTarget target = findNearestSnapTarget(screenX, screenY, screenToModel);
+		if (target == null) {
+			return false;
+		}
+
+		// Snap the caliper to the target
+		RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+		double snapValue = target.getSnapValue(mode, viewType);
+		boolean isCaliper1 = (activeSnapCaliper == 1);
+
+		if (mode == CaliperMode.VERTICAL) {
+			setCaliperLinePosition(isCaliper1, snapValue);
+		} else {
+			setHorizontalCaliperLinePosition(isCaliper1, snapValue);
+		}
+
+		// Exit snap mode after snapping
+		exitSnapMode();
+		return true;
 	}
 }
 

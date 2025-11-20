@@ -113,6 +113,7 @@ public class UITheme {
         Color getCGColor();
         Color getCPColor();
         Color getCaliperColor();
+        Color getCaliperSnapHighlightColor();
 
         Color getURLColor();
 
@@ -409,6 +410,11 @@ public class UITheme {
             @Override
             public Color getCaliperColor() {
                 return new Color(255, 100, 255);
+            }
+
+            @Override
+            public Color getCaliperSnapHighlightColor() {
+                return new Color(255, 255, 0, 200);
             }
 
             @Override
@@ -838,6 +844,11 @@ public class UITheme {
             }
 
             @Override
+            public Color getCaliperSnapHighlightColor() {
+                return new Color(255, 255, 0, 200);
+            }
+
+            @Override
             public Color getURLColor() {
                 return new Color(150, 167, 255);
             }
@@ -1261,6 +1272,11 @@ public class UITheme {
             @Override
             public Color getCaliperColor() {
                 return new Color(255, 120, 255);
+            }
+
+            @Override
+            public Color getCaliperSnapHighlightColor() {
+                return new Color(255, 255, 0, 200);
             }
 
             @Override
@@ -1706,6 +1722,11 @@ public class UITheme {
             @Override
             public Color getCaliperColor() {
                 return getCurrentTheme().getCaliperColor();
+            }
+
+            @Override
+            public Color getCaliperSnapHighlightColor() {
+                return getCurrentTheme().getCaliperSnapHighlightColor();
             }
 
             @Override
