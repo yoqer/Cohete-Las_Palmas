@@ -3243,7 +3243,7 @@ public abstract class RocketComponent implements ChangeSource, Cloneable, Iterab
 		}
 		
 		public String getComponentName() {
-			return trans.get("NullComponent.COMPONENT_REMOVED");
+			return trans.get("RemovedComponent.COMPONENT_REMOVED");
 		}
 		
 		public double getComponentMass() {
