@@ -42,7 +42,8 @@ public abstract class Caret implements FigureElement {
 	
 	@Override
 	public void paint(Graphics2D g2, double scale, Rectangle visible) {
-		throw new UnsupportedOperationException("paint() with rectangle unsupported.");
+		// Carets don't need the visible rectangle, just call the single-parameter version
+		paint(g2, scale);
 	}
 
 	/**

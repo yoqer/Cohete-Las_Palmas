@@ -333,9 +333,11 @@ public class RocketFigure extends AbstractScaleFigure {
 
 
 		// Draw relative extras
+		// Get visible rectangle for out-of-view indicators
+		Rectangle visibleRect = this.getVisibleRect();
 		if (drawCarets) {
 			for (FigureElement e : relativeExtra) {
-				e.paint(g2, scale);
+				e.paint(g2, scale, visibleRect);
 			}
 		}
 

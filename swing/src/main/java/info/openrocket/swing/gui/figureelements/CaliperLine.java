@@ -29,6 +29,12 @@ public class CaliperLine implements FigureElement {
 	private static final float LINE_WIDTH_NORMAL = 2.0f;  // Normal line thickness
 	private static final float LINE_WIDTH_HOVER = 4.0f;  // Thicker line when hovering
 	private static final Font HANDLE_LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 30);
+	private static final Font INDICATOR_LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 24);  // Font for indicator label
+	
+	// Out-of-view indicator
+	private static final float ARROW_SIZE = 20.0f;  // Size of the arrow indicator
+	private static final float ARROW_STROKE_WIDTH = 3.0f;  // Thickness of arrow lines
+	private static final float LABEL_OFFSET = 8.0f;  // Distance from arrow to label
 
 	private double x;  // X position in model coordinates
 	private boolean isHovered = false;  // Whether the mouse is hovering over this line
@@ -37,6 +43,7 @@ public class CaliperLine implements FigureElement {
 
 	private static Color lineColor;
 	private static Color handleColor;
+	private static Color textColor;
 
 	static {
 		initColors();
@@ -57,8 +64,8 @@ public class CaliperLine implements FigureElement {
 	}
 
 	public static void updateColors() {
-		// Use theme-dependent caliper color
 		lineColor = GUIUtil.getUITheme().getCaliperColor();
+		textColor = GUIUtil.getUITheme().getTextColor();
 
 		// Use an even brighter color for the handle
 		Color baseColor = lineColor;
@@ -150,6 +157,13 @@ public class CaliperLine implements FigureElement {
 			// Reset transform to draw in screen coordinates
 			g2Screen.setTransform(new AffineTransform());
 			
+			// Get the actual visible bounds in screen coordinates (after transform reset)
+			// Use clip bounds if available, otherwise fall back to visible parameter
+			Rectangle screenVisible = visible;
+			if (g2Screen.getClipBounds() != null) {
+				screenVisible = g2Screen.getClipBounds();
+			}
+			
 			// Draw vertical line covering the full viewport height
 			// We draw in screen coordinates, from Y=0 to a very large number (e.g. 20000)
 			// The clip will ensure it doesn't draw outside the viewport
@@ -214,8 +228,86 @@ public class CaliperLine implements FigureElement {
 				g2Screen.setColor(Color.BLACK);
 				g2Screen.drawString(handleLabel, (float) textX, (float) textY);
 			}
+			
+			// Draw out-of-view indicator if the caliper line is outside the visible area
+			if (screenVisible != null) {
+				// Both handleX_screen and screenVisible are now in screen coordinates (after transform reset)
+				// Add a small margin to avoid flickering when the line is right at the edge
+				double margin = 5.0;
+				boolean isOutOfView = (handleX_screen < screenVisible.x - margin) || 
+				                       (handleX_screen > screenVisible.x + screenVisible.width + margin);
+				if (isOutOfView) {
+					drawOutOfViewIndicator(g2Screen, handleX_screen, screenVisible);
+				}
+			}
 		} finally {
 			g2Screen.dispose();
+		}
+	}
+	
+	/**
+	 * Draw an arrow indicator at the edge of the viewport pointing toward the caliper line.
+	 *
+	 * @param g2Screen the graphics context in screen coordinates
+	 * @param caliperX the X position of the caliper line in screen coordinates
+	 * @param visible the visible viewport rectangle
+	 */
+	private void drawOutOfViewIndicator(Graphics2D g2Screen, double caliperX, Rectangle visible) {
+		Color indicatorColor = lineColor;
+		if (isSnapMode) {
+			indicatorColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);
+		}
+		g2Screen.setColor(indicatorColor);
+		g2Screen.setStroke(new BasicStroke(ARROW_STROKE_WIDTH, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		
+		// Determine which edge to draw the arrow on
+		boolean isLeft = caliperX < visible.x;
+		double arrowX = isLeft ? visible.x : visible.x + visible.width;
+		
+		// Position arrow vertically centered in the visible area
+		double arrowY = visible.y + visible.height / 2.0;
+		
+		// Draw arrow pointing toward the caliper line
+		Path2D.Double arrow = new Path2D.Double();
+		if (isLeft) {
+			// Arrow pointing left (caliper is to the left)
+			arrow.moveTo(arrowX, arrowY);
+			arrow.lineTo(arrowX + ARROW_SIZE, arrowY - ARROW_SIZE / 2);
+			arrow.lineTo(arrowX + ARROW_SIZE, arrowY + ARROW_SIZE / 2);
+			arrow.closePath();
+		} else {
+			// Arrow pointing right (caliper is to the right)
+			arrow.moveTo(arrowX, arrowY);
+			arrow.lineTo(arrowX - ARROW_SIZE, arrowY - ARROW_SIZE / 2);
+			arrow.lineTo(arrowX - ARROW_SIZE, arrowY + ARROW_SIZE / 2);
+			arrow.closePath();
+		}
+		
+		g2Screen.fill(arrow);
+		g2Screen.draw(arrow);
+		
+		// Draw label next to the arrow if available
+		if (handleLabel != null && !handleLabel.isEmpty()) {
+			g2Screen.setFont(INDICATOR_LABEL_FONT);
+			FontRenderContext frc = g2Screen.getFontRenderContext();
+			Rectangle2D textBounds = INDICATOR_LABEL_FONT.getStringBounds(handleLabel, frc);
+			double textWidth = textBounds.getWidth();
+			double textHeight = textBounds.getHeight();
+			
+			// Position label next to the arrow
+			double labelX, labelY;
+			if (isLeft) {
+				// Label to the right of the arrow (arrow points left)
+				labelX = arrowX + ARROW_SIZE + LABEL_OFFSET;
+				labelY = arrowY + textHeight / 4.0;  // Vertically centered
+			} else {
+				// Label to the left of the arrow (arrow points right)
+				labelX = arrowX - ARROW_SIZE - LABEL_OFFSET - textWidth;
+				labelY = arrowY + textHeight / 4.0;  // Vertically centered
+			}
+			
+			g2Screen.setColor(textColor);
+			g2Screen.drawString(handleLabel, (float) labelX, (float) labelY);
 		}
 	}
 }
