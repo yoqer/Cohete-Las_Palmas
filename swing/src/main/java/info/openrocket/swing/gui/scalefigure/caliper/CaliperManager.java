@@ -1,7 +1,10 @@
 package info.openrocket.swing.gui.scalefigure.caliper;
 
 import info.openrocket.core.document.OpenRocketDocument;
+import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
+import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
+import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
@@ -159,6 +162,28 @@ public class CaliperManager {
 		this.viewTypeProvider = viewTypeProvider;
 		this.figureUpdateCallback = figureUpdateCallback;
 		this.focusRequestCallback = focusRequestCallback;
+
+		// Listen to rocket changes to exit snap mode when rocket structure changes
+		Rocket rocket = document.getRocket();
+		rocket.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				// Exit snap mode when rocket changes (e.g., component added/removed, undo/redo)
+				if (snapModeActive) {
+					exitSnapMode();
+				}
+			}
+		});
+		
+		rocket.addComponentChangeListener(new ComponentChangeListener() {
+			@Override
+			public void componentChanged(ComponentChangeEvent e) {
+				// Exit snap mode when components change (e.g., component modified)
+				if (snapModeActive) {
+					exitSnapMode();
+				}
+			}
+		});
 
 		// Initialize models
 		distanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
