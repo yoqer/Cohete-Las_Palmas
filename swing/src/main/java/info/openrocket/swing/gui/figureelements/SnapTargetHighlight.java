@@ -23,7 +23,7 @@ import java.awt.geom.Point2D;
  */
 public class SnapTargetHighlight implements FigureElement {
 
-	private static final float LINE_WIDTH = 3.0f;
+	private static final float LINE_WIDTH = 6.0f;
 	private static final float POINT_RADIUS = 6.0f;
 
 	private static Color highlightColor;
