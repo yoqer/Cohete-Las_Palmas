@@ -151,28 +151,20 @@ public class CaliperSnapTarget {
 	public double getDistanceToPoint(Coordinate point, RocketPanel.VIEW_TYPE viewType) {
 		double distance;
 		if (type == SnapType.POINT) {
-			// Calculate 2D distance in the view plane
+			// Calculate true 2D distance in the view plane (both dimensions)
 			if (viewType == RocketPanel.VIEW_TYPE.BackView) {
 				// Back view: screen X = Z, screen Y = Y
-				if (orientation == CaliperManager.CaliperMode.VERTICAL) {
-					// Vertical caliper measures Z coordinate
-					distance = Math.abs(position.getZ() - point.getZ());
-				} else {
-					// Horizontal caliper measures Y coordinate
-					distance = Math.abs(position.getY() - point.getY());
-				}
+				double dz = position.getZ() - point.getZ();
+				double dy = position.getY() - point.getY();
+				distance = Math.sqrt(dz * dz + dy * dy);
 			} else {
 				// Side/Top view: screen X = X, screen Y = Y
-				if (orientation == CaliperManager.CaliperMode.VERTICAL) {
-					// Vertical caliper measures X coordinate
-					distance = Math.abs(position.getX() - point.getX());
-				} else {
-					// Horizontal caliper measures Y coordinate
-					distance = Math.abs(position.getY() - point.getY());
-				}
+				double dx = position.getX() - point.getX();
+				double dy = position.getY() - point.getY();
+				distance = Math.sqrt(dx * dx + dy * dy);
 			}
 		} else {
-			// For LINE targets, calculate perpendicular distance to the line segment
+			// For LINE targets, calculate perpendicular distance to the line segment in 2D
 			distance = distanceToLineSegment(point, lineStart, lineEnd, viewType);
 		}
 		return distance;
@@ -204,28 +196,67 @@ public class CaliperSnapTarget {
 	}
 	
 	/**
-	 * Calculate the perpendicular distance from a point to a line segment.
+	 * Calculate the perpendicular distance from a point to a line segment in 2D.
+	 * This calculates the true perpendicular distance in the view plane, not just one dimension.
 	 */
 	private double distanceToLineSegment(Coordinate point, Coordinate lineStart, Coordinate lineEnd, RocketPanel.VIEW_TYPE viewType) {
-		if (orientation == CaliperManager.CaliperMode.VERTICAL) {
-			// Vertical line: distance depends on view type
-			if (viewType == RocketPanel.VIEW_TYPE.BackView) {
-				// Back view: vertical caliper measures Z coordinate
-				double pz = point.getZ();
-				double lineZ = lineStart.getZ();
-				return Math.abs(pz - lineZ);
+		double px, py, lineStartX, lineStartY, lineEndX, lineEndY;
+		
+		if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+			// Back view: screen X = Z, screen Y = Y
+			if (orientation == CaliperManager.CaliperMode.VERTICAL) {
+				// Vertical line in back view: line is parallel to Y-axis (Z is constant)
+				px = point.getZ();
+				py = point.getY();
+				lineStartX = lineStart.getZ();
+				lineStartY = lineStart.getY();
+				lineEndX = lineEnd.getZ();
+				lineEndY = lineEnd.getY();
 			} else {
-				// Side/Top view: vertical caliper measures X coordinate
-				double px = point.getX();
-				double lineX = lineStart.getX();
-				return Math.abs(px - lineX);
+				// Horizontal line in back view: line is parallel to Z-axis (Y is constant)
+				px = point.getZ();
+				py = point.getY();
+				lineStartX = lineStart.getZ();
+				lineStartY = lineStart.getY();
+				lineEndX = lineEnd.getZ();
+				lineEndY = lineEnd.getY();
 			}
 		} else {
-			// Horizontal line: always measures Y coordinate (same for all views)
-			double py = point.getY();
-			double lineY = lineStart.getY();
-			return Math.abs(py - lineY);
+			// Side/Top view: screen X = X, screen Y = Y
+			px = point.getX();
+			py = point.getY();
+			lineStartX = lineStart.getX();
+			lineStartY = lineStart.getY();
+			lineEndX = lineEnd.getX();
+			lineEndY = lineEnd.getY();
 		}
+		
+		// Calculate perpendicular distance to line segment in 2D
+		double dx = lineEndX - lineStartX;
+		double dy = lineEndY - lineStartY;
+		double lineLengthSq = dx * dx + dy * dy;
+		
+		if (lineLengthSq < 1e-10) {
+			// Line is essentially a point, return distance to that point
+			double dpx = px - lineStartX;
+			double dpy = py - lineStartY;
+			return Math.sqrt(dpx * dpx + dpy * dpy);
+		}
+		
+		// Calculate projection parameter t
+		double t = ((px - lineStartX) * dx + (py - lineStartY) * dy) / lineLengthSq;
+		
+		// Clamp t to [0, 1] to stay on the line segment
+		t = Math.max(0.0, Math.min(1.0, t));
+		
+		// Find closest point on line segment
+		double closestX = lineStartX + t * dx;
+		double closestY = lineStartY + t * dy;
+		
+		// Calculate distance from point to closest point on line
+		double dpx = px - closestX;
+		double dpy = py - closestY;
+		return Math.sqrt(dpx * dpx + dpy * dpy);
 	}
 }
 
