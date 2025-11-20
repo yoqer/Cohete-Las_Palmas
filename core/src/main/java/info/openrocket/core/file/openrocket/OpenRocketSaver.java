@@ -456,10 +456,13 @@ public class OpenRocketSaver extends RocketSaver {
 				writeElement("description", w.getMessageDescription());
 				writeElement("priority", w.getPriority());
 
-				if (null != w.getSources()) {
-					for (RocketComponent c : w.getSources()) {
-						// Save component ID if it's still in the tree, else nil UUID
-						writeElement("source", null != simulation.getRocket().findComponent(c.getID()) ? c.getID() : new UUID(0, 0));
+				RocketComponent[] sources = w.getSources();
+				if (null != sources) {
+					for (RocketComponent c : sources) {
+						if (c != null) {
+							// Save component ID if it's still in the tree, else RemovedComponent UUID
+							writeElement("source", simulation.getRocket().findComponent(c.getID()).getID());
+						}
 					}
 				}
 
