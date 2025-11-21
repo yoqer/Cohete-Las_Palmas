@@ -134,8 +134,13 @@ public class CaliperSnapTarget {
 	/**
 	 * Check if this snap target is compatible with the given caliper mode.
 	 * A vertical caliper can only snap to vertical targets, and vice versa.
+	 * Targets with BOTH orientation are compatible with both modes.
 	 */
 	public boolean isCompatibleWith(CaliperManager.CaliperMode caliperMode) {
+		// BOTH targets are compatible with both VERTICAL and HORIZONTAL modes
+		if (this.orientation == CaliperManager.CaliperMode.BOTH) {
+			return caliperMode == CaliperManager.CaliperMode.VERTICAL || caliperMode == CaliperManager.CaliperMode.HORIZONTAL;
+		}
 		return this.orientation == caliperMode;
 	}
 	

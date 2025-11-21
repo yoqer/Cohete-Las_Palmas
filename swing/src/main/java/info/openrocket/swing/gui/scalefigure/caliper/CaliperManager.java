@@ -69,7 +69,8 @@ public class CaliperManager {
 	 */
 	public enum CaliperMode {
 		VERTICAL,
-		HORIZONTAL
+		HORIZONTAL,
+		BOTH			// Vertical and horizontal
 	}
 
 	/**

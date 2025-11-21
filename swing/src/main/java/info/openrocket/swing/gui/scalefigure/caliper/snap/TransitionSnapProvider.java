@@ -250,42 +250,38 @@ public class TransitionSnapProvider implements ComponentSnapProvider {
 		CoordinateIF aftCenterIF = transformation.transform(new Coordinate(transition.getLength(), 0, 0));
 		Coordinate aftCenter = new Coordinate(aftCenterIF.getX(), aftCenterIF.getY(), aftCenterIF.getZ());
 		
-		if (caliperMode == CaliperManager.CaliperMode.VERTICAL) {
-			// Vertical caliper mode: snap to left and right points on outer circles
-			
-			// Fore end outer circle points
-			if (foreRadius > MINFEATURE) {
-				Coordinate foreLeft = new Coordinate(foreCenter.getX(), foreCenter.getY(), foreCenter.getZ() - foreRadius);
-				Coordinate foreRight = new Coordinate(foreCenter.getX(), foreCenter.getY(), foreCenter.getZ() + foreRadius);
-				targets.add(new CaliperSnapTarget(foreLeft, CaliperManager.CaliperMode.VERTICAL, transition, "Fore outer left"));
-				targets.add(new CaliperSnapTarget(foreRight, CaliperManager.CaliperMode.VERTICAL, transition, "Fore outer right"));
-			}
-			
-			// Aft end outer circle points
-			if (aftRadius > MINFEATURE) {
-				Coordinate aftLeft = new Coordinate(aftCenter.getX(), aftCenter.getY(), aftCenter.getZ() - aftRadius);
-				Coordinate aftRight = new Coordinate(aftCenter.getX(), aftCenter.getY(), aftCenter.getZ() + aftRadius);
-				targets.add(new CaliperSnapTarget(aftLeft, CaliperManager.CaliperMode.VERTICAL, transition, "Aft outer left"));
-				targets.add(new CaliperSnapTarget(aftRight, CaliperManager.CaliperMode.VERTICAL, transition, "Aft outer right"));
-			}
-		} else {
-			// Horizontal caliper mode: snap to top and bottom points on outer circles
-			
-			// Fore end outer circle points
-			if (foreRadius > MINFEATURE) {
-				Coordinate foreTop = new Coordinate(foreCenter.getX(), foreCenter.getY() + foreRadius, foreCenter.getZ());
-				Coordinate foreBottom = new Coordinate(foreCenter.getX(), foreCenter.getY() - foreRadius, foreCenter.getZ());
-				targets.add(new CaliperSnapTarget(foreTop, CaliperManager.CaliperMode.HORIZONTAL, transition, "Fore outer top"));
-				targets.add(new CaliperSnapTarget(foreBottom, CaliperManager.CaliperMode.HORIZONTAL, transition, "Fore outer bottom"));
-			}
-			
-			// Aft end outer circle points
-			if (aftRadius > MINFEATURE) {
-				Coordinate aftTop = new Coordinate(aftCenter.getX(), aftCenter.getY() + aftRadius, aftCenter.getZ());
-				Coordinate aftBottom = new Coordinate(aftCenter.getX(), aftCenter.getY() - aftRadius, aftCenter.getZ());
-				targets.add(new CaliperSnapTarget(aftTop, CaliperManager.CaliperMode.HORIZONTAL, transition, "Aft outer top"));
-				targets.add(new CaliperSnapTarget(aftBottom, CaliperManager.CaliperMode.HORIZONTAL, transition, "Aft outer bottom"));
-			}
+		//// Snap to left and right points on outer circles
+		// Fore end outer circle points
+		if (foreRadius > MINFEATURE) {
+			Coordinate foreLeft = new Coordinate(foreCenter.getX(), foreCenter.getY(), foreCenter.getZ() - foreRadius);
+			Coordinate foreRight = new Coordinate(foreCenter.getX(), foreCenter.getY(), foreCenter.getZ() + foreRadius);
+			targets.add(new CaliperSnapTarget(foreLeft, CaliperManager.CaliperMode.BOTH, transition, "Fore outer left"));
+			targets.add(new CaliperSnapTarget(foreRight, CaliperManager.CaliperMode.BOTH, transition, "Fore outer right"));
+		}
+
+		// Aft end outer circle points
+		if (aftRadius > MINFEATURE) {
+			Coordinate aftLeft = new Coordinate(aftCenter.getX(), aftCenter.getY(), aftCenter.getZ() - aftRadius);
+			Coordinate aftRight = new Coordinate(aftCenter.getX(), aftCenter.getY(), aftCenter.getZ() + aftRadius);
+			targets.add(new CaliperSnapTarget(aftLeft, CaliperManager.CaliperMode.BOTH, transition, "Aft outer left"));
+			targets.add(new CaliperSnapTarget(aftRight, CaliperManager.CaliperMode.BOTH, transition, "Aft outer right"));
+		}
+
+		//// Snap to top and bottom points on outer circles
+		// Fore end outer circle points
+		if (foreRadius > MINFEATURE) {
+			Coordinate foreTop = new Coordinate(foreCenter.getX(), foreCenter.getY() + foreRadius, foreCenter.getZ());
+			Coordinate foreBottom = new Coordinate(foreCenter.getX(), foreCenter.getY() - foreRadius, foreCenter.getZ());
+			targets.add(new CaliperSnapTarget(foreTop, CaliperManager.CaliperMode.BOTH, transition, "Fore outer top"));
+			targets.add(new CaliperSnapTarget(foreBottom, CaliperManager.CaliperMode.BOTH, transition, "Fore outer bottom"));
+		}
+
+		// Aft end outer circle points
+		if (aftRadius > MINFEATURE) {
+			Coordinate aftTop = new Coordinate(aftCenter.getX(), aftCenter.getY() + aftRadius, aftCenter.getZ());
+			Coordinate aftBottom = new Coordinate(aftCenter.getX(), aftCenter.getY() - aftRadius, aftCenter.getZ());
+			targets.add(new CaliperSnapTarget(aftTop, CaliperManager.CaliperMode.BOTH, transition, "Aft outer top"));
+			targets.add(new CaliperSnapTarget(aftBottom, CaliperManager.CaliperMode.BOTH, transition, "Aft outer bottom"));
 		}
 	}
 }
