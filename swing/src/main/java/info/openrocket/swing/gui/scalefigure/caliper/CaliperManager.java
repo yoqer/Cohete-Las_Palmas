@@ -379,6 +379,15 @@ public class CaliperManager {
 	}
 
 	/**
+	 * Get the current distance model (vertical or horizontal based on mode).
+	 *
+	 * @return the current distance model
+	 */
+	public DoubleModel getCurrentDistanceModel() {
+		return (mode == CaliperMode.HORIZONTAL) ? horizontalDistanceModel : distanceModel;
+	}
+
+	/**
 	 * Get the caliper 1 position spinner.
 	 *
 	 * @return the caliper 1 position spinner

@@ -2,6 +2,9 @@ package info.openrocket.swing.gui.scalefigure.caliper;
 
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
+import info.openrocket.core.unit.Unit;
+import info.openrocket.core.util.StateChangeListener;
+import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.util.GUIUtil;
 import net.miginfocom.swing.MigLayout;
 
@@ -12,10 +15,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.WindowConstants;
 import java.awt.Color;
 import java.awt.Dialog;
+import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,6 +28,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.EventObject;
+import java.util.function.Consumer;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -84,24 +91,6 @@ public class CaliperDialog extends JDialog {
 		verticalRadio.setSelected(currentMode == CaliperManager.CaliperMode.VERTICAL);
 		horizontalRadio.setSelected(currentMode == CaliperManager.CaliperMode.HORIZONTAL);
 		
-		// Add listeners to update mode
-		verticalRadio.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					caliperManager.setMode(CaliperManager.CaliperMode.VERTICAL);
-				}
-			}
-		});
-		horizontalRadio.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					caliperManager.setMode(CaliperManager.CaliperMode.HORIZONTAL);
-				}
-			}
-		});
-		
 		panel.add(verticalRadio, "gapleft para, split 2");
 		panel.add(horizontalRadio, "wrap para");
 		
@@ -112,15 +101,93 @@ public class CaliperDialog extends JDialog {
 		Border caliperBorder = new LineBorder(caliperColor, 1);
 		distancePanel.setBorder(new CompoundBorder(caliperBorder, new EmptyBorder(5, 5, 5, 5)));
 		
-		JSpinner distanceSpinner = caliperManager.getDistanceSpinner();
-		JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) distanceSpinner.getEditor();
-		javax.swing.JTextField textField = editor.getTextField();
-		textField.setForeground(caliperColor);
-		distancePanel.add(distanceSpinner, "split 2, aligny center");
-		distancePanel.add(caliperManager.getUnitSelector(), "gapright unrel");
+		// Use a JTextField instead of spinner for better color control
+		JTextField distanceField = new JTextField();
+		distanceField.setEditable(false);
+		distanceField.setBorder(null);
+		distanceField.setOpaque(false);
+		distanceField.setForeground(caliperColor);
+		// Increase font size for the distance result
+		Font currentFont = distanceField.getFont();
+		Font largerFont = currentFont.deriveFont(currentFont.getSize() + 2f);
+		distanceField.setFont(largerFont);
+		
+		// Get unit selector and set same font size and color
+		javax.swing.JComponent unitSelector = caliperManager.getUnitSelector();
+		unitSelector.setFont(largerFont);
+		unitSelector.setForeground(caliperColor);
+		
+		// Update the distance field when the model or unit changes
+		Consumer<Object> updateDistance = (e) -> {
+			DoubleModel distanceModel = caliperManager.getCurrentDistanceModel();
+			if (distanceModel != null) {
+				double value = distanceModel.getValue();
+				Unit unit = distanceModel.getCurrentUnit();
+				String formatted = unit.toString(value);
+				distanceField.setText(formatted);
+			}
+		};
+		
+		// Store the current listener and model so we can remove it when mode changes
+		final StateChangeListener[] currentListener = new StateChangeListener[1];
+		final DoubleModel[] currentModel = new DoubleModel[1];
+		
+		// Function to set up listener for current model
+		Consumer<Void> setupListener = (v) -> {
+			// Remove old listener if it exists
+			if (currentListener[0] != null && currentModel[0] != null) {
+				currentModel[0].removeChangeListener(currentListener[0]);
+			}
+			// Add new listener
+			currentModel[0] = caliperManager.getCurrentDistanceModel();
+			currentListener[0] = new StateChangeListener() {
+				@Override
+				public void stateChanged(EventObject e) {
+					updateDistance.accept(e);
+				}
+			};
+			currentModel[0].addChangeListener(currentListener[0]);
+			updateDistance.accept(null);
+		};
+		
+		// Initial listener setup
+		setupListener.accept(null);
+		
+		// Add listeners to update mode and refresh distance field
+		verticalRadio.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					caliperManager.setMode(CaliperManager.CaliperMode.VERTICAL);
+					setupListener.accept(null);
+				}
+			}
+		});
+		horizontalRadio.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					caliperManager.setMode(CaliperManager.CaliperMode.HORIZONTAL);
+					setupListener.accept(null);
+				}
+			}
+		});
+		
+		// Listen to unit selector changes
+		caliperManager.getUnitSelector().addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED) {
+					updateDistance.accept(e);
+				}
+			}
+		});
+		
+		distancePanel.add(distanceField, "split 2, aligny center");
+		distancePanel.add(unitSelector, "gapright unrel");
 		
 		panel.add(new JLabel(trans.get("CaliperDialog.lbl.distance")));
-		panel.add(distancePanel, "growx, wrap para");
+		panel.add(distancePanel, "spanx, wrap para");
 		
 		// Caliper 1 position row
 		panel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 1)));
