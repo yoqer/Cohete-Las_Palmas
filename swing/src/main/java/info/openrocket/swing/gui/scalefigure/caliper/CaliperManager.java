@@ -1185,6 +1185,8 @@ public class CaliperManager {
 
 		CaliperSnapTarget target = findNearestSnapTarget(screenX, screenY, screenToModel);
 		if (target == null) {
+			// Clicked on empty space - exit snap mode
+			exitSnapMode();
 			return false;
 		}
 
