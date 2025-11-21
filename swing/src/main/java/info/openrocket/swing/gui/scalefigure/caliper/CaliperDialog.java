@@ -193,7 +193,8 @@ public class CaliperDialog extends JDialog {
 		panel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 1)));
 		JPanel caliper1Panel = new JPanel(new MigLayout("ins 0, fillx", "[][grow][]", ""));
 		caliper1Panel.setOpaque(false);
-		caliper1Panel.add(caliperManager.getCaliper1PositionSpinner(), "growx");
+		JSpinner caliper1Spinner = caliperManager.getCaliper1PositionSpinner();
+		caliper1Panel.add(caliper1Spinner, "growx");
 		
 		// Snap button with text - use the actual toggle button but make it show text
 		JToggleButton snap1Button = caliperManager.getCaliper1SnapButton();
@@ -207,7 +208,8 @@ public class CaliperDialog extends JDialog {
 		panel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 2)));
 		JPanel caliper2Panel = new JPanel(new MigLayout("ins 0, fillx", "[][grow][]", ""));
 		caliper2Panel.setOpaque(false);
-		caliper2Panel.add(caliperManager.getCaliper2PositionSpinner(), "growx");
+		JSpinner caliper2Spinner = caliperManager.getCaliper2PositionSpinner();
+		caliper2Panel.add(caliper2Spinner, "growx");
 		
 		// Snap button with text - use the actual toggle button but make it show text
 		JToggleButton snap2Button = caliperManager.getCaliper2SnapButton();
@@ -216,6 +218,104 @@ public class CaliperDialog extends JDialog {
 		snap2Button.setToolTipText(String.format(trans.get("CaliperDialog.btn.snap.ttip"), 2));
 		caliper2Panel.add(snap2Button, "gapleft rel");
 		panel.add(caliper2Panel, "growx, wrap para");
+		
+		// Update visual state of position spinners based on snap mode
+		// Add listeners to update styling when snap mode changes
+		final java.awt.Color normalBackground = caliper1Spinner.getBackground();
+		final java.awt.Color normalForeground = ((JSpinner.DefaultEditor) caliper1Spinner.getEditor()).getTextField().getForeground();
+		final java.awt.Color snapHighlightColor = GUIUtil.getUITheme().getCaliperSnapHighlightColor();
+		
+		// Create a method to update spinner visual state
+		java.util.function.Consumer<Void> updateSpinnerStates = (v) -> {
+			boolean caliper1Snapping = caliperManager.isSnapModeActive() && 
+				caliperManager.getActiveSnapCaliper() != null && 
+				caliperManager.getActiveSnapCaliper() == 1;
+			boolean caliper2Snapping = caliperManager.isSnapModeActive() && 
+				caliperManager.getActiveSnapCaliper() != null && 
+				caliperManager.getActiveSnapCaliper() == 2;
+			
+			// Update caliper 1 spinner
+			if (caliper1Snapping) {
+				// Highlight with snap highlight color background (lighter shade) and border
+				java.awt.Color highlightBg = new java.awt.Color(
+					Math.min(255, snapHighlightColor.getRed() + (255 - snapHighlightColor.getRed()) / 4),
+					Math.min(255, snapHighlightColor.getGreen() + (255 - snapHighlightColor.getGreen()) / 4),
+					Math.min(255, snapHighlightColor.getBlue() + (255 - snapHighlightColor.getBlue()) / 4),
+					180); // Semi-transparent
+				caliper1Spinner.setBackground(highlightBg);
+				caliper1Spinner.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 2, true));
+				// Also highlight the text field inside
+				JSpinner.DefaultEditor editor1 = (JSpinner.DefaultEditor) caliper1Spinner.getEditor();
+				javax.swing.JTextField textField1 = editor1.getTextField();
+				textField1.setBackground(highlightBg);
+				textField1.setForeground(java.awt.Color.BLACK);
+				textField1.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 1, true));
+			} else {
+				// Restore normal appearance
+				caliper1Spinner.setBackground(normalBackground);
+				caliper1Spinner.setBorder(javax.swing.UIManager.getBorder("Spinner.border"));
+				JSpinner.DefaultEditor editor1 = (JSpinner.DefaultEditor) caliper1Spinner.getEditor();
+				javax.swing.JTextField textField1 = editor1.getTextField();
+				textField1.setBackground(normalBackground);
+				textField1.setForeground(normalForeground);
+				textField1.setBorder(null);
+			}
+			
+			// Update caliper 2 spinner
+			if (caliper2Snapping) {
+				// Highlight with snap highlight color background (lighter shade) and border
+				java.awt.Color highlightBg = new java.awt.Color(
+					Math.min(255, snapHighlightColor.getRed() + (255 - snapHighlightColor.getRed()) / 4),
+					Math.min(255, snapHighlightColor.getGreen() + (255 - snapHighlightColor.getGreen()) / 4),
+					Math.min(255, snapHighlightColor.getBlue() + (255 - snapHighlightColor.getBlue()) / 4),
+					180); // Semi-transparent
+				caliper2Spinner.setBackground(highlightBg);
+				caliper2Spinner.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 2, true));
+				// Also highlight the text field inside
+				JSpinner.DefaultEditor editor2 = (JSpinner.DefaultEditor) caliper2Spinner.getEditor();
+				javax.swing.JTextField textField2 = editor2.getTextField();
+				textField2.setBackground(highlightBg);
+				textField2.setForeground(java.awt.Color.BLACK);
+				textField2.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 1, true));
+			} else {
+				// Restore normal appearance
+				caliper2Spinner.setBackground(normalBackground);
+				caliper2Spinner.setBorder(javax.swing.UIManager.getBorder("Spinner.border"));
+				JSpinner.DefaultEditor editor2 = (JSpinner.DefaultEditor) caliper2Spinner.getEditor();
+				javax.swing.JTextField textField2 = editor2.getTextField();
+				textField2.setBackground(normalBackground);
+				textField2.setForeground(normalForeground);
+				textField2.setBorder(null);
+			}
+		};
+		
+		// Add listeners to update when snap button states change
+		// Listen to property changes on the snap buttons
+		snap1Button.addPropertyChangeListener("selected", (e) -> updateSpinnerStates.accept(null));
+		snap2Button.addPropertyChangeListener("selected", (e) -> updateSpinnerStates.accept(null));
+		
+		// Also listen to action events on the snap buttons (when user clicks them)
+		snap1Button.addActionListener((e) -> {
+			// Update after a short delay to ensure CaliperManager has processed the state change
+			javax.swing.SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
+		});
+		snap2Button.addActionListener((e) -> {
+			// Update after a short delay to ensure CaliperManager has processed the state change
+			javax.swing.SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
+		});
+		
+		// Use a timer to periodically check the snap mode state
+		// This ensures the visual state stays in sync even if other code changes the state
+		javax.swing.Timer updateTimer = new javax.swing.Timer(100, (e) -> {
+			if (caliperManager != null) {
+				updateSpinnerStates.accept(null);
+			}
+		});
+		updateTimer.setRepeats(true);
+		updateTimer.start();
+		
+		// Initial update
+		updateSpinnerStates.accept(null);
 		
 		// Close button
 		JButton closeButton = new JButton(trans.get("dlg.but.close"));
