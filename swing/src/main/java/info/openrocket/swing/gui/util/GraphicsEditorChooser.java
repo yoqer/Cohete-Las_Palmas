@@ -41,7 +41,7 @@ public final class GraphicsEditorChooser {
 	 * per-platform applications directory, and finally to the user's home directory.
 	 */
 	private static File determineInitialDirectory() {
-		File preferred = ((SwingPreferences) Application.getPreferences()).getDefaultDirectory();
+		File preferred = Application.getPreferences().getDefaultDirectory();
 		if (isUsableDirectory(preferred)) {
 			return preferred;
 		}
