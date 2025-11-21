@@ -1673,12 +1673,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			caliperDialog = new CaliperDialog(parentWindow, caliperManager);
 		}
 		
-		// If dialog is already open, just bring it to front
-		if (caliperDialog.isOpen()) {
-			caliperDialog.toFront();
-			caliperDialog.requestFocus();
-			return;
-		}
+		// Always reset position and bring to front when button is clicked
+		// This helps if the user lost the window (e.g., moved off-screen)
 		
 		// Position dialog above the ribbon
 		// Get the ribbon's location on screen
@@ -1704,6 +1700,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		
 		caliperDialog.setLocation(dialogX, dialogY);
 		caliperDialog.setVisible(true);
+		caliperDialog.toFront();
+		caliperDialog.requestFocus();
 	}
 
 }
