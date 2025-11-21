@@ -44,6 +44,7 @@ import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
+import info.openrocket.swing.gui.scalefigure.caliper.CaliperDialog;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.simulation.SimulationWorker;
 import info.openrocket.swing.gui.util.GUIUtil;
@@ -75,6 +76,7 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
@@ -194,6 +196,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 	/* Caliper tool */
 	private CaliperManager caliperManager = null;
+	private CaliperDialog caliperDialog = null;
+	private JPanel ribbon = null;  // Reference to ribbon for dialog positioning
 
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
@@ -532,7 +536,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		setPreferredSize(new Dimension(800, 300));
 
-		JPanel ribbon = new JPanel(new MigLayout("insets 0, fill, hidemode 2"));
+		ribbon = new JPanel(new MigLayout("insets 0, fill, hidemode 2"));
 
 		// View Type drop-down
 		ComboBoxModel<VIEW_TYPE> cm = new ViewTypeComboBoxModel(VIEW_TYPE.values(), VIEW_TYPE.getDefaultViewType()) {
@@ -606,12 +610,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			}
 		});
 
-		// Caliper tool - use CaliperManager's UI components
+		// Caliper tool - button to open dialog
 		if (caliperManager != null) {
-		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
-			ribbon.add(caliperManager.getToggleButton(), "cell 5 1, gapleft para");
-			ribbon.add(caliperManager.getModeButton(), "cell 5 1, gapleft 2");
-			ribbon.add(caliperManager.getDisplayPanel(), "cell 5 1, gapleft 5");
+			ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
+			JButton caliperButton = caliperManager.getCaliperButton();
+			caliperButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					openCaliperDialog();
+				}
+			});
+			ribbon.add(caliperButton, "cell 5 1, gapleft para");
 		}
 
 		// Vertical separator
@@ -1647,6 +1656,54 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			};
 			return defaultRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		}
+	}
+	
+	/**
+	 * Open the caliper dialog, positioned above the ribbon.
+	 * If the dialog is already open, just bring it to front.
+	 */
+	private void openCaliperDialog() {
+		if (caliperManager == null || ribbon == null) {
+			return;
+		}
+		
+		// Create dialog if it doesn't exist
+		if (caliperDialog == null) {
+			Window parentWindow = SwingUtilities.getWindowAncestor(this);
+			caliperDialog = new CaliperDialog(parentWindow, caliperManager);
+		}
+		
+		// If dialog is already open, just bring it to front
+		if (caliperDialog.isOpen()) {
+			caliperDialog.toFront();
+			caliperDialog.requestFocus();
+			return;
+		}
+		
+		// Position dialog above the ribbon
+		// Get the ribbon's location on screen
+		java.awt.Point ribbonLocation = ribbon.getLocationOnScreen();
+		int ribbonHeight = ribbon.getHeight();
+		
+		// Calculate dialog position: above the ribbon, aligned to the left edge
+		int dialogX = ribbonLocation.x;
+		int dialogY = ribbonLocation.y - caliperDialog.getHeight() - 10; // 10px gap above ribbon
+		
+		// Ensure dialog doesn't go off-screen
+		java.awt.GraphicsConfiguration gc = getGraphicsConfiguration();
+		java.awt.Rectangle screenBounds = gc.getBounds();
+		if (dialogY < screenBounds.y) {
+			dialogY = ribbonLocation.y + ribbonHeight + 10; // Position below ribbon if not enough space above
+		}
+		if (dialogX + caliperDialog.getWidth() > screenBounds.x + screenBounds.width) {
+			dialogX = screenBounds.x + screenBounds.width - caliperDialog.getWidth();
+		}
+		if (dialogX < screenBounds.x) {
+			dialogX = screenBounds.x;
+		}
+		
+		caliperDialog.setLocation(dialogX, dialogY);
+		caliperDialog.setVisible(true);
 	}
 
 }

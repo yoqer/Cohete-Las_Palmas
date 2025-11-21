@@ -22,7 +22,6 @@ import info.openrocket.swing.gui.scalefigure.RocketPanel;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapRegistry;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.widgets.IconToggleButton;
 import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.l10n.Translator;
@@ -35,6 +34,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.SpinnerModel;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -112,15 +112,15 @@ public class CaliperManager {
 	private HorizontalCaliperLine draggingHorizontalCaliperLine = null;
 
 	// UI components
-	private IconToggleButton toggleButton;
+	private JButton caliperButton;
 	private JButton modeButton;
 	private JPanel displayPanel;
 	private JSpinner distanceSpinner;
 	private UnitSelector unitSelector;
 	private JSpinner caliper1PositionSpinner;
 	private JSpinner caliper2PositionSpinner;
-	private IconToggleButton caliper1SnapButton;
-	private IconToggleButton caliper2SnapButton;
+	private JToggleButton caliper1SnapButton;
+	private JToggleButton caliper2SnapButton;
 
 	// Models
 	private final DoubleModel distanceModel;
@@ -243,10 +243,11 @@ public class CaliperManager {
 	 * Create the UI components for the caliper tool.
 	 */
 	private void createUIComponents() {
-		// Caliper tool toggle button
-		toggleButton = new IconToggleButton();
-		toggleButton.setSelectedIcon(Icons.RULER);
-		toggleButton.setToolTipText(trans.get("CaliperManager.btn.Caliper"));
+		// Caliper tool button (regular button to open dialog)
+		caliperButton = new JButton();
+		caliperButton.setIcon(Icons.RULER);
+		caliperButton.setText(trans.get("CaliperManager.btn.Caliper"));
+		caliperButton.setToolTipText(trans.get("CaliperManager.btn.Caliper"));
 
 		// Caliper mode toggle button (Vertical/Horizontal)
 		modeButton = new JButton("V");
@@ -312,7 +313,7 @@ public class CaliperManager {
 		displayPanel.add(caliper1PositionSpinner);
 		
 		// Snap mode button for caliper 1
-		caliper1SnapButton = new IconToggleButton();
+		caliper1SnapButton = new JToggleButton();
 		caliper1SnapButton.setIcon(Icons.SNAP);
 		caliper1SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 1));
 		caliper1SnapButton.addActionListener(new ActionListener() {
@@ -331,7 +332,7 @@ public class CaliperManager {
 		displayPanel.add(caliper2PositionSpinner);
 		
 		// Snap mode button for caliper 2
-		caliper2SnapButton = new IconToggleButton();
+		caliper2SnapButton = new JToggleButton();
 		caliper2SnapButton.setIcon(Icons.SNAP);
 		caliper2SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 2));
 		caliper2SnapButton.addActionListener(new ActionListener() {
@@ -345,41 +346,104 @@ public class CaliperManager {
 			}
 		});
 		displayPanel.add(caliper2SnapButton, "gapleft rel");
+		
+		// Display panel should be visible when caliper is enabled
+		displayPanel.setVisible(enabled);
+	}
 
-		// Update visibility when caliper is toggled
-		toggleButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				setEnabled(toggleButton.isSelected());
+	/**
+	 * Get the button for opening the caliper dialog.
+	 *
+	 * @return the caliper button
+	 */
+	public JButton getCaliperButton() {
+		return caliperButton;
+	}
+
+	/**
+	 * Get the distance spinner.
+	 *
+	 * @return the distance spinner
+	 */
+	public JSpinner getDistanceSpinner() {
+		return distanceSpinner;
+	}
+
+	/**
+	 * Get the unit selector.
+	 *
+	 * @return the unit selector
+	 */
+	public UnitSelector getUnitSelector() {
+		return unitSelector;
+	}
+
+	/**
+	 * Get the caliper 1 position spinner.
+	 *
+	 * @return the caliper 1 position spinner
+	 */
+	public JSpinner getCaliper1PositionSpinner() {
+		return caliper1PositionSpinner;
+	}
+
+	/**
+	 * Get the caliper 2 position spinner.
+	 *
+	 * @return the caliper 2 position spinner
+	 */
+	public JSpinner getCaliper2PositionSpinner() {
+		return caliper2PositionSpinner;
+	}
+
+	/**
+	 * Get the caliper 1 snap button.
+	 *
+	 * @return the caliper 1 snap button
+	 */
+	public JToggleButton getCaliper1SnapButton() {
+		return caliper1SnapButton;
+	}
+
+	/**
+	 * Get the caliper 2 snap button.
+	 *
+	 * @return the caliper 2 snap button
+	 */
+	public JToggleButton getCaliper2SnapButton() {
+		return caliper2SnapButton;
+	}
+
+	/**
+	 * Get the current caliper mode.
+	 *
+	 * @return the current caliper mode
+	 */
+	public CaliperMode getMode() {
+		return mode;
+	}
+
+	/**
+	 * Set the caliper mode.
+	 *
+	 * @param newMode the new caliper mode
+	 */
+	public void setMode(CaliperMode newMode) {
+		if (mode != newMode && (newMode == CaliperMode.VERTICAL || newMode == CaliperMode.HORIZONTAL)) {
+			mode = newMode;
+			// Update distance model based on mode
+			if (horizontalDistanceModel != null && distanceSpinner != null && unitSelector != null) {
+				if (mode == CaliperMode.HORIZONTAL) {
+					distanceSpinner.setModel(horizontalDistanceModel.getSpinnerModel());
+					unitSelector.setModel(horizontalDistanceModel);
+				} else {
+					distanceSpinner.setModel(distanceModel.getSpinnerModel());
+					unitSelector.setModel(distanceModel);
+				}
 			}
-		});
-	}
-
-	/**
-	 * Get the toggle button for the caliper tool.
-	 *
-	 * @return the toggle button
-	 */
-	public IconToggleButton getToggleButton() {
-		return toggleButton;
-	}
-
-	/**
-	 * Get the mode button for switching between vertical and horizontal calipers.
-	 *
-	 * @return the mode button
-	 */
-	public JButton getModeButton() {
-		return modeButton;
-	}
-
-	/**
-	 * Get the display panel containing distance and position controls.
-	 *
-	 * @return the display panel
-	 */
-	public JPanel getDisplayPanel() {
-		return displayPanel;
+			updateCaliperElements();
+			figureUpdateCallback.run();
+		}
 	}
 
 	/**
@@ -462,15 +526,6 @@ public class CaliperManager {
 		updateCaliperDistance();
 		updateCaliperHorizontalDistance();
 		figureUpdateCallback.run();
-	}
-
-	/**
-	 * Get the current caliper mode.
-	 *
-	 * @return the caliper mode
-	 */
-	public CaliperMode getMode() {
-		return mode;
 	}
 
 	/**
@@ -742,12 +797,9 @@ public class CaliperManager {
 		wasEnabledBefore3d = enabled;
 		if (enabled) {
 			setEnabled(false);
-			if (toggleButton != null) {
-				toggleButton.setSelected(false);
-			}
 		}
-		if (toggleButton != null) {
-			toggleButton.setEnabled(false);
+		if (caliperButton != null) {
+			caliperButton.setEnabled(false);
 		}
 		if (displayPanel != null) {
 			displayPanel.setVisible(false);
@@ -762,14 +814,11 @@ public class CaliperManager {
 	 * Called when switching to 2D view - restores caliper state if it was enabled.
 	 */
 	public void onSwitchTo2D() {
-		if (toggleButton != null) {
-			toggleButton.setEnabled(true);
+		if (caliperButton != null) {
+			caliperButton.setEnabled(true);
 		}
 		if (wasEnabledBefore3d) {
 			setEnabled(true);
-			if (toggleButton != null) {
-				toggleButton.setSelected(true);
-			}
 			if (displayPanel != null) {
 				displayPanel.setVisible(true);
 				displayPanel.setPreferredSize(null);
