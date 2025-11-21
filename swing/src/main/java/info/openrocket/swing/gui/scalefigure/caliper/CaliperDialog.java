@@ -54,7 +54,7 @@ public class CaliperDialog extends JDialog {
 	 * @param caliperManager the caliper manager instance
 	 */
 	public CaliperDialog(Window owner, CaliperManager caliperManager) {
-		super(owner, trans.get("CaliperDialog.title"), ModalityType.DOCUMENT_MODAL);
+		super(owner, trans.get("CaliperDialog.title"), Dialog.ModalityType.MODELESS);
 		this.caliperManager = caliperManager;
 		
 		// Hide dialog when closed instead of disposing
