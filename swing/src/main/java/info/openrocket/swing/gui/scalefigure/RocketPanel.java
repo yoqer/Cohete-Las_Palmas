@@ -368,16 +368,28 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			}
 		};
 		
-		// Add key listener for Escape key to exit snap mode
-		// Make scrollPane focusable and request focus when snap mode is entered
-		scrollPane.setFocusable(true);
-		scrollPane.addKeyListener(new java.awt.event.KeyAdapter() {
+		// Add keyboard action for Escape key to exit snap mode
+		// Use WHEN_IN_FOCUSED_WINDOW so it works regardless of which component has focus
+		// Register on the root pane once the component hierarchy is established
+		scrollPane.addHierarchyListener(new java.awt.event.HierarchyListener() {
 			@Override
-			public void keyPressed(java.awt.event.KeyEvent e) {
-				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) {
-					if (caliperManager != null && caliperManager.isSnapModeActive()) {
-						caliperManager.exitSnapMode();
-						e.consume();  // Consume the event
+			public void hierarchyChanged(java.awt.event.HierarchyEvent e) {
+				if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.PARENT_CHANGED) != 0) {
+					javax.swing.JRootPane rootPane = javax.swing.SwingUtilities.getRootPane(scrollPane);
+					if (rootPane != null) {
+						javax.swing.Action escapeAction = new javax.swing.AbstractAction() {
+							@Override
+							public void actionPerformed(java.awt.event.ActionEvent e) {
+								if (caliperManager != null && caliperManager.isSnapModeActive()) {
+									caliperManager.exitSnapMode();
+								}
+							}
+						};
+						javax.swing.KeyStroke escapeKey = javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0);
+						rootPane.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKey, "exitSnapMode");
+						rootPane.getActionMap().put("exitSnapMode", escapeAction);
+						// Remove listener after registration to avoid re-registering
+						scrollPane.removeHierarchyListener(this);
 					}
 				}
 			}
