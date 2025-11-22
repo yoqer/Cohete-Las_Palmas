@@ -1,3 +1,4 @@
 # Also edit module-info.java !
 info.openrocket.swing.gui.scalefigure.caliper.snap.CoaxialSnapProvider
 info.openrocket.swing.gui.scalefigure.caliper.snap.TransitionSnapProvider
+info.openrocket.swing.gui.scalefigure.caliper.snap.TubeFinSetSnapProvider

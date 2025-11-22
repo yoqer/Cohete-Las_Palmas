@@ -1,7 +1,7 @@
 package info.openrocket.swing.gui.scalefigure.caliper.snap;
 
-import info.openrocket.core.rocketcomponent.Coaxial;
 import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.core.rocketcomponent.TubeFinSet;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.Transformation;
@@ -12,25 +12,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Provides snap targets for Coaxial components.
+ * Provides snap targets for TubeFinSet components.
+ * 
+ * TubeFinSet has a special geometry: each tube fin is positioned at a radius from the body center,
+ * and the component's local coordinate system has the tube fin center at (0, outerRadius, 0)
+ * relative to the component origin (which is at the body surface).
  * 
  * For side/top view:
  * - Vertical caliper mode: left edge (x = component start), right edge (x = component end)
- * - Horizontal caliper mode: top edge (y = +radius), bottom edge (y = -radius)
+ * - Horizontal caliper mode: top edge (y = +outerRadius + outerRadius), bottom edge (y = +outerRadius - outerRadius)
  * 
  * For back view:
- * - Vertical caliper mode: left/right points on outer and inner circles (z = ±radius)
- * - Horizontal caliper mode: top/bottom points on outer and inner circles (y = ±radius)
+ * - All four cardinal points on the outer circle (left, right, top, bottom)
  *
  * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
-public class CoaxialSnapProvider implements ComponentSnapProvider {
+public class TubeFinSetSnapProvider implements ComponentSnapProvider {
 	
 	@Override
 	public Class<? extends RocketComponent> getComponentClass() {
-		// Coaxial is an interface, not a class, so we return RocketComponent.class
-		// The actual Coaxial check is performed in getSnapTargets()
-		return RocketComponent.class;
+		return TubeFinSet.class;
 	}
 	
 	@Override
@@ -40,19 +41,21 @@ public class CoaxialSnapProvider implements ComponentSnapProvider {
 												  Transformation transformation) {
 		List<CaliperSnapTarget> targets = new ArrayList<>();
 		
-		if (!(component instanceof Coaxial coaxial)) {
+		if (!(component instanceof TubeFinSet finSet)) {
 			return targets;
 		}
 
 		double length = component.getLength();
-		double outerRadius = coaxial.getOuterRadius();
-		double innerRadius = coaxial.getInnerRadius();
+		double outerRadius = finSet.getOuterRadius();
+		double innerRadius = finSet.getInnerRadius();
 		
+		// TubeFinSet local coordinate system: tube fin center is at (0, outerRadius, 0)
+		// relative to component origin (body surface)
 		if (viewType == RocketPanel.VIEW_TYPE.SideView || viewType == RocketPanel.VIEW_TYPE.TopView) {
-			// Side/Top view: coaxial component appears as a rectangle
+			// Side/Top view: tube fin appears as a rectangle
 			getSideViewSnapTargets(component, length, outerRadius, transformation, caliperMode, targets);
 		} else if (viewType == RocketPanel.VIEW_TYPE.BackView) {
-			// Back view: coaxial component appears as circles
+			// Back view: tube fin appears as a circle
 			getBackViewSnapTargets(component, outerRadius, innerRadius, transformation, caliperMode, targets);
 		}
 		
@@ -61,23 +64,25 @@ public class CoaxialSnapProvider implements ComponentSnapProvider {
 	
 	/**
 	 * Get snap targets for side/top view.
-	 * The rendering code transforms the origin, then draws a rectangle at (center.getX(), center.getY()-radius, length, 2*radius).
-	 * We need to match this exactly.
+	 * The tube fin center is at (0, outerRadius, 0) in local coordinates.
+	 * The rendering code transforms (0, outerRadius, 0) to get the center,
+	 * then draws a rectangle at (center.getX(), center.getY()-outerRadius, length, 2*outerRadius).
 	 */
 	private void getSideViewSnapTargets(RocketComponent component, double length, double radius,
 									   Transformation transformation,
 									   CaliperManager.CaliperMode caliperMode,
 									   List<CaliperSnapTarget> targets) {
-		// Match the rendering code: transform the origin to get the center
-		CoordinateIF centerIF = transformation.transform(Coordinate.ZERO);
+		// Transform the tube fin center (same as TubeFinSetShapes does)
+		CoordinateIF centerIF = transformation.transform(new Coordinate(0, radius, 0));
 		Coordinate center = new Coordinate(centerIF.getX(), centerIF.getY(), centerIF.getZ());
 		
-		// The rendering draws a rectangle at (center.getX(), center.getY()-radius, length, 2*radius)
-		// So the edges are:
-		// - Left edge: x = center.getX(), from y = center.getY()-radius to y = center.getY()+radius
-		// - Right edge: x = center.getX()+length, from y = center.getY()-radius to y = center.getY()+radius
-		// - Top edge: from x = center.getX() to x = center.getX()+length, at y = center.getY()+radius
-		// - Bottom edge: from x = center.getX() to x = center.getX()+length, at y = center.getY()-radius
+		// Calculate the four corners of the rectangle
+		// Rectangle is drawn at (center.getX(), center.getY()-radius, length, 2*radius)
+		// So:
+		// - Left edge: x = center.getX(), from y = center.getY() - radius to y = center.getY() + radius
+		// - Right edge: x = center.getX() + length, from y = center.getY() - radius to y = center.getY() + radius
+		// - Top edge: from x = center.getX() to x = center.getX() + length, at y = center.getY() + radius
+		// - Bottom edge: from x = center.getX() to x = center.getX() + length, at y = center.getY() - radius
 		
 		Coordinate leftBottom = new Coordinate(center.getX(), center.getY() - radius, center.getZ());
 		Coordinate leftTop = new Coordinate(center.getX(), center.getY() + radius, center.getZ());
@@ -105,45 +110,29 @@ public class CoaxialSnapProvider implements ComponentSnapProvider {
 	
 	/**
 	 * Get snap targets for back view.
+	 * The tube fin center is at (0, outerRadius, 0) in local coordinates.
 	 */
 	private void getBackViewSnapTargets(RocketComponent component, double outerRadius, double innerRadius,
 									  Transformation transformation,
 									  CaliperManager.CaliperMode caliperMode,
 									  List<CaliperSnapTarget> targets) {
-		// In back view, the coaxial component appears as circles centered at the component origin
-		// The transformation gives us the absolute position
-		CoordinateIF centerIF = transformation.transform(Coordinate.ZERO);
-		Coordinate center = new Coordinate(centerIF.getX(), centerIF.getY(), centerIF.getZ());
+		// In back view, the tube fin appears as a circle centered at the tube fin center
+		// The transformation gives us the absolute position of the component origin
+		// We need to offset by (0, outerRadius, 0) to get the tube fin center
+		CoordinateIF tubeFinCenterIF = transformation.transform(new Coordinate(0, outerRadius, 0));
+		Coordinate tubeFinCenter = new Coordinate(tubeFinCenterIF.getX(), tubeFinCenterIF.getY(), tubeFinCenterIF.getZ());
 		
-		// Snap to left and right points on circles
-		// Outer circle: left point (z = -outerRadius), right point (z = +outerRadius)
-		Coordinate outerLeft = new Coordinate(center.getX(), center.getY(), center.getZ() - outerRadius);
-		Coordinate outerRight = new Coordinate(center.getX(), center.getY(), center.getZ() + outerRadius);
+		// Snap to left and right points on outer circle
+		Coordinate outerLeft = new Coordinate(tubeFinCenter.getX(), tubeFinCenter.getY(), tubeFinCenter.getZ() - outerRadius);
+		Coordinate outerRight = new Coordinate(tubeFinCenter.getX(), tubeFinCenter.getY(), tubeFinCenter.getZ() + outerRadius);
 		targets.add(new CaliperSnapTarget(outerLeft, CaliperManager.CaliperMode.BOTH, component, "Outer circle left"));
 		targets.add(new CaliperSnapTarget(outerRight, CaliperManager.CaliperMode.BOTH, component, "Outer circle right"));
 
-		// Inner circle - currently not used because the inner circle is not drawn in back view
-		/*if (innerRadius > 0 && innerRadius < outerRadius) {
-			Coordinate innerLeft = new Coordinate(center.getX(), center.getY(), center.getZ() - innerRadius);
-			Coordinate innerRight = new Coordinate(center.getX(), center.getY(), center.getZ() + innerRadius);
-			targets.add(new CaliperSnapTarget(innerLeft, CaliperManager.CaliperMode.BOTH, tube, "Inner circle left"));
-			targets.add(new CaliperSnapTarget(innerRight, CaliperManager.CaliperMode.BOTH, tube, "Inner circle right"));
-		}*/
-
-		// Snap to top and bottom points on circles
-		// Outer circle: top point (y = +outerRadius), bottom point (y = -outerRadius)
-		Coordinate outerTop = new Coordinate(center.getX(), center.getY() + outerRadius, center.getZ());
-		Coordinate outerBottom = new Coordinate(center.getX(), center.getY() - outerRadius, center.getZ());
+		// Snap to top and bottom points on outer circle
+		Coordinate outerTop = new Coordinate(tubeFinCenter.getX(), tubeFinCenter.getY() + outerRadius, tubeFinCenter.getZ());
+		Coordinate outerBottom = new Coordinate(tubeFinCenter.getX(), tubeFinCenter.getY() - outerRadius, tubeFinCenter.getZ());
 		targets.add(new CaliperSnapTarget(outerTop, CaliperManager.CaliperMode.BOTH, component, "Outer circle top"));
 		targets.add(new CaliperSnapTarget(outerBottom, CaliperManager.CaliperMode.BOTH, component, "Outer circle bottom"));
-
-		// Inner circle - currently not used because the inner circle is not drawn in back view
-		/*if (innerRadius > 0 && innerRadius < outerRadius) {
-			Coordinate innerTop = new Coordinate(center.getX(), center.getY() + innerRadius, center.getZ());
-			Coordinate innerBottom = new Coordinate(center.getX(), center.getY() - innerRadius, center.getZ());
-			targets.add(new CaliperSnapTarget(innerTop, CaliperManager.CaliperMode.BOTH, tube, "Inner circle top"));
-			targets.add(new CaliperSnapTarget(innerBottom, CaliperManager.CaliperMode.BOTH, tube, "Inner circle bottom"));
-		}*/
 	}
 }
 
