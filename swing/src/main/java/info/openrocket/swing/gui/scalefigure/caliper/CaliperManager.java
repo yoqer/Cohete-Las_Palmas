@@ -60,10 +60,10 @@ import java.util.Map;
  * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class CaliperManager {
-	private static final Logger log = LoggerFactory.getLogger(CaliperManager.class);
 	private static final Translator trans = Application.getTranslator();
 
 	private static final double SNAP_PIXEL_TOLERANCE = 8.0; // Tolerance in pixels for snap target detection
+	private static final double SHIFT_DRAG_SNAP_PIXEL_TOLERANCE = 20; // Tolerance in pixels for shift-drag snapping
 
 	/**
 	 * Caliper mode: VERTICAL for measuring horizontal distances, HORIZONTAL for measuring vertical distances.
@@ -609,10 +609,12 @@ public class CaliperManager {
 	 * @param screenX the screen X coordinate
 	 * @param screenY the screen Y coordinate
 	 * @param screenToModel function to convert screen coordinates to model coordinates
+	 * @param shiftDown whether the Shift key is held down (enables snapping)
 	 * @return true if a caliper line is being dragged
 	 */
 	public boolean handleMouseDragged(int screenX, int screenY,
-									  java.util.function.Function<Point, Point2D.Double> screenToModel) {
+									  java.util.function.Function<Point, Point2D.Double> screenToModel,
+									  boolean shiftDown) {
 		if (!enabled) {
 			return false;
 		}
@@ -626,6 +628,33 @@ public class CaliperManager {
 		// Dragging a vertical caliper line
 		if (draggingCaliperLine != null) {
 			double newX = modelPoint.x;
+			
+			// If Shift is held, try to snap to nearby targets
+			if (shiftDown) {
+				// Ensure snap targets are up to date (they may not be if not in snap mode)
+				// Temporarily calculate snap targets if needed
+				boolean wasInSnapMode = snapModeActive;
+				if (!snapModeActive) {
+					// Temporarily calculate snap targets for snapping during drag
+					updateSnapTargets();
+				}
+				
+				// Find nearest snap target using the caliper line's position
+				// For vertical caliper, we only care about X distance (or Z in back view)
+				RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+				CaliperSnapTarget nearest = findNearestSnapTargetForCaliper(
+						screenX, screenY, screenToModel, CaliperMode.VERTICAL, newX, modelPoint.y);
+				if (nearest != null) {
+					// Snap to the target's X coordinate (for vertical caliper)
+					newX = nearest.getSnapValue(CaliperMode.VERTICAL, viewType);
+				}
+				
+				// Clear snap targets if we weren't in snap mode (cleanup)
+				if (!wasInSnapMode) {
+					currentSnapTargets.clear();
+				}
+			}
+			
 			if (draggingCaliperLine == caliper1Line) {
 				setCaliperLinePosition(true, newX);
 			} else if (draggingCaliperLine == caliper2Line) {
@@ -637,6 +666,33 @@ public class CaliperManager {
 		// Dragging a horizontal caliper line
 		if (draggingHorizontalCaliperLine != null) {
 			double newY = modelPoint.y;
+			
+			// If Shift is held, try to snap to nearby targets
+			if (shiftDown) {
+				// Ensure snap targets are up to date (they may not be if not in snap mode)
+				// Temporarily calculate snap targets if needed
+				boolean wasInSnapMode = snapModeActive;
+				if (!snapModeActive) {
+					// Temporarily calculate snap targets for snapping during drag
+					updateSnapTargets();
+				}
+				
+				// Find nearest snap target using the caliper line's position
+				// For horizontal caliper, we only care about Y distance
+				RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+				CaliperSnapTarget nearest = findNearestSnapTargetForCaliper(
+						screenX, screenY, screenToModel, CaliperMode.HORIZONTAL, modelPoint.x, newY);
+				if (nearest != null) {
+					// Snap to the target's Y coordinate (for horizontal caliper)
+					newY = nearest.getSnapValue(CaliperMode.HORIZONTAL, viewType);
+				}
+				
+				// Clear snap targets if we weren't in snap mode (cleanup)
+				if (!wasInSnapMode) {
+					currentSnapTargets.clear();
+				}
+			}
+			
 			if (draggingHorizontalCaliperLine == caliper1HorizontalLine) {
 				setHorizontalCaliperLinePosition(true, newY);
 			} else if (draggingHorizontalCaliperLine == caliper2HorizontalLine) {
@@ -1182,9 +1238,6 @@ public class CaliperManager {
 		if (!enabled) {
 			return;
 		}
-		if (!snapModeActive) {
-			return;
-		}
 
 		RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
 		if (viewType == null) {
@@ -1235,6 +1288,7 @@ public class CaliperManager {
 
 	/**
 	 * Find the nearest snap target to the given screen coordinates.
+	 * Can be called even when not in snap mode (e.g., when Shift-dragging).
 	 *
 	 * @param screenX screen X coordinate
 	 * @param screenY screen Y coordinate
@@ -1243,7 +1297,9 @@ public class CaliperManager {
 	 */
 	public CaliperSnapTarget findNearestSnapTarget(int screenX, int screenY,
 												   java.util.function.Function<Point, Point2D.Double> screenToModel) {
-		if (!snapModeActive) {
+		// Allow finding snap targets even when not in explicit snap mode
+		// (e.g., when Shift-dragging)
+		if (!enabled) {
 			return null;
 		}
 		if (currentSnapTargets.isEmpty()) {
@@ -1261,13 +1317,13 @@ public class CaliperManager {
 		// Convert to Coordinate for distance calculation
 		// In back view, screen X maps to model Z, screen Y maps to model Y
 		// In side/top view, screen X maps to model X, screen Y maps to model Y
-		info.openrocket.core.util.Coordinate point;
+		Coordinate point;
 		if (viewType == RocketPanel.VIEW_TYPE.BackView) {
 			// Back view: modelPoint.x is actually Z coordinate
-			point = new info.openrocket.core.util.Coordinate(0, modelPoint.y, modelPoint.x);
+			point = new Coordinate(0, modelPoint.y, modelPoint.x);
 		} else {
 			// Side/Top view: modelPoint.x is X coordinate
-			point = new info.openrocket.core.util.Coordinate(modelPoint.x, modelPoint.y, 0);
+			point = new Coordinate(modelPoint.x, modelPoint.y, 0);
 		}
 
 		// Fixed pixel tolerance: 8 pixels
@@ -1291,6 +1347,104 @@ public class CaliperManager {
 		}
 
 		return nearest;
+	}
+
+	/**
+	 * Find the nearest snap target for a caliper line being dragged.
+	 * This version uses the caliper line's position (not the mouse position) for more accurate snapping.
+	 * Uses 1D distance calculation (only in the relevant direction) for shift-drag snapping.
+	 *
+	 * @param screenX screen X coordinate (for reference)
+	 * @param screenY screen Y coordinate (for reference)
+	 * @param screenToModel function to convert screen to model coordinates
+	 * @param caliperMode the caliper mode (VERTICAL or HORIZONTAL)
+	 * @param caliperX the caliper's X position in model coordinates (or Z for back view vertical)
+	 * @param caliperY the caliper's Y position in model coordinates
+	 * @return the nearest compatible snap target, or null if none within tolerance
+	 */
+	private CaliperSnapTarget findNearestSnapTargetForCaliper(int screenX, int screenY,
+															   java.util.function.Function<Point, Point2D.Double> screenToModel,
+															   CaliperMode caliperMode,
+															   double caliperX, double caliperY) {
+		if (!enabled) {
+			return null;
+		}
+		if (currentSnapTargets.isEmpty()) {
+			return null;
+		}
+
+		RocketPanel.VIEW_TYPE viewType = viewTypeProvider.getCurrentViewType();
+		
+		// Create a point representing the caliper line's position
+		Coordinate point;
+		if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+			// Back view: for vertical caliper, caliperX is actually Z coordinate
+			if (caliperMode == CaliperMode.VERTICAL) {
+				point = new Coordinate(0, caliperY, caliperX);
+			} else {
+				// Horizontal caliper in back view
+				point = new Coordinate(0, caliperY, caliperX);
+			}
+		} else {
+			// Side/Top view: caliperX is X coordinate
+			point = new Coordinate(caliperX, caliperY, 0);
+		}
+
+		// Use higher tolerance for shift-drag snapping
+		// Convert pixel tolerance to model coordinates using the figure's scale
+		double scale = figure.getAbsoluteScale();
+		double modelTolerance = SHIFT_DRAG_SNAP_PIXEL_TOLERANCE / scale;
+
+		CaliperSnapTarget nearest = null;
+		double minDistance = Double.MAX_VALUE;
+
+		for (CaliperSnapTarget target : currentSnapTargets) {
+			if (!target.isCompatibleWith(caliperMode)) {
+				continue;
+			}
+
+			// For shift-drag snapping, calculate 1D distance in the relevant direction only
+			double distance = getOneDimensionalDistance(target, point, caliperMode, viewType);
+			if (distance < modelTolerance && distance < minDistance) {
+				minDistance = distance;
+				nearest = target;
+			}
+		}
+
+		return nearest;
+	}
+
+	/**
+	 * Calculate 1D distance from a point to a snap target in the relevant direction only.
+	 * For vertical caliper in side view: X direction
+	 * For horizontal caliper in side/back view: Y direction
+	 * For vertical caliper in back view: Z direction
+	 *
+	 * @param target the snap target
+	 * @param point the point in model coordinates
+	 * @param caliperMode the caliper mode
+	 * @param viewType the view type
+	 * @return the 1D distance in model coordinates
+	 */
+	private double getOneDimensionalDistance(CaliperSnapTarget target, Coordinate point,
+											  CaliperMode caliperMode, RocketPanel.VIEW_TYPE viewType) {
+		double targetValue = target.getSnapValue(caliperMode, viewType);
+		double pointValue;
+		
+		if (caliperMode == CaliperMode.VERTICAL) {
+			if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+				// Vertical caliper in back view: use Z coordinate
+				pointValue = point.getZ();
+			} else {
+				// Vertical caliper in side/top view: use X coordinate
+				pointValue = point.getX();
+			}
+		} else {
+			// Horizontal caliper: always use Y coordinate
+			pointValue = point.getY();
+		}
+		
+		return Math.abs(targetValue - pointValue);
 	}
 
 	/**

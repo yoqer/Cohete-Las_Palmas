@@ -187,16 +187,34 @@ public class CaliperSnapTarget {
 	 * @return the snap value in model coordinates
 	 */
 	public double getSnapValue(CaliperManager.CaliperMode caliperMode, RocketPanel.VIEW_TYPE viewType) {
-		if (caliperMode == CaliperManager.CaliperMode.VERTICAL) {
-			// For vertical caliper, use X in side/top view, Z in back view
-			if (viewType == RocketPanel.VIEW_TYPE.BackView) {
-				return position.getZ();
+		if (type == SnapType.LINE) {
+			// For LINE targets, use the line's constant coordinate
+			if (caliperMode == CaliperManager.CaliperMode.VERTICAL) {
+				// Vertical line: X (or Z in back view) is constant
+				if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+					// In back view, vertical lines have constant Z
+					return lineStart.getZ();
+				} else {
+					// In side/top view, vertical lines have constant X
+					return lineStart.getX();
+				}
 			} else {
-				return position.getX();
+				// Horizontal line: Y is constant
+				return lineStart.getY();
 			}
 		} else {
-			// For horizontal caliper, always use Y coordinate
-			return position.getY();
+			// For POINT targets, use the position
+			if (caliperMode == CaliperManager.CaliperMode.VERTICAL) {
+				// For vertical caliper, use X in side/top view, Z in back view
+				if (viewType == RocketPanel.VIEW_TYPE.BackView) {
+					return position.getZ();
+				} else {
+					return position.getX();
+				}
+			} else {
+				// For horizontal caliper, always use Y coordinate
+				return position.getY();
+			}
 		}
 	}
 	

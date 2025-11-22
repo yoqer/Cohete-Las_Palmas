@@ -323,7 +323,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
 					
-					if (caliperManager.handleMouseDragged(x, y, (p) -> screenToModel(p.x, p.y))) {
+					if (caliperManager.handleMouseDragged(x, y, (p) -> screenToModel(p.x, p.y), e.isShiftDown())) {
 							return;
 					}
 				}
