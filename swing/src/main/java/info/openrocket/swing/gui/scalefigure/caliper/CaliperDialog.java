@@ -1,6 +1,7 @@
 package info.openrocket.swing.gui.scalefigure.caliper;
 
 import info.openrocket.core.l10n.Translator;
+import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.util.StateChangeListener;
@@ -58,6 +59,7 @@ import javax.swing.border.LineBorder;
  */
 public class CaliperDialog extends JDialog {
 	private static final Translator trans = Application.getTranslator();
+	private static final ApplicationPreferences preferences = Application.getPreferences();
 	
 	private final CaliperManager caliperManager;
 	private boolean isOpen = false;
@@ -480,9 +482,19 @@ public class CaliperDialog extends JDialog {
 	public void setVisible(boolean visible) {
 		if (visible) {
 			isOpen = true;
-			// Reset to normal size when opening
-			if (minimized) {
-				setMinimized(false);
+			// Check preference for whether to open minimized
+			boolean shouldOpenMinimized = preferences.getBoolean(
+					ApplicationPreferences.CALIPER_OPEN_MINIMIZED, false);
+			if (shouldOpenMinimized) {
+				// Open in minimized mode
+				if (!minimized) {
+					setMinimized(true);
+				}
+			} else {
+				// Reset to normal size when opening
+				if (minimized) {
+					setMinimized(false);
+				}
 			}
 			// Enable caliper when dialog opens
 			caliperManager.setEnabled(true);
