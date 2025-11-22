@@ -1360,6 +1360,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Check if we're in snap mode
 		boolean inSnapMode = caliperManager != null && caliperManager.isSnapModeActive() && !is3d;
 		
+		// Always show CP and CG carets (even in snap mode)
+		figure.addRelativeExtra(extraCP);
+		figure.addRelativeExtra(extraCG);
+		
 		if (inSnapMode) {
 			// In snap mode: show snap mode message instead of RocketInfo
 			Integer activeCaliper = caliperManager.getActiveSnapCaliper();
@@ -1369,9 +1373,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				figure.addAbsoluteExtra(snapInfo);
 			}
 		} else {
-			// Normal mode: show CP, CG, and RocketInfo
-			figure.addRelativeExtra(extraCP);
-			figure.addRelativeExtra(extraCG);
+			// Normal mode: show RocketInfo text
 			figure.addAbsoluteExtra(extraText);
 		}
 		
