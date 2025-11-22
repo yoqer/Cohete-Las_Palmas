@@ -138,6 +138,7 @@ public class CaliperManager {
 	private boolean snapModeActive = false;
 	private Integer activeSnapCaliper = null;  // 1 or 2, or null if not in snap mode
 	private CaliperSnapTarget hoveredSnapTarget = null;
+	private CaliperSnapTarget shiftDragSnappedTarget = null;  // Target currently snapped to during shift-drag
 	private final List<CaliperSnapTarget> currentSnapTargets = new ArrayList<>();
 	private boolean alwaysShowSnapTargets = false;  // Debug mode: always show all snap targets
 
@@ -647,11 +648,28 @@ public class CaliperManager {
 				if (nearest != null) {
 					// Snap to the target's X coordinate (for vertical caliper)
 					newX = nearest.getSnapValue(CaliperMode.VERTICAL, viewType);
+					// Track the snapped target for highlighting
+					if (shiftDragSnappedTarget != nearest) {
+						shiftDragSnappedTarget = nearest;
+						figureUpdateCallback.run();
+					}
+				} else {
+					// No target found, clear the snapped target
+					if (shiftDragSnappedTarget != null) {
+						shiftDragSnappedTarget = null;
+						figureUpdateCallback.run();
+					}
 				}
 				
 				// Clear snap targets if we weren't in snap mode (cleanup)
 				if (!wasInSnapMode) {
 					currentSnapTargets.clear();
+				}
+			} else {
+				// Shift not held, clear the snapped target
+				if (shiftDragSnappedTarget != null) {
+					shiftDragSnappedTarget = null;
+					figureUpdateCallback.run();
 				}
 			}
 			
@@ -685,11 +703,28 @@ public class CaliperManager {
 				if (nearest != null) {
 					// Snap to the target's Y coordinate (for horizontal caliper)
 					newY = nearest.getSnapValue(CaliperMode.HORIZONTAL, viewType);
+					// Track the snapped target for highlighting
+					if (shiftDragSnappedTarget != nearest) {
+						shiftDragSnappedTarget = nearest;
+						figureUpdateCallback.run();
+					}
+				} else {
+					// No target found, clear the snapped target
+					if (shiftDragSnappedTarget != null) {
+						shiftDragSnappedTarget = null;
+						figureUpdateCallback.run();
+					}
 				}
 				
 				// Clear snap targets if we weren't in snap mode (cleanup)
 				if (!wasInSnapMode) {
 					currentSnapTargets.clear();
+				}
+			} else {
+				// Shift not held, clear the snapped target
+				if (shiftDragSnappedTarget != null) {
+					shiftDragSnappedTarget = null;
+					figureUpdateCallback.run();
 				}
 			}
 			
@@ -710,6 +745,11 @@ public class CaliperManager {
 	public void handleMouseReleased() {
 		draggingCaliperLine = null;
 		draggingHorizontalCaliperLine = null;
+		// Clear shift-drag snapped target when dragging stops
+		if (shiftDragSnappedTarget != null) {
+			shiftDragSnappedTarget = null;
+			figureUpdateCallback.run();
+		}
 	}
 
 	/**
@@ -1164,6 +1204,15 @@ public class CaliperManager {
 	 */
 	public CaliperSnapTarget getHoveredSnapTarget() {
 		return hoveredSnapTarget;
+	}
+
+	/**
+	 * Get the snap target currently locked onto during shift-drag.
+	 *
+	 * @return the shift-drag snapped target, or null
+	 */
+	public CaliperSnapTarget getShiftDragSnappedTarget() {
+		return shiftDragSnappedTarget;
 	}
 
 	/**

@@ -1420,6 +1420,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					}
 				}
 			}
+			
+			// Show shift-drag snapped target highlight (even when not in explicit snap mode)
+			CaliperSnapTarget shiftDragTarget = caliperManager.getShiftDragSnappedTarget();
+			if (shiftDragTarget != null) {
+				info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
+						new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(shiftDragTarget, figure.getCurrentViewType());
+				figure.addRelativeExtra(highlight);
+			}
 		}
 
 		figure3d.clearRelativeExtra();
