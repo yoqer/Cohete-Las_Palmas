@@ -187,6 +187,18 @@ public class CaliperManager {
 			}
 		});
 
+		// Listen to figure rotation changes to update snap targets
+		figure.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				// Update snap targets when view rotation changes
+				if (snapModeActive && enabled) {
+					updateSnapTargets();
+					figureUpdateCallback.run();
+				}
+			}
+		});
+
 		// Initialize models
 		distanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
 		horizontalDistanceModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
