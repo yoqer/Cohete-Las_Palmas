@@ -419,20 +419,24 @@ public class CaliperDialog extends JDialog {
 		// Add main panel to dialog
 		add(mainPanel);
 		
-		// Add Escape key handler to exit snap mode
+		// Add Escape key handler: exit snap mode if active, otherwise close dialog
 		// This ensures Escape works even when the dialog has focus
 		JRootPane rootPane = getRootPane();
 		Action escapeAction = new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (caliperManager != null && caliperManager.isSnapModeActive()) {
+					// In snap mode: exit snap mode
 					caliperManager.exitSnapMode();
+				} else {
+					// Not in snap mode: close the dialog
+					dispatchEvent(new WindowEvent(CaliperDialog.this, WindowEvent.WINDOW_CLOSING));
 				}
 			}
 		};
 		KeyStroke escapeKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-		rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKey, "exitSnapMode");
-		rootPane.getActionMap().put("exitSnapMode", escapeAction);
+		rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKey, "escapeAction");
+		rootPane.getActionMap().put("escapeAction", escapeAction);
 		
 		pack();
 	}
