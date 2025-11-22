@@ -1213,6 +1213,10 @@ public class CaliperManager {
 		hoveredSnapTarget = null;
 		updateSnapTargets();
 		updateSnapButtonStates();
+		// Update info message when entering snap mode
+		if (infoMessageUpdater != null) {
+			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.snapMode");
+		}
 		figureUpdateCallback.run();
 		
 		// Request focus on the scroll pane so Escape key works
@@ -1233,6 +1237,10 @@ public class CaliperManager {
 		}
 		currentSnapTargets.clear();
 		updateSnapButtonStates();
+		// Update info message when exiting snap mode
+		if (infoMessageUpdater != null) {
+			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage");
+		}
 		figureUpdateCallback.run();
 	}
 
