@@ -319,9 +319,9 @@ public class CaliperManager {
 		caliper1PositionSpinner.setEnabled(false);
 		caliper2PositionSpinner.setEnabled(false);
 		JSpinner.DefaultEditor caliper1Editor = (JSpinner.DefaultEditor) caliper1PositionSpinner.getEditor();
-		caliper1Editor.getTextField().setColumns(2);
+		caliper1Editor.getTextField().setColumns(4);
 		JSpinner.DefaultEditor caliper2Editor = (JSpinner.DefaultEditor) caliper2PositionSpinner.getEditor();
-		caliper2Editor.getTextField().setColumns(2);
+		caliper2Editor.getTextField().setColumns(4);
 
 		displayPanel.add(new JLabel("1:"));
 		displayPanel.add(caliper1PositionSpinner);

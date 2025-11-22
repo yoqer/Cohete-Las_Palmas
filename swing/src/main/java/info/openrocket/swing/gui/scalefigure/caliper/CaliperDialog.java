@@ -8,16 +8,24 @@ import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.util.GUIUtil;
 import net.miginfocom.swing.MigLayout;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import java.awt.Color;
 import java.awt.Dialog;
@@ -27,6 +35,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.EventObject;
@@ -130,7 +141,7 @@ public class CaliperDialog extends JDialog {
 		distanceField.setFont(largerFont);
 		
 		// Get unit selector and set same font size and color
-		javax.swing.JComponent unitSelector = caliperManager.getUnitSelector();
+		JComponent unitSelector = caliperManager.getUnitSelector();
 		unitSelector.setFont(largerFont);
 		unitSelector.setForeground(caliperColor);
 		
@@ -239,9 +250,9 @@ public class CaliperDialog extends JDialog {
 		
 		// Update visual state of position spinners based on snap mode
 		// Add listeners to update styling when snap mode changes
-		final java.awt.Color normalBackground = caliper1Spinner.getBackground();
-		final java.awt.Color normalForeground = ((JSpinner.DefaultEditor) caliper1Spinner.getEditor()).getTextField().getForeground();
-		final java.awt.Color snapHighlightColor = GUIUtil.getUITheme().getCaliperSnapHighlightColor();
+		final Color normalBackground = caliper1Spinner.getBackground();
+		final Color normalForeground = ((JSpinner.DefaultEditor) caliper1Spinner.getEditor()).getTextField().getForeground();
+		final Color snapHighlightColor = GUIUtil.getUITheme().getCaliperSnapHighlightColor();
 		
 		// Create a method to update spinner visual state
 		java.util.function.Consumer<Void> updateSpinnerStates = (v) -> {
@@ -255,25 +266,25 @@ public class CaliperDialog extends JDialog {
 			// Update caliper 1 spinner
 			if (caliper1Snapping) {
 				// Highlight with snap highlight color background (lighter shade) and border
-				java.awt.Color highlightBg = new java.awt.Color(
+				Color highlightBg = new Color(
 					Math.min(255, snapHighlightColor.getRed() + (255 - snapHighlightColor.getRed()) / 4),
 					Math.min(255, snapHighlightColor.getGreen() + (255 - snapHighlightColor.getGreen()) / 4),
 					Math.min(255, snapHighlightColor.getBlue() + (255 - snapHighlightColor.getBlue()) / 4),
 					180); // Semi-transparent
 				caliper1Spinner.setBackground(highlightBg);
-				caliper1Spinner.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 2, true));
+				caliper1Spinner.setBorder(new LineBorder(snapHighlightColor, 2, true));
 				// Also highlight the text field inside
 				JSpinner.DefaultEditor editor1 = (JSpinner.DefaultEditor) caliper1Spinner.getEditor();
-				javax.swing.JTextField textField1 = editor1.getTextField();
+				JTextField textField1 = editor1.getTextField();
 				textField1.setBackground(highlightBg);
-				textField1.setForeground(java.awt.Color.BLACK);
-				textField1.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 1, true));
+				textField1.setForeground(Color.BLACK);
+				textField1.setBorder(new LineBorder(snapHighlightColor, 1, true));
 			} else {
 				// Restore normal appearance
 				caliper1Spinner.setBackground(normalBackground);
-				caliper1Spinner.setBorder(javax.swing.UIManager.getBorder("Spinner.border"));
+				caliper1Spinner.setBorder(UIManager.getBorder("Spinner.border"));
 				JSpinner.DefaultEditor editor1 = (JSpinner.DefaultEditor) caliper1Spinner.getEditor();
-				javax.swing.JTextField textField1 = editor1.getTextField();
+				JTextField textField1 = editor1.getTextField();
 				textField1.setBackground(normalBackground);
 				textField1.setForeground(normalForeground);
 				textField1.setBorder(null);
@@ -282,25 +293,25 @@ public class CaliperDialog extends JDialog {
 			// Update caliper 2 spinner
 			if (caliper2Snapping) {
 				// Highlight with snap highlight color background (lighter shade) and border
-				java.awt.Color highlightBg = new java.awt.Color(
+				Color highlightBg = new Color(
 					Math.min(255, snapHighlightColor.getRed() + (255 - snapHighlightColor.getRed()) / 4),
 					Math.min(255, snapHighlightColor.getGreen() + (255 - snapHighlightColor.getGreen()) / 4),
 					Math.min(255, snapHighlightColor.getBlue() + (255 - snapHighlightColor.getBlue()) / 4),
 					180); // Semi-transparent
 				caliper2Spinner.setBackground(highlightBg);
-				caliper2Spinner.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 2, true));
+				caliper2Spinner.setBorder(new LineBorder(snapHighlightColor, 2, true));
 				// Also highlight the text field inside
 				JSpinner.DefaultEditor editor2 = (JSpinner.DefaultEditor) caliper2Spinner.getEditor();
-				javax.swing.JTextField textField2 = editor2.getTextField();
+				JTextField textField2 = editor2.getTextField();
 				textField2.setBackground(highlightBg);
-				textField2.setForeground(java.awt.Color.BLACK);
-				textField2.setBorder(new javax.swing.border.LineBorder(snapHighlightColor, 1, true));
+				textField2.setForeground(Color.BLACK);
+				textField2.setBorder(new LineBorder(snapHighlightColor, 1, true));
 			} else {
 				// Restore normal appearance
 				caliper2Spinner.setBackground(normalBackground);
-				caliper2Spinner.setBorder(javax.swing.UIManager.getBorder("Spinner.border"));
+				caliper2Spinner.setBorder(UIManager.getBorder("Spinner.border"));
 				JSpinner.DefaultEditor editor2 = (JSpinner.DefaultEditor) caliper2Spinner.getEditor();
-				javax.swing.JTextField textField2 = editor2.getTextField();
+				JTextField textField2 = editor2.getTextField();
 				textField2.setBackground(normalBackground);
 				textField2.setForeground(normalForeground);
 				textField2.setBorder(null);
@@ -315,16 +326,16 @@ public class CaliperDialog extends JDialog {
 		// Also listen to action events on the snap buttons (when user clicks them)
 		snap1Button.addActionListener((e) -> {
 			// Update after a short delay to ensure CaliperManager has processed the state change
-			javax.swing.SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
+			SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
 		});
 		snap2Button.addActionListener((e) -> {
 			// Update after a short delay to ensure CaliperManager has processed the state change
-			javax.swing.SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
+			SwingUtilities.invokeLater(() -> updateSpinnerStates.accept(null));
 		});
 		
 		// Use a timer to periodically check the snap mode state
 		// This ensures the visual state stays in sync even if other code changes the state
-		javax.swing.Timer updateTimer = new javax.swing.Timer(100, (e) -> {
+		Timer updateTimer = new Timer(100, (e) -> {
 			if (caliperManager != null) {
 				updateSpinnerStates.accept(null);
 			}
@@ -375,9 +386,9 @@ public class CaliperDialog extends JDialog {
 		// Note: distancePanel will be moved between mainPanel and minimizedPanel
 		minimizedPanel = new JPanel(new MigLayout("fill, insets dialog", "[grow]", "[]"));
 		// Make minimized panel clickable to restore (double-click)
-		minimizedPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+		minimizedPanel.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e) {
+			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
 					setMinimized(false);
 				}
@@ -390,17 +401,17 @@ public class CaliperDialog extends JDialog {
 		
 		// Add Escape key handler to exit snap mode
 		// This ensures Escape works even when the dialog has focus
-		javax.swing.JRootPane rootPane = getRootPane();
-		javax.swing.Action escapeAction = new javax.swing.AbstractAction() {
+		JRootPane rootPane = getRootPane();
+		Action escapeAction = new AbstractAction() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent e) {
+			public void actionPerformed(ActionEvent e) {
 				if (caliperManager != null && caliperManager.isSnapModeActive()) {
 					caliperManager.exitSnapMode();
 				}
 			}
 		};
-		javax.swing.KeyStroke escapeKey = javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0);
-		rootPane.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKey, "exitSnapMode");
+		KeyStroke escapeKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+		rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKey, "exitSnapMode");
 		rootPane.getActionMap().put("exitSnapMode", escapeAction);
 		
 		pack();
