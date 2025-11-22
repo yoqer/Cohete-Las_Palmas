@@ -179,21 +179,6 @@ class MotorInformationPanel extends JPanel {
 			setDelays(false);
 		}
 
-		//// Hide very similar thrust curves
-		{
-			hideSimilarBox = new JCheckBox(trans.get("TCMotorSelPan.checkbox.hideSimilar"));
-			GUIUtil.changeFontSize(hideSimilarBox, -1);
-			hideSimilarBox.setSelected(Application.getPreferences().getBoolean(ApplicationPreferences.MOTOR_HIDE_SIMILAR, true));
-			hideSimilarBox.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Application.getPreferences().putBoolean(ApplicationPreferences.MOTOR_HIDE_SIMILAR, hideSimilarBox.isSelected());
-					updateData();
-				}
-			});
-			add(hideSimilarBox, "gapleft para, spanx, growx, wrap");
-		}
-
 		//// Select thrust curve:
 		{
 			curveSelectionLabel = new JLabel(trans.get("TCMotorSelPan.lbl.Selectthrustcurve"));
@@ -237,9 +222,6 @@ class MotorInformationPanel extends JPanel {
 			changeLabelFont(plot.getDomainAxis(), -2, textColor);
 
 			//// Thrust curve:
-			TextTitle title = new TextTitle(trans.get("TCMotorSelPan.title.Thrustcurve"), this.getFont());
-			title.setPaint(textColor);
-			chart.setTitle(title);
 			chart.setBackgroundPaint(this.getBackground());
 			plot.setBackgroundPaint(backgroundColor);
 			plot.setDomainGridlinePaint(gridColor);
@@ -286,9 +268,36 @@ class MotorInformationPanel extends JPanel {
 
 			this.add(layer, "width 300:300:, height 180:180:, grow, spanx");
 		}
+
+		//// Hide very similar thrust curves
+		{
+			hideSimilarBox = new JCheckBox(trans.get("TCMotorSelPan.checkbox.hideSimilar"));
+			GUIUtil.changeFontSize(hideSimilarBox, -1);
+			hideSimilarBox.setSelected(Application.getPreferences().getBoolean(ApplicationPreferences.MOTOR_HIDE_SIMILAR, true));
+			hideSimilarBox.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Application.getPreferences().putBoolean(ApplicationPreferences.MOTOR_HIDE_SIMILAR, hideSimilarBox.isSelected());
+					updateData();
+				}
+			});
+			add(hideSimilarBox, "gapleft para, spanx, growx, wrap");
+		}
+
 		
 		// Thrust curve info
 		{
+			//// comment
+			comment = new JTextArea(5, 5);
+			GUIUtil.changeFontSize(comment, -2);
+			withCommentFont = comment.getFont();
+			noCommentFont = withCommentFont.deriveFont(Font.ITALIC);
+			comment.setLineWrap(true);
+			comment.setWrapStyleWord(true);
+			comment.setEditable(false);
+			JScrollPane scrollpane = new JScrollPane(comment);
+			this.add(scrollpane, "spanx, grow, pushy, wrap para");
+			
 			//// Designation
 			this.add(new JLabel(trans.get("TCMotorSelPan.lbl.Designation")));
 			designationLabel = new JLabel();
@@ -366,17 +375,6 @@ class MotorInformationPanel extends JPanel {
 			} else {
 				digestLabel = null;
 			}
-
-
-			comment = new JTextArea(5, 5);
-			GUIUtil.changeFontSize(comment, -2);
-			withCommentFont = comment.getFont();
-			noCommentFont = withCommentFont.deriveFont(Font.ITALIC);
-			comment.setLineWrap(true);
-			comment.setWrapStyleWord(true);
-			comment.setEditable(false);
-			JScrollPane scrollpane = new JScrollPane(comment);
-			this.add(scrollpane, "spanx, grow, pushy, wrap para");
 		}
 
 		hideSimilarBox.getActionListeners()[0].actionPerformed(null);
