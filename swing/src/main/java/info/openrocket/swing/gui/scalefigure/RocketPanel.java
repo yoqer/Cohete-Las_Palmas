@@ -46,6 +46,9 @@ import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperDialog;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
+import info.openrocket.swing.gui.util.GUIUtil;
+import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.core.startup.Application;
 import info.openrocket.swing.gui.simulation.SimulationWorker;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
@@ -76,10 +79,13 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -1722,34 +1728,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperDialog == null) {
 			Window parentWindow = SwingUtilities.getWindowAncestor(this);
 			caliperDialog = new CaliperDialog(parentWindow, caliperManager);
+			// Enable window position memory
+			GUIUtil.rememberWindowPosition(caliperDialog);
 		}
 		
-		// Always reset position and bring to front when button is clicked
-		// This helps if the user lost the window (e.g., moved off-screen)
-		
-		// Position dialog above the ribbon
-		// Get the ribbon's location on screen
-		java.awt.Point ribbonLocation = ribbon.getLocationOnScreen();
-		int ribbonHeight = ribbon.getHeight();
-		
-		// Calculate dialog position: above the ribbon, aligned to the left edge
-		int dialogX = ribbonLocation.x;
-		int dialogY = ribbonLocation.y - caliperDialog.getHeight() - 10; // 10px gap above ribbon
-		
-		// Ensure dialog doesn't go off-screen
-		java.awt.GraphicsConfiguration gc = getGraphicsConfiguration();
-		java.awt.Rectangle screenBounds = gc.getBounds();
-		if (dialogY < screenBounds.y) {
-			dialogY = ribbonLocation.y + ribbonHeight + 10; // Position below ribbon if not enough space above
-		}
-		if (dialogX + caliperDialog.getWidth() > screenBounds.x + screenBounds.width) {
-			dialogX = screenBounds.x + screenBounds.width - caliperDialog.getWidth();
-		}
-		if (dialogX < screenBounds.x) {
-			dialogX = screenBounds.x;
+		// Center dialog to BasicFrame (only if position is not remembered)
+		Point savedPosition = ((SwingPreferences) Application.getPreferences()).getWindowPosition(caliperDialog.getClass());
+		if (savedPosition == null) {
+			// No saved position, center to BasicFrame
+			caliperDialog.setLocationRelativeTo(basicFrame);
 		}
 		
-		caliperDialog.setLocation(dialogX, dialogY);
 		// Restore to normal size when opening
 		caliperDialog.restore();
 		caliperDialog.setVisible(true);
