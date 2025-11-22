@@ -415,6 +415,15 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 						scrollPane.requestFocusInWindow();
 					}
 				});
+		
+		// Set info message updater for caliper manager
+		if (caliperManager != null) {
+			caliperManager.setInfoMessageUpdater((messageKey) -> {
+				if (infoMessage != null) {
+					infoMessage.setText(trans.get(messageKey));
+				}
+			});
+		}
 
 		createPanel();
 
@@ -1377,10 +1386,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figure.clearRelativeExtra();
 		figure.clearAbsoluteExtra();
 		
-		// Check if we're in snap mode
+		// Check if we're in snap mode or dragging
 		boolean inSnapMode = caliperManager != null && caliperManager.isSnapModeActive() && !is3d;
+		boolean isDragging = caliperManager != null && caliperManager.isDragging() && !is3d;
 		
-		// Always show CP and CG carets (even in snap mode)
+		// Always show CP and CG carets (even in snap mode or when dragging)
 		figure.addRelativeExtra(extraCP);
 		figure.addRelativeExtra(extraCG);
 		
@@ -1392,10 +1402,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 						new info.openrocket.swing.gui.figureelements.SnapModeInfo(activeCaliper);
 				figure.addAbsoluteExtra(snapInfo);
 			}
-		} else {
-			// Normal mode: show RocketInfo text
+		} else if (!isDragging) {
+			// Normal mode: show RocketInfo text (not when dragging)
 			figure.addAbsoluteExtra(extraText);
 		}
+		// When dragging, don't show RocketInfo (but CP/CG are still shown above)
 		
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
 			caliperManager.updateCaliperElements();
@@ -1408,8 +1419,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 						info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
 								new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(target, figure.getCurrentViewType());
 						figure.addRelativeExtra(highlight);
-				}
-			} else {
+			}
+		} else {
 					// Normal mode: only show hovered target
 					CaliperSnapTarget hoveredTarget =
 							caliperManager.getHoveredSnapTarget();

@@ -150,6 +150,15 @@ public class CaliperManager {
 	}
 
 	/**
+	 * Interface for updating the info message label.
+	 */
+	public interface InfoMessageUpdater {
+		void updateInfoMessage(String messageKey);
+	}
+
+	private InfoMessageUpdater infoMessageUpdater = null;
+
+	/**
 	 * Create a new CaliperManager.
 	 *
 	 * @param figure the rocket figure to add caliper elements to
@@ -583,20 +592,36 @@ public class CaliperManager {
 			// Check vertical caliper lines (X proximity)
 			if (Math.abs(modelPoint.x - caliper1X) < handleTolerance) {
 				draggingCaliperLine = caliper1Line;
+				// Update info message when dragging starts
+				if (infoMessageUpdater != null) {
+					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+				}
 				return true;
 			}
 			if (Math.abs(modelPoint.x - caliper2X) < handleTolerance) {
 				draggingCaliperLine = caliper2Line;
+				// Update info message when dragging starts
+				if (infoMessageUpdater != null) {
+					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+				}
 				return true;
 			}
 		} else {
 			// Check horizontal caliper lines (Y proximity)
 			if (Math.abs(modelPoint.y - caliper1Y) < handleTolerance) {
 				draggingHorizontalCaliperLine = caliper1HorizontalLine;
+				// Update info message when dragging starts
+				if (infoMessageUpdater != null) {
+					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+				}
 				return true;
 			}
 			if (Math.abs(modelPoint.y - caliper2Y) < handleTolerance) {
 				draggingHorizontalCaliperLine = caliper2HorizontalLine;
+				// Update info message when dragging starts
+				if (infoMessageUpdater != null) {
+					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+				}
 				return true;
 			}
 		}
@@ -625,6 +650,8 @@ public class CaliperManager {
 		if (modelPoint == null) {
 			return false;
 		}
+
+		boolean wasDragging = isDragging();
 
 		// Dragging a vertical caliper line
 		if (draggingCaliperLine != null) {
@@ -736,6 +763,11 @@ public class CaliperManager {
 			return true;
 		}
 
+		// Update UI if we just started dragging
+		if (!wasDragging && isDragging()) {
+			figureUpdateCallback.run();
+		}
+
 		return false;
 	}
 
@@ -743,13 +775,38 @@ public class CaliperManager {
 	 * Handle mouse release events to stop caliper dragging.
 	 */
 	public void handleMouseReleased() {
+		boolean wasDragging = isDragging();
 		draggingCaliperLine = null;
 		draggingHorizontalCaliperLine = null;
 		// Clear shift-drag snapped target when dragging stops
 		if (shiftDragSnappedTarget != null) {
 			shiftDragSnappedTarget = null;
+		}
+		// Update UI if we were dragging
+		if (wasDragging) {
+			if (infoMessageUpdater != null) {
+				infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage");
+			}
 			figureUpdateCallback.run();
 		}
+	}
+
+	/**
+	 * Check if a caliper line is currently being dragged.
+	 *
+	 * @return true if dragging, false otherwise
+	 */
+	public boolean isDragging() {
+		return draggingCaliperLine != null || draggingHorizontalCaliperLine != null;
+	}
+
+	/**
+	 * Set the info message updater callback.
+	 *
+	 * @param updater the updater to use for updating the info message
+	 */
+	public void setInfoMessageUpdater(InfoMessageUpdater updater) {
+		this.infoMessageUpdater = updater;
 	}
 
 	/**
