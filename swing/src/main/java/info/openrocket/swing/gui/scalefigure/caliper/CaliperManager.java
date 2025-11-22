@@ -453,6 +453,10 @@ public class CaliperManager {
 	public void setMode(CaliperMode newMode) {
 		if (mode != newMode && (newMode == CaliperMode.VERTICAL || newMode == CaliperMode.HORIZONTAL)) {
 			mode = newMode;
+			// Exit snap mode when switching between vertical and horizontal
+			if (snapModeActive) {
+				exitSnapMode();
+			}
 			// Update distance model based on mode
 			if (horizontalDistanceModel != null && distanceSpinner != null && unitSelector != null) {
 				if (mode == CaliperMode.HORIZONTAL) {
