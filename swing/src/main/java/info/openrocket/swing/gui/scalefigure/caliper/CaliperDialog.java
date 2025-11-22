@@ -348,14 +348,6 @@ public class CaliperDialog extends JDialog {
 		
 		add(panel);
 		
-		// Install Escape key handler
-		GUIUtil.installEscapeCloseOperation(this, new javax.swing.AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				setVisible(false);  // This will disable the caliper via setVisible
-			}
-		});
-		
 		pack();
 	}
 	
