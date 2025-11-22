@@ -1095,9 +1095,29 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				((figure.getCurrentViewType() == RocketPanel.VIEW_TYPE.TopView) || (figure.getCurrentViewType() == RocketPanel.VIEW_TYPE.SideView))) {
 			extraCP.setPosition(cpx, cpy);
 			extraCG.setPosition(cgx, cgy);
+			
+			// Update CG/CP positions in CaliperManager for snap targets
+			if (caliperManager != null) {
+				caliperManager.setCGPosition(cgx, cgy);
+				caliperManager.setCPPosition(cpx, cpy);
+				// Update snap targets if in snap mode
+				if (caliperManager.isSnapModeActive()) {
+					caliperManager.updateSnapTargets();
+				}
+			}
 		} else {
 			extraCP.setPosition(Double.NaN, Double.NaN);
 			extraCG.setPosition(Double.NaN, Double.NaN);
+			
+			// Clear CG/CP positions in CaliperManager
+			if (caliperManager != null) {
+				caliperManager.setCGPosition(Double.NaN, Double.NaN);
+				caliperManager.setCPPosition(Double.NaN, Double.NaN);
+				// Update snap targets if in snap mode
+				if (caliperManager.isSnapModeActive()) {
+					caliperManager.updateSnapTargets();
+				}
+			}
 		}
 
 		////////  Flight simulation in background

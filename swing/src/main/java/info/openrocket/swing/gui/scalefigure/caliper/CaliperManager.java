@@ -9,6 +9,7 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.BoundingBox;
+import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.core.util.Transformation;
@@ -1156,6 +1157,25 @@ public class CaliperManager {
 	/**
 	 * Update the list of snap targets based on current view type and caliper mode.
 	 */
+	/**
+	 * Set CG and CP positions for snap targets.
+	 * Called from RocketPanel to provide CG/CP positions.
+	 */
+	private Double cgX = Double.NaN;
+	private Double cgY = Double.NaN;
+	private Double cpX = Double.NaN;
+	private Double cpY = Double.NaN;
+	
+	public void setCGPosition(double x, double y) {
+		this.cgX = x;
+		this.cgY = y;
+	}
+	
+	public void setCPPosition(double x, double y) {
+		this.cpX = x;
+		this.cpY = y;
+	}
+	
 	public void updateSnapTargets() {
 		currentSnapTargets.clear();
 		
@@ -1190,6 +1210,25 @@ public class CaliperManager {
 				List<CaliperSnapTarget> targets = registry.getSnapTargets(
 						component, viewType, mode, transform);
 				currentSnapTargets.addAll(targets);
+			}
+		}
+		
+		// Add CG and CP snap targets if positions are valid
+		// Only add for side/top view (not back view, as CG/CP are 2D positions)
+		if (viewType == RocketPanel.VIEW_TYPE.SideView || viewType == RocketPanel.VIEW_TYPE.TopView) {
+			if (!Double.isNaN(cgX) && !Double.isNaN(cgY)) {
+				// Create a dummy component reference for CG (we'll use null since it's not a component)
+				// Actually, we need a component. Let's use the rocket itself.
+				RocketComponent rocket = document.getRocket();
+				Coordinate cgPos = new Coordinate(cgX, cgY, 0);
+				currentSnapTargets.add(new CaliperSnapTarget(cgPos, CaliperManager.CaliperMode.BOTH, 
+						rocket, "Center of Gravity"));
+			}
+			if (!Double.isNaN(cpX) && !Double.isNaN(cpY)) {
+				RocketComponent rocket = document.getRocket();
+				Coordinate cpPos = new Coordinate(cpX, cpY, 0);
+				currentSnapTargets.add(new CaliperSnapTarget(cpPos, CaliperManager.CaliperMode.BOTH, 
+						rocket, "Center of Pressure"));
 			}
 		}
 	}

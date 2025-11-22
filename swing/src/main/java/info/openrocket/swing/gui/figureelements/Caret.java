@@ -25,6 +25,20 @@ public abstract class Caret implements FigureElement {
 		this.x = x;
 		this.y = y;
 	}
+	
+	/**
+	 * Gets the X position of the caret.
+	 */
+	public double getX() {
+		return x;
+	}
+	
+	/**
+	 * Gets the Y position of the caret.
+	 */
+	public double getY() {
+		return y;
+	}
 
 	/**
 	 * Paints the caret to the Graphics2D element.
