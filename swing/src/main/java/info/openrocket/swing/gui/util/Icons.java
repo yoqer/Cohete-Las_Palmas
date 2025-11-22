@@ -71,6 +71,7 @@ public class Icons {
 	public static final Icon FILE_EXPORT = loadImageIcon("pix/icons/model_export.png", "Export");
 	public static final Icon SIM_TABLE_EXPORT = loadImageIcon("pix/icons/sim_table_export.png", "Export simulation table");
 	public static final Icon EXPORT_3D = loadImageIcon("pix/icons/model_export3d.png", "Export 3D");
+	public static final Icon EXPORT_SVG = loadImageIcon("pix/icons/svg-logo.png", "Export SVG");
 	public static final Icon FILE_CLOSE = loadImageIcon("pix/icons/document-close.png", "Close document");
 	public static final Icon FILE_QUIT = loadImageIcon("pix/icons/application-exit.png", "Quit OpenRocket");
 	public static final Icon EDIT_UNDO = loadImageIcon("pix/icons/edit-undo.png", trans.get("Icons.Undo"));

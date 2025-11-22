@@ -180,6 +180,12 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	// SVG export options
 	public static final String SVG_STROKE_COLOR = "SVGStrokeColor";
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
+	public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
+	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
+	public static final String SVG_CROSSHAIR_SIZE = "SVGCrosshairSize";
+	public static final String SVG_SHOW_LABELS = "SVGShowLabels";
+	public static final String SVG_LABEL_COLOR = "SVGLabelColor";
+	public static final String SVG_PART_SPACING = "SVGPartSpacing";
 	
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
@@ -222,6 +228,23 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public abstract java.util.prefs.Preferences getNode(String nodeName);
 
 	public abstract java.util.prefs.Preferences getPreferences();
+
+	public File getDefaultDirectory() {
+		String file = getString(ApplicationPreferences.DEFAULT_DIRECTORY, null);
+		if (file == null)
+			return null;
+		return new File(file);
+	}
+
+	public void setDefaultDirectory(File dir) {
+		String d;
+		if (dir == null) {
+			d = null;
+		} else {
+			d = dir.getAbsolutePath();
+		}
+		putString(ApplicationPreferences.DEFAULT_DIRECTORY, d);
+	}
 
 	/*
 	 * Welcome dialog
@@ -1365,6 +1388,116 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGStrokeWidth(double width) {
 		putDouble(SVG_STROKE_WIDTH, width);
+	}
+
+	/**
+	 * Returns whether SVG exports should include crosshairs (used for centering rings/bulkheads).
+	 *
+	 * @return true if crosshairs should be drawn
+	 */
+	public boolean isSVGDrawCrosshair() {
+		return getBoolean(SVG_DRAW_CROSSHAIR, false);
+	}
+
+	/**
+	 * Sets whether SVG exports should include crosshairs.
+	 *
+	 * @param drawCrosshair true to include crosshairs
+	 */
+	public void setSVGDrawCrosshair(boolean drawCrosshair) {
+		putBoolean(SVG_DRAW_CROSSHAIR, drawCrosshair);
+	}
+
+	/**
+	 * Returns the color used for crosshair guides in SVG exports.
+	 *
+	 * @return the crosshair color
+	 */
+	public Color getSVGCrosshairColor() {
+		return getColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(Color.GRAY)).toAWTColor();
+	}
+
+	/**
+	 * Sets the crosshair color for SVG exports.
+	 *
+	 * @param color the color to use for crosshairs
+	 */
+	public void setSVGCrosshairColor(Color color) {
+		putColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(color));
+	}
+
+	/**
+	 * Returns the crosshair size used for SVG exports in mm.
+	 * This is the length of one full crosshair line.
+	 *
+	 * @return the crosshair size in mm
+	 */
+	public double getSVGCrosshairSize() {
+		return getDouble(SVG_CROSSHAIR_SIZE, 2.0); // Default 2mm
+	}
+
+	/**
+	 * Sets the crosshair size used for SVG exports in mm.
+	 * This is the length of one full crosshair line.
+	 *
+	 * @param size the crosshair size in mm
+	 */
+	public void setSVGCrosshairSize(double size) {
+		putDouble(SVG_CROSSHAIR_SIZE, size);
+	}
+
+	/**
+	 * Returns whether SVG exports should include component name labels.
+	 *
+	 * @return true if labels should be shown
+	 */
+	public boolean isSVGShowLabels() {
+		return getBoolean(SVG_SHOW_LABELS, true);
+	}
+
+	/**
+	 * Sets whether SVG exports should include component name labels.
+	 *
+	 * @param showLabels true to include labels
+	 */
+	public void setSVGShowLabels(boolean showLabels) {
+		putBoolean(SVG_SHOW_LABELS, showLabels);
+	}
+
+	/**
+	 * Returns the color used for component name labels in SVG exports.
+	 *
+	 * @return the label color
+	 */
+	public Color getSVGLabelColor() {
+		return getColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
+	}
+
+	/**
+	 * Sets the label color for SVG exports.
+	 *
+	 * @param color the color to use for labels
+	 */
+	public void setSVGLabelColor(Color color) {
+		putColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(color));
+	}
+
+	/**
+	 * Returns the part spacing used for SVG exports in meters.
+	 *
+	 * @return the part spacing in meters
+	 */
+	public double getSVGPartSpacing() {
+		return getDouble(SVG_PART_SPACING, 0.01); // Default 10mm
+	}
+
+	/**
+	 * Sets the part spacing used for SVG exports in meters.
+	 *
+	 * @param spacing the part spacing in meters
+	 */
+	public void setSVGPartSpacing(double spacing) {
+		putDouble(SVG_PART_SPACING, spacing);
 	}
 
 	/**
