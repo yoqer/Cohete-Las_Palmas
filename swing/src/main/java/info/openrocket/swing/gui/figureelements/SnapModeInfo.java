@@ -28,6 +28,7 @@ public class SnapModeInfo implements FigureElement {
 
 	private int caliperNumber;
 	private static Color textColor;
+	private static Color snapHighlightColor;
 
 	static {
 		initColors();
@@ -44,6 +45,7 @@ public class SnapModeInfo implements FigureElement {
 
 	public static void updateColors() {
 		textColor = GUIUtil.getUITheme().getTextColor();
+		snapHighlightColor = GUIUtil.getUITheme().getCaliperSnapHighlightColor();
 	}
 
 	@Override
@@ -69,15 +71,16 @@ public class SnapModeInfo implements FigureElement {
 		Rectangle2D mainBounds = mainText.getVisualBounds();
 		Rectangle2D hintBounds = hintText.getVisualBounds();
 		
-		// Draw the main message at top center of visible area
+		// Draw the main message at top center of visible area in snap highlight color
 		float mainX = (float)(visible.x + (visible.width - mainBounds.getWidth()) / 2);
 		float mainY = visible.y + MARGIN + (float)mainBounds.getHeight();
-		g2.setColor(textColor);
+		g2.setColor(snapHighlightColor);
 		g2.drawGlyphVector(mainText, mainX, mainY);
 		
 		// Draw the exit hint at bottom center of visible area
 		float hintX = (float)(visible.x + (visible.width - hintBounds.getWidth()) / 2);
 		float hintY = visible.y + visible.height - MARGIN;
+		g2.setColor(textColor);
 		g2.drawGlyphVector(hintText, hintX, hintY);
 	}
 }
