@@ -327,7 +327,7 @@ public class CaliperManager {
 		
 		// Snap mode button for caliper 1
 		caliper1SnapButton = new JToggleButton();
-		caliper1SnapButton.setIcon(Icons.SNAP);
+		caliper1SnapButton.setIcon(Icons.SNAP_CLICK);
 		caliper1SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 1));
 		caliper1SnapButton.addActionListener(new ActionListener() {
 			@Override
@@ -346,7 +346,7 @@ public class CaliperManager {
 		
 		// Snap mode button for caliper 2
 		caliper2SnapButton = new JToggleButton();
-		caliper2SnapButton.setIcon(Icons.SNAP);
+		caliper2SnapButton.setIcon(Icons.SNAP_CLICK);
 		caliper2SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 2));
 		caliper2SnapButton.addActionListener(new ActionListener() {
 			@Override

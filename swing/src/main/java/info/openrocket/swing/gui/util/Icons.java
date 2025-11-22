@@ -99,7 +99,7 @@ public class Icons {
 	public static final Icon ZOOM_OUT = loadImageIcon("pix/icons/zoom-out.png", "Zoom out");
 	public static final Icon ZOOM_RESET = loadImageIcon("pix/icons/zoom-reset.png", "Reset Zoom & Pan");
 	public static final Icon RULER = loadImageIcon("pix/icons/ruler.png", "Ruler");
-	public static final Icon SNAP = loadImageIcon("pix/icons/magnet.png", "Snap");
+	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
 	
 	public static final Icon PREFERENCES = loadImageIcon("pix/icons/preferences.png", "Preferences");
 	
