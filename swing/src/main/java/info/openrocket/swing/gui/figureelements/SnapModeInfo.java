@@ -23,6 +23,7 @@ public class SnapModeInfo implements FigureElement {
 
 	private static final Translator trans = Application.getTranslator();
 	private static final int MARGIN = 8;
+	private static final int LINE_SPACING = 4;
 	private static final Font FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
 
 	private int caliperNumber;
@@ -56,18 +57,28 @@ public class SnapModeInfo implements FigureElement {
 			return;
 		}
 
-		// Create the message text
-		GlyphVector text = FONT.createGlyphVector(g2.getFontRenderContext(),
-				String.format(trans.get("CaliperManager.snapModeMessage"), caliperNumber));
+		// Create the main message text
+		String mainMessage = String.format(trans.get("CaliperManager.snapModeMessage"), caliperNumber);
+		GlyphVector mainText = FONT.createGlyphVector(g2.getFontRenderContext(), mainMessage);
+		
+		// Create the exit hint text
+		String exitHint = trans.get("CaliperManager.snapModeExitHint");
+		GlyphVector hintText = FONT.createGlyphVector(g2.getFontRenderContext(), exitHint);
 
-		// Position at top center of visible area
-		Rectangle2D textBounds = text.getVisualBounds();
-		float x = (float)(visible.x + (visible.width - textBounds.getWidth()) / 2);
-		float y = visible.y + MARGIN + (float)textBounds.getHeight();
-
-		// Draw the text
+		// Calculate bounds for both texts
+		Rectangle2D mainBounds = mainText.getVisualBounds();
+		Rectangle2D hintBounds = hintText.getVisualBounds();
+		
+		// Draw the main message at top center of visible area
+		float mainX = (float)(visible.x + (visible.width - mainBounds.getWidth()) / 2);
+		float mainY = visible.y + MARGIN + (float)mainBounds.getHeight();
 		g2.setColor(textColor);
-		g2.drawGlyphVector(text, x, y);
+		g2.drawGlyphVector(mainText, mainX, mainY);
+		
+		// Draw the exit hint at bottom center of visible area
+		float hintX = (float)(visible.x + (visible.width - hintBounds.getWidth()) / 2);
+		float hintY = visible.y + visible.height - MARGIN;
+		g2.drawGlyphVector(hintText, hintX, hintY);
 	}
 }
 
