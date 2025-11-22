@@ -65,6 +65,10 @@ public class CaliperDialog extends JDialog {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				isOpen = false;
+				// Exit snap mode if active
+				if (caliperManager.isSnapModeActive()) {
+					caliperManager.exitSnapMode();
+				}
 				// Disable caliper when dialog closes
 				caliperManager.setEnabled(false);
 			}
@@ -367,6 +371,10 @@ public class CaliperDialog extends JDialog {
 			caliperManager.setEnabled(true);
 		} else {
 			isOpen = false;
+			// Exit snap mode if active
+			if (caliperManager.isSnapModeActive()) {
+				caliperManager.exitSnapMode();
+			}
 			// Disable caliper when dialog closes
 			caliperManager.setEnabled(false);
 		}
