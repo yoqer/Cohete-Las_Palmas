@@ -612,11 +612,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		// Caliper tool - button to open dialog
 		if (caliperManager != null) {
-			ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
+		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
 			JButton caliperButton = caliperManager.getCaliperButton();
 			caliperButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed(ActionEvent e) {
 					openCaliperDialog();
 				}
 			});
@@ -1378,14 +1378,24 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
 			caliperManager.updateCaliperElements();
 			
-			// Add snap target highlight if in snap mode and hovering over a target
+			// Add snap target highlights
 			if (inSnapMode) {
-				CaliperSnapTarget hoveredTarget =
-						caliperManager.getHoveredSnapTarget();
-				if (hoveredTarget != null) {
-					info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
-							new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(hoveredTarget, figure.getCurrentViewType());
-					figure.addRelativeExtra(highlight);
+				// If always show is enabled (debug mode), show all snap targets
+				if (caliperManager.isAlwaysShowSnapTargets()) {
+					for (CaliperSnapTarget target : caliperManager.getCurrentSnapTargets()) {
+						info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
+								new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(target, figure.getCurrentViewType());
+						figure.addRelativeExtra(highlight);
+				}
+			} else {
+					// Normal mode: only show hovered target
+					CaliperSnapTarget hoveredTarget =
+							caliperManager.getHoveredSnapTarget();
+					if (hoveredTarget != null) {
+						info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
+								new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(hoveredTarget, figure.getCurrentViewType());
+						figure.addRelativeExtra(highlight);
+					}
 				}
 			}
 		}

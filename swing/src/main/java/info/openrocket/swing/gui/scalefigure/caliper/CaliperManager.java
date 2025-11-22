@@ -138,6 +138,7 @@ public class CaliperManager {
 	private Integer activeSnapCaliper = null;  // 1 or 2, or null if not in snap mode
 	private CaliperSnapTarget hoveredSnapTarget = null;
 	private final List<CaliperSnapTarget> currentSnapTargets = new ArrayList<>();
+	private boolean alwaysShowSnapTargets = false;  // Debug mode: always show all snap targets
 
 	/**
 	 * Interface for getting the current view type from the panel.
@@ -1090,6 +1091,36 @@ public class CaliperManager {
 	 */
 	public CaliperSnapTarget getHoveredSnapTarget() {
 		return hoveredSnapTarget;
+	}
+
+	/**
+	 * Get the list of all current snap targets.
+	 *
+	 * @return the list of current snap targets
+	 */
+	public List<CaliperSnapTarget> getCurrentSnapTargets() {
+		return new ArrayList<>(currentSnapTargets);
+	}
+
+	/**
+	 * Set whether to always show all snap targets (debug mode).
+	 *
+	 * @param alwaysShow true to always show all snap targets, false to only show on hover
+	 */
+	public void setAlwaysShowSnapTargets(boolean alwaysShow) {
+		if (alwaysShowSnapTargets != alwaysShow) {
+			alwaysShowSnapTargets = alwaysShow;
+			figureUpdateCallback.run();
+		}
+	}
+
+	/**
+	 * Check if always showing snap targets is enabled (debug mode).
+	 *
+	 * @return true if always showing snap targets is enabled
+	 */
+	public boolean isAlwaysShowSnapTargets() {
+		return alwaysShowSnapTargets;
 	}
 
 	/**

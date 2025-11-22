@@ -317,6 +317,21 @@ public class CaliperDialog extends JDialog {
 		// Initial update
 		updateSpinnerStates.accept(null);
 		
+		// Debug mode checkbox: always show snap targets
+		// Only show this checkbox when in debug mode
+		boolean isDebugMode = System.getProperty("openrocket.debug") != null;
+		if (isDebugMode) {
+			javax.swing.JCheckBox alwaysShowSnapTargetsCheckbox = new javax.swing.JCheckBox("Always show snap targets");
+			alwaysShowSnapTargetsCheckbox.setSelected(caliperManager.isAlwaysShowSnapTargets());
+			alwaysShowSnapTargetsCheckbox.addItemListener(new ItemListener() {
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+					caliperManager.setAlwaysShowSnapTargets(e.getStateChange() == ItemEvent.SELECTED);
+				}
+			});
+			panel.add(alwaysShowSnapTargetsCheckbox, "spanx, wrap para");
+		}
+		
 		// Close button
 		JButton closeButton = new JButton(trans.get("dlg.but.close"));
 		closeButton.addActionListener(new ActionListener() {
