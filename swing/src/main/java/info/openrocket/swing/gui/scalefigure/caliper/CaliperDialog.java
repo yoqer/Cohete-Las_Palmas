@@ -5,7 +5,10 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.components.DescriptionArea;
 import info.openrocket.swing.gui.util.GUIUtil;
+import info.openrocket.swing.gui.util.Icons;
+import info.openrocket.swing.gui.widgets.IconToggleButton;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.AbstractAction;
@@ -70,6 +73,10 @@ public class CaliperDialog extends JDialog {
 	// Distance panel (shared between main and minimized views)
 	private final JPanel distancePanel;
 	
+	// Help components
+	private DescriptionArea componentInfo;
+	private IconToggleButton infoBtn;
+	
 	/**
 	 * Create a new CaliperDialog.
 	 *
@@ -103,7 +110,7 @@ public class CaliperDialog extends JDialog {
 		});
 		
 		// Build the dialog content
-		mainPanel = new JPanel(new MigLayout("fill, insets dialog", "[grow]", "[]rel[]para[]"));
+		mainPanel = new JPanel(new MigLayout("fill, insets dialog, hidemode 3", "[grow]", "[]rel[]para[]"));
 		
 		// Mode selection: Radio buttons for Vertical/Horizontal
 		JLabel modeLabel = new JLabel(trans.get("CaliperDialog.lbl.mode"));
@@ -379,8 +386,19 @@ public class CaliperDialog extends JDialog {
 				setVisible(false);  // This will disable the caliper via setVisible
 			}
 		});
-		mainPanel.add(minimizeButton, "spanx, split 2, tag close, align right");
-		mainPanel.add(closeButton, "tag close, align right");
+		
+		// Button panel for minimize, close, and help button
+		JPanel buttonPanel = new JPanel(new MigLayout("ins 0, fillx"));
+		buttonPanel.setOpaque(false);
+		
+		// Add component info (help text) - this creates infoBtn
+		addComponentInfo(buttonPanel);
+		
+		// Minimize and close buttons (right side)
+		buttonPanel.add(minimizeButton, "align right, split 2, gapleft para");
+		buttonPanel.add(closeButton, "align right");
+		
+		mainPanel.add(buttonPanel, "spanx, growx");
 		
 		// Create minimized panel (only distance)
 		// Note: distancePanel will be moved between mainPanel and minimizedPanel
@@ -415,6 +433,43 @@ public class CaliperDialog extends JDialog {
 		rootPane.getActionMap().put("exitSnapMode", escapeAction);
 		
 		pack();
+	}
+	
+	/**
+	 * Add a section to the caliper dialog that displays help information.
+	 */
+	private void addComponentInfo(JPanel buttonPanel) {
+		final String helpText = "<html>" + trans.get("CaliperDialog.info") + "</html>";
+
+		// Component info
+		componentInfo = new DescriptionArea(helpText, 5);
+		componentInfo.setTextFont(null);
+		componentInfo.setVisible(false);
+		mainPanel.add(componentInfo, "spanx, growx, wrap para");
+
+		// Component info toggle button
+		infoBtn = new IconToggleButton();
+		infoBtn.setToolTipText(trans.get("CaliperDialog.btn.ComponentInfo.ttip"));
+		infoBtn.setIconScale(1.2f);
+		infoBtn.setSelectedIcon(Icons.HELP_ABOUT);
+		infoBtn.setIcon(Icons.HELP_ABOUT);
+		buttonPanel.add(infoBtn, "pushx, align left, gapright para");
+
+		infoBtn.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				componentInfo.setVisible(e.getStateChange() != ItemEvent.SELECTED);
+				pack();
+				SwingUtilities.invokeLater(() -> {
+					// Scroll to top when showing info
+					if (componentInfo.isVisible()) {
+						componentInfo.scrollToTop();
+					}
+				});
+			}
+		});
+
+		infoBtn.setSelected(true);
 	}
 	
 	/**
