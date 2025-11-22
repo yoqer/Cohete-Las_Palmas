@@ -3,3 +3,4 @@ info.openrocket.swing.gui.scalefigure.caliper.snap.CoaxialSnapProvider
 info.openrocket.swing.gui.scalefigure.caliper.snap.TransitionSnapProvider
 info.openrocket.swing.gui.scalefigure.caliper.snap.TubeFinSetSnapProvider
 info.openrocket.swing.gui.scalefigure.caliper.snap.FinSetSnapProvider
+info.openrocket.swing.gui.scalefigure.caliper.snap.MassObjectSnapProvider

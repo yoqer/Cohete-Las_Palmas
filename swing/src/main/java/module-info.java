@@ -1,4 +1,6 @@
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CoaxialSnapProvider;
+import info.openrocket.swing.gui.scalefigure.caliper.snap.FinSetSnapProvider;
+import info.openrocket.swing.gui.scalefigure.caliper.snap.MassObjectSnapProvider;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.TransitionSnapProvider;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.TubeFinSetSnapProvider;
 
@@ -63,5 +65,7 @@ open module info.openrocket.swing {
 	provides info.openrocket.swing.gui.scalefigure.caliper.snap.ComponentSnapProvider with
 			CoaxialSnapProvider,
 			TransitionSnapProvider,
-			TubeFinSetSnapProvider;
+			TubeFinSetSnapProvider,
+			FinSetSnapProvider,
+			MassObjectSnapProvider;
 }
