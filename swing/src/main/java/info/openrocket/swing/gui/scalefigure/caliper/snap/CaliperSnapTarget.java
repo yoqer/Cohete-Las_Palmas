@@ -209,7 +209,7 @@ public class CaliperSnapTarget {
 		
 		if (viewType == RocketPanel.VIEW_TYPE.BackView) {
 			// Back view: screen X = Z, screen Y = Y
-			if (orientation == CaliperManager.CaliperMode.VERTICAL) {
+		if (orientation == CaliperManager.CaliperMode.VERTICAL) {
 				// Vertical line in back view: line is parallel to Y-axis (Z is constant)
 				px = point.getZ();
 				py = point.getY();

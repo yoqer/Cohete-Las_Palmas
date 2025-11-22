@@ -10,6 +10,7 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -46,6 +47,17 @@ public class CaliperDialog extends JDialog {
 	
 	private final CaliperManager caliperManager;
 	private boolean isOpen = false;
+	private boolean minimized = false;
+	
+	// Components that should be hidden when minimized
+	private final JPanel mainPanel;
+	private final JLabel distanceLabel;
+
+	// Minimized panel (only distance)
+	private final JPanel minimizedPanel;
+	
+	// Distance panel (shared between main and minimized views)
+	private final JPanel distancePanel;
 	
 	/**
 	 * Create a new CaliperDialog.
@@ -80,10 +92,11 @@ public class CaliperDialog extends JDialog {
 		});
 		
 		// Build the dialog content
-		JPanel panel = new JPanel(new MigLayout("fill, insets dialog", "[grow]", "[]rel[]para[]"));
+		mainPanel = new JPanel(new MigLayout("fill, insets dialog", "[grow]", "[]rel[]para[]"));
 		
 		// Mode selection: Radio buttons for Vertical/Horizontal
-		panel.add(new JLabel(trans.get("CaliperDialog.lbl.mode")));
+		JLabel modeLabel = new JLabel(trans.get("CaliperDialog.lbl.mode"));
+		mainPanel.add(modeLabel);
 		ButtonGroup modeGroup = new ButtonGroup();
 		JRadioButton verticalRadio = new JRadioButton(trans.get("CaliperDialog.radio.vertical"));
 		JRadioButton horizontalRadio = new JRadioButton(trans.get("CaliperDialog.radio.horizontal"));
@@ -95,12 +108,12 @@ public class CaliperDialog extends JDialog {
 		verticalRadio.setSelected(currentMode == CaliperManager.CaliperMode.VERTICAL);
 		horizontalRadio.setSelected(currentMode == CaliperManager.CaliperMode.HORIZONTAL);
 		
-		panel.add(verticalRadio, "gapleft para, split 2");
-		panel.add(horizontalRadio, "wrap para");
+		mainPanel.add(verticalRadio, "gapleft para, split 2");
+		mainPanel.add(horizontalRadio, "wrap para");
 		
 		// Distance and unit in a colored border panel
 		Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
-		JPanel distancePanel = new JPanel(new MigLayout("ins 0"));
+		distancePanel = new JPanel(new MigLayout("ins 0"));
 		distancePanel.setOpaque(false);
 		Border caliperBorder = new LineBorder(caliperColor, 1);
 		distancePanel.setBorder(new CompoundBorder(caliperBorder, new EmptyBorder(5, 5, 5, 5)));
@@ -190,11 +203,12 @@ public class CaliperDialog extends JDialog {
 		distancePanel.add(distanceField, "split 2, aligny center");
 		distancePanel.add(unitSelector, "gapright unrel");
 		
-		panel.add(new JLabel(trans.get("CaliperDialog.lbl.distance")));
-		panel.add(distancePanel, "spanx, wrap para");
+		distanceLabel = new JLabel(trans.get("CaliperDialog.lbl.distance"));
+		mainPanel.add(distanceLabel);
+		mainPanel.add(distancePanel, "spanx, wrap para");
 		
 		// Caliper 1 position row
-		panel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 1)));
+		mainPanel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 1)));
 		JPanel caliper1Panel = new JPanel(new MigLayout("ins 0, fillx", "[][grow][]", ""));
 		caliper1Panel.setOpaque(false);
 		JSpinner caliper1Spinner = caliperManager.getCaliper1PositionSpinner();
@@ -206,10 +220,10 @@ public class CaliperDialog extends JDialog {
 		snap1Button.setText(trans.get("CaliperDialog.btn.snap"));
 		snap1Button.setToolTipText(String.format(trans.get("CaliperDialog.btn.snap.ttip"), 1));
 		caliper1Panel.add(snap1Button, "gapleft rel");
-		panel.add(caliper1Panel, "growx, wrap");
+		mainPanel.add(caliper1Panel, "growx, wrap");
 		
 		// Caliper 2 position row
-		panel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 2)));
+		mainPanel.add(new JLabel(String.format(trans.get("CaliperDialog.lbl.caliperPosition"), 2)));
 		JPanel caliper2Panel = new JPanel(new MigLayout("ins 0, fillx", "[][grow][]", ""));
 		caliper2Panel.setOpaque(false);
 		JSpinner caliper2Spinner = caliperManager.getCaliper2PositionSpinner();
@@ -221,7 +235,7 @@ public class CaliperDialog extends JDialog {
 		snap2Button.setText(trans.get("CaliperDialog.btn.snap"));
 		snap2Button.setToolTipText(String.format(trans.get("CaliperDialog.btn.snap.ttip"), 2));
 		caliper2Panel.add(snap2Button, "gapleft rel");
-		panel.add(caliper2Panel, "growx, wrap para");
+		mainPanel.add(caliper2Panel, "growx, wrap para");
 		
 		// Update visual state of position spinners based on snap mode
 		// Add listeners to update styling when snap mode changes
@@ -325,16 +339,26 @@ public class CaliperDialog extends JDialog {
 		// Only show this checkbox when in debug mode
 		boolean isDebugMode = System.getProperty("openrocket.debug") != null;
 		if (isDebugMode) {
-			javax.swing.JCheckBox alwaysShowSnapTargetsCheckbox = new javax.swing.JCheckBox("Always show snap targets");
-			alwaysShowSnapTargetsCheckbox.setSelected(caliperManager.isAlwaysShowSnapTargets());
-			alwaysShowSnapTargetsCheckbox.addItemListener(new ItemListener() {
+			JCheckBox debugCheckbox = new JCheckBox("Always show snap targets");
+			debugCheckbox.setSelected(caliperManager.isAlwaysShowSnapTargets());
+			debugCheckbox.addItemListener(new ItemListener() {
 				@Override
 				public void itemStateChanged(ItemEvent e) {
 					caliperManager.setAlwaysShowSnapTargets(e.getStateChange() == ItemEvent.SELECTED);
 				}
 			});
-			panel.add(alwaysShowSnapTargetsCheckbox, "spanx, wrap para");
+			mainPanel.add(debugCheckbox, "spanx, wrap para");
 		}
+		
+		// Minimize button
+		JButton minimizeButton = new JButton(trans.get("CaliperDialog.btn.minimize"));
+		minimizeButton.setToolTipText(trans.get("CaliperDialog.btn.minimize.ttip"));
+		minimizeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setMinimized(true);
+			}
+		});
 		
 		// Close button
 		JButton closeButton = new JButton(trans.get("dlg.but.close"));
@@ -344,9 +368,25 @@ public class CaliperDialog extends JDialog {
 				setVisible(false);  // This will disable the caliper via setVisible
 			}
 		});
-		panel.add(closeButton, "spanx, tag close, align right");
+		mainPanel.add(minimizeButton, "spanx, split 2, tag close, align right");
+		mainPanel.add(closeButton, "tag close, align right");
 		
-		add(panel);
+		// Create minimized panel (only distance)
+		// Note: distancePanel will be moved between mainPanel and minimizedPanel
+		minimizedPanel = new JPanel(new MigLayout("fill, insets dialog", "[grow]", "[]"));
+		// Make minimized panel clickable to restore (double-click)
+		minimizedPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e) {
+				if (e.getClickCount() == 2) {
+					setMinimized(false);
+				}
+			}
+		});
+		minimizedPanel.setToolTipText("Double-click to restore dialog");
+		
+		// Add main panel to dialog
+		add(mainPanel);
 		
 		pack();
 	}
@@ -359,6 +399,10 @@ public class CaliperDialog extends JDialog {
 	public void setVisible(boolean visible) {
 		if (visible) {
 			isOpen = true;
+			// Reset to normal size when opening
+			if (minimized) {
+				setMinimized(false);
+			}
 			// Enable caliper when dialog opens
 			caliperManager.setEnabled(true);
 		} else {
@@ -371,6 +415,56 @@ public class CaliperDialog extends JDialog {
 			caliperManager.setEnabled(false);
 		}
 		super.setVisible(visible);
+	}
+	
+	/**
+	 * Set the minimized state of the dialog.
+	 * When minimized, only the distance panel is shown.
+	 *
+	 * @param minimized true to minimize, false to restore
+	 */
+	private void setMinimized(boolean minimized) {
+		if (this.minimized == minimized) {
+			return;
+		}
+		this.minimized = minimized;
+		
+		if (minimized) {
+			// Remove distancePanel from mainPanel and add it to minimizedPanel
+			mainPanel.remove(distancePanel);
+			minimizedPanel.removeAll(); // Clear any existing components
+			minimizedPanel.add(distancePanel, "growx, wrap");
+			
+			// Remove main panel and add minimized panel
+			remove(mainPanel);
+			add(minimizedPanel);
+			pack();
+		} else {
+			// Remove distancePanel from minimizedPanel and add it back to mainPanel
+			minimizedPanel.remove(distancePanel);
+			// distancePanel should already be in mainPanel's layout, but we need to ensure it's there
+			// The layout manager will handle the positioning based on the constraints
+			// We need to re-add it with the correct constraints
+			mainPanel.remove(distanceLabel);
+			mainPanel.remove(distancePanel);
+			mainPanel.add(distanceLabel, 3);
+			mainPanel.add(distancePanel, "spanx, wrap para", 4);
+			
+			// Remove minimized panel and add main panel
+			remove(minimizedPanel);
+			add(mainPanel);
+			pack();
+		}
+	}
+	
+	/**
+	 * Restore the dialog to normal size.
+	 * Called when the caliper button is pressed.
+	 */
+	public void restore() {
+		if (minimized) {
+			setMinimized(false);
+		}
 	}
 	
 	/**

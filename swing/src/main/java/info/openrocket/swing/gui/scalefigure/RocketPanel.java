@@ -1709,6 +1709,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		
 		caliperDialog.setLocation(dialogX, dialogY);
+		// Restore to normal size when opening
+		caliperDialog.restore();
 		caliperDialog.setVisible(true);
 		caliperDialog.toFront();
 		caliperDialog.requestFocus();
