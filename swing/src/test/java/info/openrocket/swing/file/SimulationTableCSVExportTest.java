@@ -162,16 +162,17 @@ public class SimulationTableCSVExportTest extends BaseTestCase {
 	}
 
 	/**
-	 * Test that reproduces the bug: ArrayIndexOutOfBoundsException when selecting all rows
-	 * and copying. The bug occurred when getColumnCount() returned 13, and the code tried
-	 * to access index 13 (which is out of bounds for a 0-indexed array of size 13).
+	 * Test that reproduces the exact bug: ArrayIndexOutOfBoundsException when selecting all rows
+	 * and copying. The bug occurred when getColumnCount() returned 14, but only 13 columns exist,
+	 * causing the loop to try accessing index 13, which throws "13 >= 13".
 	 * 
-	 * This test verifies that the fix prevents the exception even when column count
-	 * is at the boundary (13 columns, indices 0-12).
+	 * This test simulates the actual bug by making getColumnCount() return 14, but only
+	 * mocking columns 0-12, so accessing column 13 throws the exception.
 	 */
 	@Test
 	public void testCopyAllRowsWithBoundaryColumnCount() {
-		final int modelColumnCount = 13; // This is the boundary case that caused the bug
+		final int actualColumnCount = 13; // Actual columns (indices 0-12)
+		final int reportedColumnCount = 14; // getColumnCount() incorrectly returns 14
 
 		OpenRocketDocument document = mock(OpenRocketDocument.class);
 		JTable simulationTable = mock(JTable.class);
@@ -179,17 +180,23 @@ public class SimulationTableCSVExportTest extends BaseTestCase {
 		TableColumnModel tableColumnModel = mock(TableColumnModel.class);
 
 		when(simulationTable.getColumnModel()).thenReturn(tableColumnModel);
-		when(simulationTableModel.getColumnCount()).thenReturn(modelColumnCount);
-		when(simulationTable.getColumnCount()).thenReturn(modelColumnCount);
+		// This is the bug: getColumnCount() returns 14, but only 13 columns exist
+		when(simulationTableModel.getColumnCount()).thenReturn(reportedColumnCount);
+		when(simulationTable.getColumnCount()).thenReturn(actualColumnCount);
 		when(simulationTableModel.getRowCount()).thenReturn(5); // 5 simulations
 
-		// Mock column names from model - ensure all 13 columns are properly mocked
-		for (int i = 0; i < modelColumnCount; i++) {
+		// Mock only the actual columns that exist (0-12)
+		for (int i = 0; i < actualColumnCount; i++) {
 			Column mockColumn = mock(Column.class);
 			when(simulationTableModel.getColumn(i)).thenReturn(mockColumn);
 			when(mockColumn.toString()).thenReturn("Column" + i);
 			when(simulationTableModel.getColumnName(i)).thenReturn("Column" + i);
 		}
+
+		// CRITICAL: When trying to access column 13 (which doesn't exist), throw the exact exception
+		// This reproduces the bug: "13 >= 13"
+		when(simulationTableModel.getColumn(13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
+		when(simulationTableModel.getColumnName(13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
 
 		// Mock simulations with data
 		for (int row = 0; row < 5; row++) {
@@ -201,24 +208,90 @@ public class SimulationTableCSVExportTest extends BaseTestCase {
 			when(simulation.getSimulatedWarnings()).thenReturn(new info.openrocket.core.logging.WarningSet());
 
 			// Mock cell values (starting from column 2, as per buildRowData logic)
-			for (int col = 2; col < modelColumnCount; col++) {
+			for (int col = 2; col < actualColumnCount; col++) {
 				when(simulationTableModel.getValueAt(row, col)).thenReturn("Value" + row + "_" + col);
 			}
+			// Column 13 doesn't exist
+			when(simulationTableModel.getValueAt(row, 13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
 		}
 
 		// Create exporter
 		SimulationTableCSVExport exporter = new SimulationTableCSVExport(
 				document, simulationTable, simulationTableModel);
 
-		// This should not throw ArrayIndexOutOfBoundsException: 13 >= 13
-		// The bug occurred when the loop tried to access index 13 in an array of size 13
+		// This should NOT throw ArrayIndexOutOfBoundsException: 13 >= 13
+		// The fix should catch the exception and break the loop gracefully
 		assertDoesNotThrow(() -> {
 			// Test with onlySelected=false to simulate "select all" scenario
 			String result = exporter.generateCSVData("\t", 6, false, false);
 			assertNotNull(result);
-			// Verify the result contains data
+			// The result should still be generated even if one column fails
+		}, "Should handle IndexOutOfBoundsException gracefully when getColumnName is called with invalid index");
+	}
+
+	/**
+	 * Test that reproduces the EXACT bug scenario from the user's report:
+	 * - User clicks on a row, presses Cmd+A to select all, then Cmd+C to copy
+	 * - getColumnCount() returns 14, but only 13 columns exist (indices 0-12)
+	 * - Loop tries to access index 13, causing ArrayIndexOutOfBoundsException: 13 >= 13
+	 * 
+	 * This test verifies the fix handles this scenario gracefully.
+	 */
+	@Test
+	public void testCopyAllRowsReproducesOriginalBug() {
+		final int actualColumnCount = 13; // Actual number of columns (indices 0-12)
+		final int reportedColumnCount = 14; // getColumnCount() incorrectly returns 14
+
+		OpenRocketDocument document = mock(OpenRocketDocument.class);
+		JTable simulationTable = mock(JTable.class);
+		ColumnTableModel simulationTableModel = mock(ColumnTableModel.class);
+		TableColumnModel tableColumnModel = mock(TableColumnModel.class);
+
+		when(simulationTable.getColumnModel()).thenReturn(tableColumnModel);
+		// getColumnCount() returns 14, but only 13 columns exist
+		when(simulationTableModel.getColumnCount()).thenReturn(reportedColumnCount);
+		when(simulationTable.getColumnCount()).thenReturn(actualColumnCount);
+		when(simulationTableModel.getRowCount()).thenReturn(3);
+
+		// Mock only the actual columns that exist (0-12)
+		for (int i = 0; i < actualColumnCount; i++) {
+			Column mockColumn = mock(Column.class);
+			when(simulationTableModel.getColumn(i)).thenReturn(mockColumn);
+			when(mockColumn.toString()).thenReturn("Column" + i);
+			when(simulationTableModel.getColumnName(i)).thenReturn("Column" + i);
+		}
+
+		// When trying to access column 13 (which doesn't exist), throw the exception
+		when(simulationTableModel.getColumnName(13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
+		when(simulationTableModel.getColumn(13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
+
+		// Mock simulations with data
+		for (int row = 0; row < 3; row++) {
+			Simulation simulation = mock(Simulation.class);
+			FlightData flightData = mock(FlightData.class);
+			when(document.getSimulation(row)).thenReturn(simulation);
+			when(simulation.hasSummaryData()).thenReturn(true);
+			when(simulation.getSimulatedData()).thenReturn(flightData);
+			when(simulation.getSimulatedWarnings()).thenReturn(new info.openrocket.core.logging.WarningSet());
+
+			// Mock cell values for existing columns only
+			for (int col = 2; col < actualColumnCount; col++) {
+				when(simulationTableModel.getValueAt(row, col)).thenReturn("Value" + row + "_" + col);
+			}
+			// Column 13 doesn't exist, so getValueAt should throw
+			when(simulationTableModel.getValueAt(row, 13)).thenThrow(new ArrayIndexOutOfBoundsException("13 >= 13"));
+		}
+
+		// Create exporter
+		SimulationTableCSVExport exporter = new SimulationTableCSVExport(
+				document, simulationTable, simulationTableModel);
+
+		// This should NOT throw - the fix should catch and handle the exception
+		assertDoesNotThrow(() -> {
+			String result = exporter.generateCSVData("\t", 6, false, false);
 			assertNotNull(result);
-		});
+			// Should still produce output for the valid columns
+		}, "Should handle IndexOutOfBoundsException when column count is inconsistent");
 	}
 
 	/**

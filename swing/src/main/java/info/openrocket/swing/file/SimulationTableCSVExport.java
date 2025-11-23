@@ -49,14 +49,21 @@ public class SimulationTableCSVExport {
 		if (simulationTableModel == null) {
 			return;
 		}
-		for (int i = 0; i < simulationTableModel.getColumnCount(); i++) {
-			Column c = simulationTableModel.getColumn(i);
-			if (c instanceof ValueColumn) {
-				// Only value columns seem to have units that are not zero length strings... These are
-				// the ones we actually want in our lookup table.
-				valueColumnToUnitString.put(c.toString(), c.getUnits().getDefaultUnit().getUnit());
+		// Capture column count once to avoid issues if it changes during iteration
+		int columnCount = simulationTableModel.getColumnCount();
+		for (int i = 0; i < columnCount; i++) {
+			try {
+				Column c = simulationTableModel.getColumn(i);
+				if (c instanceof ValueColumn) {
+					// Only value columns seem to have units that are not zero length strings... These are
+					// the ones we actually want in our lookup table.
+					valueColumnToUnitString.put(c.toString(), c.getUnits().getDefaultUnit().getUnit());
+				}
+			} catch (IndexOutOfBoundsException e) {
+				// Handle case where column count changed during iteration or index is invalid
+				log.warn("Skipping column {} in populateColumnNameToUnitsHashTable due to index out of bounds (column count: {})", i, columnCount, e);
+				break;
 			}
-			
 		}
 	}
 	/**
