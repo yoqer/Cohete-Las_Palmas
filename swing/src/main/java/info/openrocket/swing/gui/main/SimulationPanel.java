@@ -674,7 +674,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		}
 
 		OpenRocketClipboard.setClipboard(simsCopy);
-		copySimulationValues(Application.getPreferences().getString(ApplicationPreferences.EXPORT_FIELD_SEPARATOR, ","));
+		// Use tab separator for clipboard operations so Excel properly recognizes columns
+		copySimulationValues("\t");
 	}
 
 	/**
