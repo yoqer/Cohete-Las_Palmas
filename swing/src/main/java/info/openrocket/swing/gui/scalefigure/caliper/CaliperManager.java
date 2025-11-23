@@ -43,6 +43,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -1070,6 +1071,85 @@ public class CaliperManager {
 		updateCaliperPositionModelsFromState();
 		saveCurrentCaliperState();
 		figureUpdateCallback.run();
+	}
+	
+	/**
+	 * Move a caliper line back into view at 5% from the corresponding edge.
+	 * 
+	 * @param cal1Handle true for caliper 1, false for caliper 2
+	 * @param visibleRect the visible viewport rectangle in screen coordinates
+	 * @param screenToModel function to convert screen coordinates to model coordinates
+	 */
+	public void moveCaliperLineIntoView(boolean cal1Handle, Rectangle visibleRect, 
+	                                    java.util.function.Function<Point, Point2D.Double> screenToModel) {
+		if (visibleRect == null || !enabled) {
+			return;
+		}
+		
+		// Get the visible bounds in model coordinates
+		Point2D.Double topLeft = screenToModel.apply(new Point(visibleRect.x, visibleRect.y));
+		Point2D.Double bottomRight = screenToModel.apply(
+				new Point(visibleRect.x + visibleRect.width, visibleRect.y + visibleRect.height));
+		
+		if (mode == CaliperMode.VERTICAL) {
+			// Vertical mode: move X position to 5% from left or right edge
+			double currentX = cal1Handle ? caliper1X : caliper2X;
+			double visibleWidth = bottomRight.x - topLeft.x;
+			double newX;
+			
+			// Determine which edge (left or right) based on current position
+			double centerX = (topLeft.x + bottomRight.x) / 2.0;
+			if (currentX < centerX) {
+				// Move to 5% from left edge
+				newX = topLeft.x + visibleWidth * 0.05;
+			} else {
+				// Move to 5% from right edge
+				newX = bottomRight.x - visibleWidth * 0.05;
+			}
+			
+			setCaliperLinePosition(cal1Handle, newX);
+		} else {
+			// Horizontal mode: move Y position to 5% from top or bottom edge
+			// Note: Y coordinates may be inverted after screenToModel conversion
+			// So we need to find the actual min and max Y values
+			double minY = Math.min(topLeft.y, bottomRight.y);
+			double maxY = Math.max(topLeft.y, bottomRight.y);
+			double visibleHeight = maxY - minY;
+			
+			double currentY = cal1Handle ? caliper1Y : caliper2Y;
+			double newY;
+			
+			// Determine which edge (top or bottom) based on current position
+			double centerY = (minY + maxY) / 2.0;
+			if (currentY < centerY) {
+				// Move to 5% from top edge (minY is top in model coordinates)
+				newY = minY + visibleHeight * 0.05;
+			} else {
+				// Move to 5% from bottom edge (maxY is bottom in model coordinates)
+				newY = maxY - visibleHeight * 0.05;
+			}
+			
+			setHorizontalCaliperLinePosition(cal1Handle, newY);
+		}
+	}
+	
+	/**
+	 * Get the caliper line elements for checking indicator bounds.
+	 */
+	public CaliperLine getCaliper1Line() {
+		return caliper1Line;
+	}
+	
+	public CaliperLine getCaliper2Line() {
+		return caliper2Line;
+	}
+	
+	public HorizontalCaliperLine getCaliper1HorizontalLine() {
+		return caliper1HorizontalLine;
+	}
+	
+	public HorizontalCaliperLine getCaliper2HorizontalLine() {
+		return caliper2HorizontalLine;
 	}
 
 	/**

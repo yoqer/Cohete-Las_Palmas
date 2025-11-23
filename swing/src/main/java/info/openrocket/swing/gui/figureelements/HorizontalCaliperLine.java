@@ -252,6 +252,73 @@ public class HorizontalCaliperLine implements FigureElement {
 	}
 	
 	/**
+	 * Get the screen Y position of the caliper line.
+	 * This is a helper method to calculate the screen position from the model position.
+	 *
+	 * @param transform the transform from model to screen coordinates
+	 * @return the screen Y position, or Double.NaN if invalid
+	 */
+	public double getScreenY(AffineTransform transform) {
+		Point2D.Double modelPoint = new Point2D.Double(0, y);
+		Point2D.Double screenPoint = new Point2D.Double();
+		transform.transform(modelPoint, screenPoint);
+		return screenPoint.y;
+	}
+	
+	/**
+	 * Get the bounds of the out-of-view indicator in screen coordinates.
+	 *
+	 * @param caliperYScreen the Y position of the caliper line in screen coordinates
+	 * @param visible the visible viewport rectangle
+	 * @return the bounds of the indicator, or null if not out of view
+	 */
+	public Rectangle2D.Double getIndicatorBounds(double caliperYScreen, Rectangle visible) {
+		if (visible == null) {
+			return null;
+		}
+		
+		double margin = 5.0;
+		boolean isOutOfView = (caliperYScreen < visible.y - margin) || 
+		                      (caliperYScreen > visible.y + visible.height + margin);
+		if (!isOutOfView) {
+			return null;
+		}
+		
+		// Determine which edge to draw the arrow on
+		boolean isTop = caliperYScreen < visible.y;
+		double arrowY = isTop ? visible.y : visible.y + visible.height;
+		double arrowX = visible.x + visible.width / 2.0;
+		
+		// Calculate bounds: arrow area + label area
+		double minX, maxX, minY, maxY;
+		minX = arrowX - ARROW_SIZE / 2.0 - 10; // Add padding
+		maxX = arrowX + ARROW_SIZE / 2.0 + 10;
+		if (handleLabel != null && !handleLabel.isEmpty()) {
+			// Account for label width (approximate)
+			minX -= 30;
+			maxX += 30;
+		}
+		
+		if (isTop) {
+			minY = arrowY;
+			maxY = arrowY + ARROW_SIZE + LABEL_OFFSET;
+			if (handleLabel != null && !handleLabel.isEmpty()) {
+				// Add label height
+				maxY += 30; // Approximate label height
+			}
+		} else {
+			maxY = arrowY;
+			minY = arrowY - ARROW_SIZE - LABEL_OFFSET;
+			if (handleLabel != null && !handleLabel.isEmpty()) {
+				// Subtract label height
+				minY -= 30; // Approximate label height
+			}
+		}
+		
+		return new Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
+	}
+	
+	/**
 	 * Draw an arrow indicator at the edge of the viewport pointing toward the caliper line.
 	 *
 	 * @param g2Screen the graphics context in screen coordinates

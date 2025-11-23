@@ -861,6 +861,70 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			return;
 		}
 		
+		// Check if click is on a caliper indicator (before checking components)
+		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
+			Point clickPoint = event.getPoint();
+			Rectangle visibleRect = figure.getVisibleRect();
+			if (visibleRect != null) {
+				// Get the transform from the figure
+				java.awt.geom.AffineTransform transform = new java.awt.geom.AffineTransform();
+				Point origin = figure.getSubjectOrigin();
+				double scale = figure.getAbsoluteScale();
+				transform.translate(origin.x, origin.y);
+				transform.scale(scale, -scale); // Y is inverted
+				
+				// Create screenToModel function
+				java.util.function.Function<Point, java.awt.geom.Point2D.Double> screenToModelFunc = 
+						(p) -> figure.screenToModel(p.x, p.y);
+				
+				// Check vertical caliper lines
+				if (caliperManager.getMode() == CaliperManager.CaliperMode.VERTICAL) {
+					info.openrocket.swing.gui.figureelements.CaliperLine cal1Line = caliperManager.getCaliper1Line();
+					info.openrocket.swing.gui.figureelements.CaliperLine cal2Line = caliperManager.getCaliper2Line();
+					
+					if (cal1Line != null) {
+						double screenX = cal1Line.getScreenX(transform);
+						java.awt.geom.Rectangle2D.Double bounds = cal1Line.getIndicatorBounds(screenX, visibleRect);
+						if (bounds != null && bounds.contains(clickPoint.x, clickPoint.y)) {
+							caliperManager.moveCaliperLineIntoView(true, visibleRect, screenToModelFunc);
+							return; // Handled, don't process component click
+						}
+					}
+					
+					if (cal2Line != null) {
+						double screenX = cal2Line.getScreenX(transform);
+						java.awt.geom.Rectangle2D.Double bounds = cal2Line.getIndicatorBounds(screenX, visibleRect);
+						if (bounds != null && bounds.contains(clickPoint.x, clickPoint.y)) {
+							caliperManager.moveCaliperLineIntoView(false, visibleRect, screenToModelFunc);
+							return; // Handled, don't process component click
+						}
+					}
+				} else {
+					// Check horizontal caliper lines
+					info.openrocket.swing.gui.figureelements.HorizontalCaliperLine cal1Line = caliperManager.getCaliper1HorizontalLine();
+					info.openrocket.swing.gui.figureelements.HorizontalCaliperLine cal2Line = caliperManager.getCaliper2HorizontalLine();
+					
+					if (cal1Line != null) {
+						double screenY = cal1Line.getScreenY(transform);
+						java.awt.geom.Rectangle2D.Double bounds = cal1Line.getIndicatorBounds(screenY, visibleRect);
+						if (bounds != null && bounds.contains(clickPoint.x, clickPoint.y)) {
+							caliperManager.moveCaliperLineIntoView(true, visibleRect, screenToModelFunc);
+							return; // Handled, don't process component click
+						}
+					}
+					
+					if (cal2Line != null) {
+						double screenY = cal2Line.getScreenY(transform);
+						java.awt.geom.Rectangle2D.Double bounds = cal2Line.getIndicatorBounds(screenY, visibleRect);
+						if (bounds != null && bounds.contains(clickPoint.x, clickPoint.y)) {
+							caliperManager.moveCaliperLineIntoView(false, visibleRect, screenToModelFunc);
+							return; // Handled, don't process component click
+						}
+					}
+				}
+			}
+		}
+		
 		// Get the component that is clicked on
 		Point p0 = event.getPoint();
 		Point p1 = scrollPane.getViewport().getViewPosition();
