@@ -27,8 +27,6 @@ import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.l10n.Translator;
 import net.miginfocom.swing.MigLayout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
