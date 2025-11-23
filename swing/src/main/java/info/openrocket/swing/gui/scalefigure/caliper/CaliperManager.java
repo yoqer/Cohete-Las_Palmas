@@ -274,17 +274,6 @@ public class CaliperManager {
 		caliperButton.setText(trans.get("CaliperManager.btn.Caliper"));
 		caliperButton.setToolTipText(trans.get("CaliperManager.btn.Caliper"));
 
-		// Caliper mode toggle button (Vertical/Horizontal)
-		modeButton = new JButton("V");
-		modeButton.setToolTipText("Switch to horizontal calipers");
-		modeButton.setEnabled(false);
-		modeButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				toggleMode();
-			}
-		});
-
 		// Caliper display panel
 		Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
 		displayPanel = new JPanel(new MigLayout("ins 0"));
@@ -480,6 +469,7 @@ public class CaliperManager {
 				}
 			}
 			updateCaliperElements();
+			updateCaliperPositionModelsFromState();
 			figureUpdateCallback.run();
 		}
 	}
@@ -526,44 +516,6 @@ public class CaliperManager {
 	 */
 	public boolean isEnabled() {
 		return enabled;
-	}
-
-	/**
-	 * Toggle between vertical and horizontal caliper modes.
-	 */
-	public void toggleMode() {
-		if (mode == CaliperMode.VERTICAL) {
-			mode = CaliperMode.HORIZONTAL;
-			if (modeButton != null) {
-				modeButton.setText("H");
-				modeButton.setToolTipText("Switch to vertical calipers");
-			}
-			// Switch distance model to horizontal
-			if (horizontalDistanceModel != null && distanceSpinner != null && unitSelector != null) {
-				distanceSpinner.setModel(horizontalDistanceModel.getSpinnerModel());
-				unitSelector.setModel(horizontalDistanceModel);
-			}
-		} else {
-			mode = CaliperMode.VERTICAL;
-			if (modeButton != null) {
-				modeButton.setText("V");
-				modeButton.setToolTipText("Switch to horizontal calipers");
-			}
-			// Switch distance model to vertical
-			if (distanceModel != null && distanceSpinner != null && unitSelector != null) {
-				distanceSpinner.setModel(distanceModel.getSpinnerModel());
-				unitSelector.setModel(distanceModel);
-			}
-		}
-		// Update snap targets if in snap mode
-		if (snapModeActive) {
-			updateSnapTargets();
-		}
-		updateCaliperElements();
-		updateCaliperPositionModelsFromState();
-		updateCaliperDistance();
-		updateCaliperHorizontalDistance();
-		figureUpdateCallback.run();
 	}
 
 	/**

@@ -77,8 +77,7 @@ public class CaliperDialog extends JDialog {
 	
 	// Help components
 	private DescriptionArea componentInfo;
-	private IconToggleButton infoBtn;
-	
+
 	/**
 	 * Create a new CaliperDialog.
 	 *
@@ -454,7 +453,7 @@ public class CaliperDialog extends JDialog {
 		mainPanel.add(componentInfo, "spanx, growx, wrap para");
 
 		// Component info toggle button
-		infoBtn = new IconToggleButton();
+		IconToggleButton infoBtn = new IconToggleButton();
 		infoBtn.setToolTipText(trans.get("CaliperDialog.btn.ComponentInfo.ttip"));
 		infoBtn.setIconScale(1.2f);
 		infoBtn.setSelectedIcon(Icons.HELP_ABOUT);
