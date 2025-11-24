@@ -29,13 +29,37 @@ public final class CsvMachAoALookup {
 		Objects.requireNonNull(requiredValueColumns, "requiredValueColumns");
 		try {
 			List<String> lines = Files.readAllLines(path);
-			return parse(lines, requiredValueColumns, separator);
+			return parseInternal(lines, requiredValueColumns, separator);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to read lookup table from " + path, e);
 		}
 	}
 
-	private static MachAoALookup parse(List<String> lines, Collection<String> requiredValueColumns, char separator) {
+	/**
+	 * Parse CSV data from a list of lines.
+	 *
+	 * @param lines the CSV lines to parse
+	 * @param requiredValueColumns the required value columns
+	 * @param separator the field separator character
+	 * @return a MachAoALookup instance
+	 * @throws IllegalArgumentException if the CSV format is invalid
+	 */
+	/**
+	 * Parse CSV data from a list of lines.
+	 *
+	 * @param lines the CSV lines to parse
+	 * @param requiredValueColumns the required value columns
+	 * @param separator the field separator character
+	 * @return a MachAoALookup instance
+	 * @throws IllegalArgumentException if the CSV format is invalid
+	 */
+	public static MachAoALookup parse(List<String> lines, Collection<String> requiredValueColumns, char separator) {
+		Objects.requireNonNull(lines, "lines");
+		Objects.requireNonNull(requiredValueColumns, "requiredValueColumns");
+		return parseInternal(lines, requiredValueColumns, separator);
+	}
+
+	private static MachAoALookup parseInternal(List<String> lines, Collection<String> requiredValueColumns, char separator) {
 		Set<String> normalizedColumns = MachAoALookup.normalizeColumns(requiredValueColumns);
 		MachAoALookup.Builder builder = MachAoALookup.builder(requiredValueColumns);
 		Map<String, Integer> headerIndex = null;

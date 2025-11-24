@@ -21,6 +21,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -57,6 +59,7 @@ class AerodynamicLookupDialog extends JDialog {
 	private JTextArea dragExampleArea;
 	private JScrollPane dragExampleScroll;
 	private javax.swing.border.TitledBorder dragExampleBorder;
+	private boolean dragModified = false;
 
 	private JLabel stabilitySummaryLabel;
 	private JButton clearStabilityButton;
@@ -64,6 +67,7 @@ class AerodynamicLookupDialog extends JDialog {
 	private JTextArea stabilityExampleArea;
 	private JScrollPane stabilityExampleScroll;
 	private javax.swing.border.TitledBorder stabilityExampleBorder;
+	private boolean stabilityModified = false;
 
 	private static Color textColor;
 	private static Color infoTextColor;
@@ -158,7 +162,7 @@ class AerodynamicLookupDialog extends JDialog {
 				example.getFont().getSize()));
 		example.setBackground(Color.WHITE);
 		example.setForeground(Color.GRAY);
-		example.setFocusable(false);
+		example.setFocusable(true); // Make selectable but not editable
 		example.setRows(3);
 		JScrollPane exampleScroll = new JScrollPane(example);
 		javax.swing.border.TitledBorder exampleBorder = BorderFactory.createTitledBorder(trans.get("AerodynamicLookupDialog.lbl.formatHint"));
@@ -278,6 +282,45 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	private void applyAndClose() {
+		// Validate and apply drag lookup if modified
+		if (dragModified && dragCsv != null) {
+			try {
+				String editedText = dragExampleArea.getText();
+				char separator = dragSeparatorCombo.getSeparatorChar();
+				MachAoALookup table = CsvMachAoALookup.parse(
+						editedText.lines()
+								.map(String::trim)
+								.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+								.collect(Collectors.toList()),
+						DRAG_VALUE_COLUMNS, separator);
+				dragTable = table;
+				dragModified = false;
+			} catch (Exception ex) {
+				showLookupError(dragCsv, ex);
+				return; // Don't close dialog on error
+			}
+		}
+		
+		// Validate and apply stability lookup if modified
+		if (stabilityModified && stabilityCsv != null) {
+			try {
+				String editedText = stabilityExampleArea.getText();
+				char separator = stabilitySeparatorCombo.getSeparatorChar();
+				MachAoALookup table = CsvMachAoALookup.parse(
+						editedText.lines()
+								.map(String::trim)
+								.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+								.collect(Collectors.toList()),
+						STABILITY_VALUE_COLUMNS, separator);
+				stabilityTable = table;
+				stabilityModified = false;
+			} catch (Exception ex) {
+				showLookupError(stabilityCsv, ex);
+				return; // Don't close dialog on error
+			}
+		}
+
+		// Apply the lookups
 		if (dragCsv == null || dragTable == null) {
 			options.clearDragLookup();
 		} else {
@@ -302,6 +345,13 @@ class AerodynamicLookupDialog extends JDialog {
 
 	private void updateSectionDisplay(Path path, MachAoALookup table, JLabel summaryLabel,
 			JButton clearButton, boolean isDrag) {
+		// Reset modification flag when clearing or loading new file
+		if (isDrag) {
+			dragModified = false;
+		} else {
+			stabilityModified = false;
+		}
+		
 		// Update separator combo box if a file is loaded
 		if (path != null && table != null) {
 			if (isDrag && dragSeparatorCombo != null) {
@@ -321,13 +371,7 @@ class AerodynamicLookupDialog extends JDialog {
 			}
 			return;
 		}
-		String fileName = path.getFileName() != null ? path.getFileName().toString() : path.toString();
-		String detail = formatLookupSummary(trans, table);
-		String fullText = fileName + " - " + detail;
-		// Use HTML to allow text wrapping, and escape HTML special characters
-		String escapedText = fullText.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-		summaryLabel.setText("<html>" + escapedText + "</html>");
-		summaryLabel.setToolTipText(fullText);
+		updateSummaryLabel(!isDrag); // isDrag: true=drag, false=stability; updateSummaryLabel expects stability flag
 		if (clearButton != null) {
 			clearButton.setEnabled(true);
 		}
@@ -349,7 +393,7 @@ class AerodynamicLookupDialog extends JDialog {
 		String separatorStr = String.valueOf(separator);
 
 		if (csvPath != null && table != null) {
-			// Show loaded data
+			// Show loaded data - make editable
 			try {
 				List<String> lines = Files.readAllLines(csvPath);
 				// Filter out empty lines and comments
@@ -360,8 +404,28 @@ class AerodynamicLookupDialog extends JDialog {
 						.collect(Collectors.toList());
 				String loadedData = String.join("\n", dataLines);
 				exampleArea.setText(loadedData);
+				exampleArea.setEditable(true);
 				exampleArea.setForeground(Color.BLACK);
+				exampleArea.setFocusable(true);
 				exampleBorder.setTitle(trans.get("AerodynamicLookupDialog.lbl.loadedData"));
+				
+				// Add document listener to track modifications
+				exampleArea.getDocument().addDocumentListener(new DocumentListener() {
+					@Override
+					public void insertUpdate(DocumentEvent e) {
+						markModified(stability);
+					}
+
+					@Override
+					public void removeUpdate(DocumentEvent e) {
+						markModified(stability);
+					}
+
+					@Override
+					public void changedUpdate(DocumentEvent e) {
+						markModified(stability);
+					}
+				});
 			} catch (IOException e) {
 				// If we can't read the file, fall back to example
 				updateExampleFormatText(exampleArea, exampleBorder, separatorStr, stability);
@@ -372,6 +436,50 @@ class AerodynamicLookupDialog extends JDialog {
 		}
 		exampleScroll.repaint();
 	}
+	
+	private void markModified(boolean stability) {
+		if (stability) {
+			if (!stabilityModified) {
+				stabilityModified = true;
+				updateSummaryLabel(stability);
+			}
+		} else {
+			if (!dragModified) {
+				dragModified = true;
+				updateSummaryLabel(stability);
+			}
+		}
+	}
+	
+	private void updateSummaryLabel(boolean stability) {
+		JLabel summaryLabel = stability ? stabilitySummaryLabel : dragSummaryLabel;
+		Path csvPath = stability ? stabilityCsv : dragCsv;
+		MachAoALookup table = stability ? stabilityTable : dragTable;
+		boolean modified = stability ? stabilityModified : dragModified;
+		
+		if (summaryLabel == null) {
+			return;
+		}
+		
+		if (csvPath == null || table == null) {
+			summaryLabel.setText("<html>" + trans.get("AerodynamicLookupDialog.summary.none") + "</html>");
+			summaryLabel.setToolTipText(null);
+			return;
+		}
+		
+		String fileName = csvPath.getFileName() != null ? csvPath.getFileName().toString() : csvPath.toString();
+		String detail = formatLookupSummary(trans, table);
+		String fullText = fileName + " - " + detail;
+		String escapedText = fullText.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		
+		if (modified) {
+			escapedText += " <i>(modified)</i>";
+			fullText += " (modified)";
+		}
+		
+		summaryLabel.setText("<html>" + escapedText + "</html>");
+		summaryLabel.setToolTipText(fullText);
+	}
 
 	private void updateExampleFormatText(JTextArea exampleArea, javax.swing.border.TitledBorder exampleBorder,
 			String separator, boolean stability) {
@@ -380,7 +488,9 @@ class AerodynamicLookupDialog extends JDialog {
 		// Replace commas with the selected separator
 		exampleText = exampleText.replace(",", separator);
 		exampleArea.setText(exampleText);
+		exampleArea.setEditable(false);
 		exampleArea.setForeground(Color.GRAY);
+		exampleArea.setFocusable(true); // Make selectable but not editable
 		exampleBorder.setTitle(trans.get("AerodynamicLookupDialog.lbl.formatHint"));
 	}
 
