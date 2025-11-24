@@ -60,6 +60,7 @@ class AerodynamicLookupDialog extends JDialog {
 	private JScrollPane dragExampleScroll;
 	private javax.swing.border.TitledBorder dragExampleBorder;
 	private boolean dragModified = false;
+	private DocumentListener dragDocumentListener;
 
 	private JLabel stabilitySummaryLabel;
 	private JButton clearStabilityButton;
@@ -68,6 +69,7 @@ class AerodynamicLookupDialog extends JDialog {
 	private JScrollPane stabilityExampleScroll;
 	private javax.swing.border.TitledBorder stabilityExampleBorder;
 	private boolean stabilityModified = false;
+	private DocumentListener stabilityDocumentListener;
 
 	private static Color textColor;
 	private static Color infoTextColor;
@@ -392,6 +394,12 @@ class AerodynamicLookupDialog extends JDialog {
 		char separator = separatorCombo != null ? separatorCombo.getSeparatorChar() : ',';
 		String separatorStr = String.valueOf(separator);
 
+		// Remove existing document listener before making programmatic changes
+		DocumentListener existingListener = stability ? stabilityDocumentListener : dragDocumentListener;
+		if (existingListener != null) {
+			exampleArea.getDocument().removeDocumentListener(existingListener);
+		}
+
 		if (csvPath != null && table != null) {
 			// Show loaded data - make editable
 			try {
@@ -403,6 +411,8 @@ class AerodynamicLookupDialog extends JDialog {
 						.limit(20) // Limit to first 20 data lines for display
 						.collect(Collectors.toList());
 				String loadedData = String.join("\n", dataLines);
+				
+				// Set text without triggering modification (listener is removed)
 				exampleArea.setText(loadedData);
 				exampleArea.setEditable(true);
 				exampleArea.setForeground(Color.BLACK);
@@ -410,7 +420,7 @@ class AerodynamicLookupDialog extends JDialog {
 				exampleBorder.setTitle(trans.get("AerodynamicLookupDialog.lbl.loadedData"));
 				
 				// Add document listener to track modifications
-				exampleArea.getDocument().addDocumentListener(new DocumentListener() {
+				DocumentListener listener = new DocumentListener() {
 					@Override
 					public void insertUpdate(DocumentEvent e) {
 						markModified(stability);
@@ -425,14 +435,34 @@ class AerodynamicLookupDialog extends JDialog {
 					public void changedUpdate(DocumentEvent e) {
 						markModified(stability);
 					}
-				});
+				};
+				exampleArea.getDocument().addDocumentListener(listener);
+				
+				// Store listener reference for future removal
+				if (stability) {
+					stabilityDocumentListener = listener;
+				} else {
+					dragDocumentListener = listener;
+				}
 			} catch (IOException e) {
 				// If we can't read the file, fall back to example
 				updateExampleFormatText(exampleArea, exampleBorder, separatorStr, stability);
+				// Clear listener reference
+				if (stability) {
+					stabilityDocumentListener = null;
+				} else {
+					dragDocumentListener = null;
+				}
 			}
 		} else {
 			// Show example format
 			updateExampleFormatText(exampleArea, exampleBorder, separatorStr, stability);
+			// Clear listener reference
+			if (stability) {
+				stabilityDocumentListener = null;
+			} else {
+				dragDocumentListener = null;
+			}
 		}
 		exampleScroll.repaint();
 	}
