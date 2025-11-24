@@ -175,7 +175,7 @@ public abstract class PlotDialog<T extends DataType, B extends DataBranch<T>, C 
 		JFileChooser chooser = new SaveFileChooser();
 		chooser.setAcceptAllFileFilterUsed(false);
 		chooser.setFileFilter(FileHelper.PNG_FILTER);
-		chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 
 		//// Ensures No Problems When Choosing File
 		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)

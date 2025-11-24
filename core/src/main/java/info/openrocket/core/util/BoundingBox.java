@@ -162,6 +162,14 @@ public class BoundingBox {
 		return new Rectangle2D.Double(min.getX(), min.getY(), (max.getX() - min.getX()), (max.getY() - min.getY()));
 	}
 
+	public double getWidth() {
+		return max.getX() - min.getX();
+	}
+
+	public double getHeight() {
+		return max.getY() - min.getY();
+	}
+
 	@Override
 	public String toString() {
 		return String.format("[( %g, %g, %g) < ( %g, %g, %g)]",

@@ -303,7 +303,14 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			@Override
 			public void focusGained(FocusEvent e) {
 				if (table.isEditing()) {
-					table.getCellEditor().stopCellEditing();
+					// Check if the row being edited is still valid before stopping editing
+					int editingRow = table.getEditingRow();
+					if (editingRow >= 0 && editingRow < table.getRowCount()) {
+						table.getCellEditor().stopCellEditing();
+					} else {
+						// Row is out of bounds, cancel editing instead
+						table.getCellEditor().cancelCellEditing();
+					}
 				}
 				table.clearSelection();
 			}
@@ -346,7 +353,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				
 				JFileChooser chooser = new JFileChooser();
 				chooser.setFileFilter(FileHelper.CSV_FILTER);
-				chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+				chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 
                 if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FreeformFinSetConfig.this)){
                 	File selectedFile= chooser.getSelectedFile();
@@ -356,7 +363,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					}
 
 				    FreeformFinSetConfig.writeCSVFile(table, selectedFile);
-					((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+					Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 				}
 			}
 		});
@@ -435,7 +442,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileFilter(FileHelper.getImageFileFilter());
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 		
 		JPanel desc = new JPanel(new MigLayout("fill, ins 0 para 0 para"));
 		desc.add(new DescriptionArea(trans.get("CustomFinImport.description"), 5, 0), "grow, wmin 100lp");
@@ -455,7 +462,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 						trans.get("CustomFinImport.error.title"), JOptionPane.ERROR_MESSAGE);
 			} finally {
 				document.stopUndo();
-				((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+				Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 			}
 		}	
 	}
@@ -514,6 +521,13 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		if (currentPointIdx == -1) {
 			return;
 		}
+		
+		// Cancel any active cell editing before deleting the point
+		// This prevents setValueAt from being called with an invalid row index
+		if (table.isEditing()) {
+			table.getCellEditor().cancelCellEditing();
+		}
+		
 		final FreeformFinSet finSet = (FreeformFinSet) component;
 		try {
 			finSet.removePoint(currentPointIdx);
@@ -838,8 +852,10 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			final FreeformFinSet finset = (FreeformFinSet)component;
 
 			// bounds check that indices are valid
+			// Return early instead of throwing to handle race conditions when points are deleted
 			if (rowIndex < 0 || rowIndex >= finset.getFinPoints().length || columnIndex < 0 || columnIndex >= Columns.values().length) {
-				throw new IllegalArgumentException("Index out of bounds, row=" + rowIndex + " column=" + columnIndex + " fin point count=" + finset.getFinPoints().length);
+				log.warn("Attempted to set value at invalid index, row=" + rowIndex + " column=" + columnIndex + " fin point count=" + finset.getFinPoints().length);
+				return;
 			}
 
 			String str = (String) o;
