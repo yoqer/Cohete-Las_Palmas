@@ -35,7 +35,7 @@ public class Icons {
 	static {
 		final String SIM_UPTODATE = "pix/icons/tick.png";
 		final String SIM_CANTRUN = "pix/icons/sim_cantrun.png";
-		final String SIM_OUTDATED = "pix/icons/refresh_sim.png";
+		final String SIM_OUTDATED = "pix/icons/refresh.png";
 		final String SIM_ABORTED = "pix/eventicons/event-exception.png";
 
 		HashMap<Simulation.Status, Icon> map = new HashMap<>();
