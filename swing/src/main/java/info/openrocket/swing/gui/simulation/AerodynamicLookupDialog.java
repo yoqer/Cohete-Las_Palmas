@@ -19,7 +19,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Color;
@@ -48,12 +47,10 @@ class AerodynamicLookupDialog extends JDialog {
 	private MachAoALookup stabilityTable;
 	private char stabilitySeparator = ',';
 
-	private JTextField dragPathField;
 	private JLabel dragSummaryLabel;
 	private JButton clearDragButton;
 	private FieldSeparatorComboBox dragSeparatorCombo;
 
-	private JTextField stabilityPathField;
 	private JLabel stabilitySummaryLabel;
 	private JButton clearStabilityButton;
 	private FieldSeparatorComboBox stabilitySeparatorCombo;
@@ -116,17 +113,17 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	private JPanel createLookupSection(String labelText, boolean stability) {
-		JPanel panel = new JPanel(new MigLayout("fillx, insets 0, gap rel"));
+		JPanel panel = new JPanel(new MigLayout("fillx, gap rel"));
 		panel.setBorder(BorderFactory.createTitledBorder(labelText));
 
-		JTextField pathField = new JTextField();
-		pathField.setEditable(false);
-		pathField.setColumns(25);
-		panel.add(pathField, "growx, pushx");
+		// Summary label (moved to where path field was)
+		JLabel summary = new JLabel(trans.get("AerodynamicLookupDialog.summary.none"));
+		summary.setForeground(infoTextColor);
+		panel.add(summary, "growx, pushx");
 
 		// Load from file button
-		JButton browse = new JButton(trans.get("AerodynamicLookupDialog.btn.browse"));
-		panel.add(browse);
+		JButton loadButton = new JButton(trans.get("AerodynamicLookupDialog.btn.loadFromFile"));
+		panel.add(loadButton);
 
 		// Clear button
 		JButton clear = new JButton(trans.get("AerodynamicLookupDialog.btn.clear"));
@@ -140,12 +137,7 @@ class AerodynamicLookupDialog extends JDialog {
 
 		FieldSeparatorComboBox separatorCombo = new FieldSeparatorComboBox();
 		separatorCombo.setToolTipText(tip);
-		panel.add(separatorCombo, "wrap");
-
-		// Summary label
-		JLabel summary = new JLabel(trans.get("AerodynamicLookupDialog.summary.none"));
-		summary.setForeground(infoTextColor);
-		panel.add(summary, "spanx, growx, wrap para");
+		panel.add(separatorCombo, "wrap para");
 
 		// Example format textarea
 		String exampleKey = stability ? "AerodynamicLookupDialog.example.stability" : "AerodynamicLookupDialog.example.drag";
@@ -162,11 +154,10 @@ class AerodynamicLookupDialog extends JDialog {
 		panel.add(exampleScroll, "spanx, growx");
 
 		if (stability) {
-			stabilityPathField = pathField;
 			stabilitySummaryLabel = summary;
 			clearStabilityButton = clear;
 			stabilitySeparatorCombo = separatorCombo;
-			browse.addActionListener(e -> chooseStabilityLookup());
+			loadButton.addActionListener(e -> chooseStabilityLookup());
 			clear.addActionListener(e -> {
 				stabilityCsv = null;
 				stabilityTable = null;
@@ -178,11 +169,10 @@ class AerodynamicLookupDialog extends JDialog {
 				}
 			});
 		} else {
-			dragPathField = pathField;
 			dragSummaryLabel = summary;
 			clearDragButton = clear;
 			dragSeparatorCombo = separatorCombo;
-			browse.addActionListener(e -> chooseDragLookup());
+			loadButton.addActionListener(e -> chooseDragLookup());
 			clear.addActionListener(e -> {
 				dragCsv = null;
 				dragTable = null;
@@ -286,37 +276,36 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	private void updateDisplays() {
-		updateSectionDisplay(dragCsv, dragTable, dragPathField, dragSummaryLabel, clearDragButton);
-		updateSectionDisplay(stabilityCsv, stabilityTable, stabilityPathField, stabilitySummaryLabel,
-				clearStabilityButton);
+		updateSectionDisplay(dragCsv, dragTable, dragSummaryLabel, clearDragButton, true);
+		updateSectionDisplay(stabilityCsv, stabilityTable, stabilitySummaryLabel, clearStabilityButton, false);
 	}
 
-	private void updateSectionDisplay(Path path, MachAoALookup table, JTextField field, JLabel summaryLabel,
-			JButton clearButton) {
+	private void updateSectionDisplay(Path path, MachAoALookup table, JLabel summaryLabel,
+			JButton clearButton, boolean isDrag) {
 		// Update separator combo box if a file is loaded
 		if (path != null && table != null) {
-			if (field == dragPathField && dragSeparatorCombo != null) {
+			if (isDrag && dragSeparatorCombo != null) {
 				dragSeparatorCombo.setSeparatorChar(dragSeparator);
-			} else if (field == stabilityPathField && stabilitySeparatorCombo != null) {
+			} else if (!isDrag && stabilitySeparatorCombo != null) {
 				stabilitySeparatorCombo.setSeparatorChar(stabilitySeparator);
 			}
 		}
-		if (field == null || summaryLabel == null) {
+		if (summaryLabel == null) {
 			return;
 		}
 		if (path == null || table == null) {
-			field.setText("");
 			summaryLabel.setText(trans.get("AerodynamicLookupDialog.summary.none"));
 			if (clearButton != null) {
 				clearButton.setEnabled(false);
 			}
 			return;
 		}
-		field.setText(path.toString());
+		String fileName = path.getFileName() != null ? path.getFileName().toString() : path.toString();
+		String detail = formatLookupSummary(trans, table);
+		summaryLabel.setText(fileName + " - " + detail);
 		if (clearButton != null) {
 			clearButton.setEnabled(true);
 		}
-		summaryLabel.setText(formatLookupSummary(trans, table));
 	}
 
 	private JFileChooser createCsvFileChooser(Path currentPath) {
