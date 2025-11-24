@@ -27,6 +27,7 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.Coordinate;
+import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.Reflection;
 
@@ -57,7 +58,7 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 	}
 
 	@Override
-	public Coordinate getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings) {
+	public CoordinateIF getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings) {
 		return calculateNonAxialForces(configuration, conditions, warnings).getCP();
 	}
 
@@ -111,7 +112,7 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 			AerodynamicForces total) {
 		ensureCalcMap(configuration);
 
-		double mul = getDampingMultiplier(configuration, conditions, conditions.getPitchCenter().x);
+		double mul = getDampingMultiplier(configuration, conditions, conditions.getPitchCenter().getX());
 		double pitchRate = conditions.getPitchRate();
 		double yawRate = conditions.getYawRate();
 		double velocity = conditions.getVelocity();
@@ -166,11 +167,11 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 							actualWarnings.add(Warning.ZERO_VOLUME_BODY, sym);
 						}
 
-						double symXfore = sym.toAbsolute(Coordinate.NUL)[0].x;
-						double prevXfore = prevComp.toAbsolute(Coordinate.NUL)[0].x;
+						double symXfore = sym.toAbsolute(Coordinate.NUL)[0].getX();
+						double prevXfore = prevComp.toAbsolute(Coordinate.NUL)[0].getX();
 
-						double symXaft = sym.toAbsolute(new Coordinate(comp.getLength(), 0, 0, 0))[0].x;
-						double prevXaft = prevComp.toAbsolute(new Coordinate(prevComp.getLength(), 0, 0, 0))[0].x;
+						double symXaft = sym.toAbsolute(new Coordinate(comp.getLength(), 0, 0, 0))[0].getX();
+						double prevXaft = prevComp.toAbsolute(new Coordinate(prevComp.getLength(), 0, 0, 0))[0].getX();
 
 						if (!UnitGroup.UNITS_LENGTH.getDefaultUnit().toStringUnit(symXfore)
 								.equals(UnitGroup.UNITS_LENGTH.getDefaultUnit().toStringUnit(prevXaft))) {
@@ -187,7 +188,7 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 										firstComp = scout;
 										scout = scout.getPreviousSymmetricComponent();
 									}
-									double firstCompXfore = firstComp.toAbsolute(Coordinate.NUL)[0].x;
+									double firstCompXfore = firstComp.toAbsolute(Coordinate.NUL)[0].getX();
 
 									SymmetricComponent lastComp = sym;
 									scout = sym;
@@ -196,7 +197,7 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 										scout = scout.getNextSymmetricComponent();
 									}
 									double lastCompXaft = lastComp
-											.toAbsolute(new Coordinate(lastComp.getLength(), 0, 0, 0))[0].x;
+											.toAbsolute(new Coordinate(lastComp.getLength(), 0, 0, 0))[0].getX();
 
 									if (lastCompXaft <= firstCompXfore) {
 										actualWarnings.add(Warning.PODSET_FORWARD, comp.getParent());
@@ -242,13 +243,13 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 			AerodynamicForces instanceForces = new AerodynamicForces().zero();
 			calcObj.calculateNonaxialForces(conditions, context.transform, instanceForces, warnings);
 
-			Coordinate cpInst = instanceForces.getCP();
-			Coordinate cpAbs = context.transform.transform(cpInst);
+			CoordinateIF cpInst = instanceForces.getCP();
+			CoordinateIF cpAbs = context.transform.transform(cpInst);
 			cpAbs = cpAbs.setY(0.0).setZ(0.0);
 
 			instanceForces.setCP(cpAbs);
 			double cNInst = instanceForces.getCN();
-			instanceForces.setCm(cNInst * instanceForces.getCP().x / conditions.getRefLength());
+			instanceForces.setCm(cNInst * instanceForces.getCP().getX() / conditions.getRefLength());
 
 			componentForces.merge(instanceForces);
 		}
@@ -349,7 +350,7 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 				FinSet f = (FinSet) c;
 				mul += 0.6 * Math.min(f.getFinCount(), 4) * f.getPlanformArea() *
 						MathUtil.pow3(Math.abs(f.toAbsolute(new Coordinate(
-								((FinSetCalc) calcMap.get(f)).getMidchordPos()))[0].x
+								((FinSetCalc) calcMap.get(f)).getMidchordPos()))[0].getX()
 								- cgx)) /
 						(conditions.getRefArea() * conditions.getRefLength());
 			}

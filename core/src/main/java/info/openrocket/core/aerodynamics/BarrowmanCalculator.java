@@ -9,6 +9,7 @@ import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.InstanceMap;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.util.Coordinate;
+import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.ModID;
 
 /**
@@ -42,8 +43,8 @@ public class BarrowmanCalculator extends AbstractAerodynamicCalculator {
 	}
 
 	@Override
-	public Coordinate getCP(FlightConfiguration configuration, FlightConditions conditions,
-			WarningSet warnings) {
+	public CoordinateIF getCP(FlightConfiguration configuration, FlightConditions conditions,
+							  WarningSet warnings) {
 		checkCache(configuration);
 		WarningSet actualWarnings = (warnings != null) ? warnings : ignoreWarningSet;
 		return stabilityCalculator.getCP(configuration, conditions, actualWarnings);

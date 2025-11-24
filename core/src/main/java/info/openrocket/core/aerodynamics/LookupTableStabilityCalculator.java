@@ -13,6 +13,7 @@ import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.InstanceMap;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.util.Coordinate;
+import info.openrocket.core.util.CoordinateIF;
 
 /**
  * Stability calculator backed by a CSV lookup table.
@@ -45,7 +46,7 @@ public class LookupTableStabilityCalculator implements StabilityCalculator {
 	}
 
 	@Override
-	public Coordinate getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings) {
+	public CoordinateIF getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings) {
 		return calculateNonAxialForces(configuration, conditions, warnings).getCP();
 	}
 

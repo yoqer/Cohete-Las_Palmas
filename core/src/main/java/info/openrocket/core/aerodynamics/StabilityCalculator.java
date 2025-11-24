@@ -1,11 +1,9 @@
 package info.openrocket.core.aerodynamics;
 
-import java.util.Map;
-
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.RocketComponent;
-import info.openrocket.core.util.Coordinate;
+import info.openrocket.core.util.CoordinateIF;
 
 /**
  * Calculator responsible for the non-axial (stability) aerodynamic behaviour of a rocket.
@@ -27,7 +25,7 @@ public interface StabilityCalculator {
 	/**
 	 * Calculate the centre of pressure for the supplied configuration and conditions.
 	 */
-	Coordinate getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings);
+	CoordinateIF getCP(FlightConfiguration configuration, FlightConditions conditions, WarningSet warnings);
 
 	/**
 	 * Calculate the non-axial force coefficients for the entire rocket.
