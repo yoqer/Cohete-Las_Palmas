@@ -106,6 +106,7 @@ public class Icons {
 	public static final Icon HELP = loadImageIcon("pix/icons/help-about.png", "Help");
 	public static final Icon UP = loadImageIcon("pix/icons/up.png", "Up");
 	public static final Icon DOWN = loadImageIcon("pix/icons/down.png", "Down");
+	public static final Icon REFRESH = loadImageIcon("pix/icons/refresh.png", "Refresh");
 	
 	public static final Icon NOT_FAVORITE = loadImageIcon("pix/icons/star_silver.png", "Not favorite");
 	public static final Icon FAVORITE = loadImageIcon("pix/icons/star_gold.png", "Favorite");
