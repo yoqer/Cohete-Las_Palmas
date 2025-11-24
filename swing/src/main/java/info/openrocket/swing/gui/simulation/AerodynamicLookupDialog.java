@@ -18,6 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -95,10 +96,12 @@ class AerodynamicLookupDialog extends JDialog {
 		JPanel content = new JPanel(new MigLayout("fill, insets dialog, gap para"));
 		setContentPane(content);
 
-		content.add(createLookupSection(trans.get("AerodynamicLookupDialog.lbl.drag"), false),
-				"spanx, growx, wrap rel");
-		content.add(createLookupSection(trans.get("AerodynamicLookupDialog.lbl.stability"), true),
-				"spanx, growx, wrap para");
+		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.addTab(trans.get("AerodynamicLookupDialog.lbl.drag"),
+				createLookupSection(trans.get("AerodynamicLookupDialog.lbl.drag"), false));
+		tabbedPane.addTab(trans.get("AerodynamicLookupDialog.lbl.stability"),
+				createLookupSection(trans.get("AerodynamicLookupDialog.lbl.stability"), true));
+		content.add(tabbedPane, "spanx, growx, wrap para");
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton cancel = new JButton(trans.get("button.cancel"));
@@ -113,13 +116,7 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	private JPanel createLookupSection(String labelText, boolean stability) {
-		JPanel panel = new JPanel(new MigLayout("fillx, gap rel"));
-		panel.setBorder(BorderFactory.createTitledBorder(labelText));
-
-		// Summary label (moved to where path field was)
-		JLabel summary = new JLabel(trans.get("AerodynamicLookupDialog.summary.none"));
-		summary.setForeground(infoTextColor);
-		panel.add(summary, "growx, pushx");
+		JPanel panel = new JPanel(new MigLayout("fillx, insets dialog, gap para"));
 
 		// Load from file button
 		JButton loadButton = new JButton(trans.get("AerodynamicLookupDialog.btn.loadFromFile"));
@@ -128,6 +125,11 @@ class AerodynamicLookupDialog extends JDialog {
 		// Clear button
 		JButton clear = new JButton(trans.get("AerodynamicLookupDialog.btn.clear"));
 		panel.add(clear, "wrap");
+
+		// Summary label (on its own row to allow wrapping)
+		JLabel summary = new JLabel("<html>" + trans.get("AerodynamicLookupDialog.summary.none") + "</html>");
+		summary.setForeground(infoTextColor);
+		panel.add(summary, "spanx, growx, wrap");
 
 		// Field separator
 		JLabel separatorLabel = new JLabel(trans.get("SimExpPan.lbl.Fieldsepstr"));
@@ -294,7 +296,8 @@ class AerodynamicLookupDialog extends JDialog {
 			return;
 		}
 		if (path == null || table == null) {
-			summaryLabel.setText(trans.get("AerodynamicLookupDialog.summary.none"));
+			summaryLabel.setText("<html>" + trans.get("AerodynamicLookupDialog.summary.none") + "</html>");
+			summaryLabel.setToolTipText(null);
 			if (clearButton != null) {
 				clearButton.setEnabled(false);
 			}
@@ -302,7 +305,11 @@ class AerodynamicLookupDialog extends JDialog {
 		}
 		String fileName = path.getFileName() != null ? path.getFileName().toString() : path.toString();
 		String detail = formatLookupSummary(trans, table);
-		summaryLabel.setText(fileName + " - " + detail);
+		String fullText = fileName + " - " + detail;
+		// Use HTML to allow text wrapping, and escape HTML special characters
+		String escapedText = fullText.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		summaryLabel.setText("<html>" + escapedText + "</html>");
+		summaryLabel.setToolTipText(fullText);
 		if (clearButton != null) {
 			clearButton.setEnabled(true);
 		}
