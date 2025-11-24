@@ -92,7 +92,8 @@ public final class CsvMachAoALookup {
 		}
 
 		if (!result.containsKey("mach")) {
-			throw new IllegalArgumentException("Lookup table header must contain a 'mach' column");
+			throw new IllegalArgumentException("Lookup table header must contain a 'mach' column. " +
+					"Make sure the column is included and you are using the correct field separator.");
 		}
 
 		for (String column : requiredValueColumns) {
@@ -101,7 +102,8 @@ public final class CsvMachAoALookup {
 				normalized = "aoa";
 			}
 			if (!result.containsKey(normalized)) {
-				throw new IllegalArgumentException("Lookup table header missing required column '" + column + "'");
+				throw new IllegalArgumentException("Lookup table header missing required column '" + column + "'. " +
+						"Make sure the column is included and you are using the correct field separator.");
 			}
 		}
 

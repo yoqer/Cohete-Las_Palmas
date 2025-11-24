@@ -25,10 +25,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Window;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Dialog for configuring drag and stability lookup tables loaded from CSV files.
@@ -51,10 +54,16 @@ class AerodynamicLookupDialog extends JDialog {
 	private JLabel dragSummaryLabel;
 	private JButton clearDragButton;
 	private FieldSeparatorComboBox dragSeparatorCombo;
+	private JTextArea dragExampleArea;
+	private JScrollPane dragExampleScroll;
+	private javax.swing.border.TitledBorder dragExampleBorder;
 
 	private JLabel stabilitySummaryLabel;
 	private JButton clearStabilityButton;
 	private FieldSeparatorComboBox stabilitySeparatorCombo;
+	private JTextArea stabilityExampleArea;
+	private JScrollPane stabilityExampleScroll;
+	private javax.swing.border.TitledBorder stabilityExampleBorder;
 
 	private static Color textColor;
 	private static Color infoTextColor;
@@ -93,15 +102,15 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	private void initUI() {
-		JPanel content = new JPanel(new MigLayout("fill, insets dialog, gap para"));
+		JPanel content = new JPanel(new MigLayout("fill, gap para"));
 		setContentPane(content);
 
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.addTab(trans.get("AerodynamicLookupDialog.lbl.drag"),
-				createLookupSection(trans.get("AerodynamicLookupDialog.lbl.drag"), false));
+				createLookupSection(false));
 		tabbedPane.addTab(trans.get("AerodynamicLookupDialog.lbl.stability"),
-				createLookupSection(trans.get("AerodynamicLookupDialog.lbl.stability"), true));
-		content.add(tabbedPane, "spanx, growx, wrap para");
+				createLookupSection(true));
+		content.add(tabbedPane, "spanx, growx, growy, wrap para");
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton cancel = new JButton(trans.get("button.cancel"));
@@ -115,8 +124,8 @@ class AerodynamicLookupDialog extends JDialog {
 		content.add(buttons, "spanx, growx");
 	}
 
-	private JPanel createLookupSection(String labelText, boolean stability) {
-		JPanel panel = new JPanel(new MigLayout("fillx, insets dialog, gap para"));
+	private JPanel createLookupSection(boolean stability) {
+		JPanel panel = new JPanel(new MigLayout("fill, ins para, gap para"));
 
 		// Load from file button
 		JButton loadButton = new JButton(trans.get("AerodynamicLookupDialog.btn.loadFromFile"));
@@ -148,17 +157,21 @@ class AerodynamicLookupDialog extends JDialog {
 		example.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN,
 				example.getFont().getSize()));
 		example.setBackground(Color.WHITE);
-		example.setForeground(Color.BLACK);
+		example.setForeground(Color.GRAY);
 		example.setFocusable(false);
 		example.setRows(3);
 		JScrollPane exampleScroll = new JScrollPane(example);
-		exampleScroll.setBorder(BorderFactory.createTitledBorder(trans.get("AerodynamicLookupDialog.lbl.formatHint")));
-		panel.add(exampleScroll, "spanx, growx");
+		javax.swing.border.TitledBorder exampleBorder = BorderFactory.createTitledBorder(trans.get("AerodynamicLookupDialog.lbl.formatHint"));
+		exampleScroll.setBorder(exampleBorder);
+		panel.add(exampleScroll, "spanx, growx, growy");
 
 		if (stability) {
 			stabilitySummaryLabel = summary;
 			clearStabilityButton = clear;
 			stabilitySeparatorCombo = separatorCombo;
+			stabilityExampleArea = example;
+			stabilityExampleScroll = exampleScroll;
+			stabilityExampleBorder = exampleBorder;
 			loadButton.addActionListener(e -> chooseStabilityLookup());
 			clear.addActionListener(e -> {
 				stabilityCsv = null;
@@ -166,14 +179,17 @@ class AerodynamicLookupDialog extends JDialog {
 				updateDisplays();
 			});
 			separatorCombo.addActionListener(e -> {
-				if (stabilityCsv != null && stabilityTable != null) {
-					reloadStabilityLookup();
-				}
+				// Just update the example format display, don't reload the file
+				// The separator is only used when loading a new file
+				updateExampleFormat(true);
 			});
 		} else {
 			dragSummaryLabel = summary;
 			clearDragButton = clear;
 			dragSeparatorCombo = separatorCombo;
+			dragExampleArea = example;
+			dragExampleScroll = exampleScroll;
+			dragExampleBorder = exampleBorder;
 			loadButton.addActionListener(e -> chooseDragLookup());
 			clear.addActionListener(e -> {
 				dragCsv = null;
@@ -181,9 +197,9 @@ class AerodynamicLookupDialog extends JDialog {
 				updateDisplays();
 			});
 			separatorCombo.addActionListener(e -> {
-				if (dragCsv != null && dragTable != null) {
-					reloadDragLookup();
-				}
+				// Just update the example format display, don't reload the file
+				// The separator is only used when loading a new file
+				updateExampleFormat(false);
 			});
 		}
 
@@ -280,6 +296,8 @@ class AerodynamicLookupDialog extends JDialog {
 	private void updateDisplays() {
 		updateSectionDisplay(dragCsv, dragTable, dragSummaryLabel, clearDragButton, true);
 		updateSectionDisplay(stabilityCsv, stabilityTable, stabilitySummaryLabel, clearStabilityButton, false);
+		updateExampleFormat(false);
+		updateExampleFormat(true);
 	}
 
 	private void updateSectionDisplay(Path path, MachAoALookup table, JLabel summaryLabel,
@@ -313,6 +331,57 @@ class AerodynamicLookupDialog extends JDialog {
 		if (clearButton != null) {
 			clearButton.setEnabled(true);
 		}
+	}
+
+	private void updateExampleFormat(boolean stability) {
+		JTextArea exampleArea = stability ? stabilityExampleArea : dragExampleArea;
+		JScrollPane exampleScroll = stability ? stabilityExampleScroll : dragExampleScroll;
+		javax.swing.border.TitledBorder exampleBorder = stability ? stabilityExampleBorder : dragExampleBorder;
+		FieldSeparatorComboBox separatorCombo = stability ? stabilitySeparatorCombo : dragSeparatorCombo;
+		Path csvPath = stability ? stabilityCsv : dragCsv;
+		MachAoALookup table = stability ? stabilityTable : dragTable;
+
+		if (exampleArea == null || exampleScroll == null || exampleBorder == null) {
+			return;
+		}
+
+		char separator = separatorCombo != null ? separatorCombo.getSeparatorChar() : ',';
+		String separatorStr = String.valueOf(separator);
+
+		if (csvPath != null && table != null) {
+			// Show loaded data
+			try {
+				List<String> lines = Files.readAllLines(csvPath);
+				// Filter out empty lines and comments
+				List<String> dataLines = lines.stream()
+						.map(String::trim)
+						.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+						.limit(20) // Limit to first 20 data lines for display
+						.collect(Collectors.toList());
+				String loadedData = String.join("\n", dataLines);
+				exampleArea.setText(loadedData);
+				exampleArea.setForeground(Color.BLACK);
+				exampleBorder.setTitle(trans.get("AerodynamicLookupDialog.lbl.loadedData"));
+			} catch (IOException e) {
+				// If we can't read the file, fall back to example
+				updateExampleFormatText(exampleArea, exampleBorder, separatorStr, stability);
+			}
+		} else {
+			// Show example format
+			updateExampleFormatText(exampleArea, exampleBorder, separatorStr, stability);
+		}
+		exampleScroll.repaint();
+	}
+
+	private void updateExampleFormatText(JTextArea exampleArea, javax.swing.border.TitledBorder exampleBorder,
+			String separator, boolean stability) {
+		String exampleKey = stability ? "AerodynamicLookupDialog.example.stability" : "AerodynamicLookupDialog.example.drag";
+		String exampleText = trans.get(exampleKey);
+		// Replace commas with the selected separator
+		exampleText = exampleText.replace(",", separator);
+		exampleArea.setText(exampleText);
+		exampleArea.setForeground(Color.GRAY);
+		exampleBorder.setTitle(trans.get("AerodynamicLookupDialog.lbl.formatHint"));
 	}
 
 	private JFileChooser createCsvFileChooser(Path currentPath) {
