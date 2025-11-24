@@ -79,6 +79,7 @@ class SimulationOptionsPanel extends JPanel {
 
 	private static Color textColor;
 	private static Color dimTextColor;
+	private static Color infoTextColor;
 
 	static {
 		initColors();
@@ -287,6 +288,7 @@ class SimulationOptionsPanel extends JPanel {
 		subsub.add(configureLookupButton, "wrap");
 
 		aerodynamicLookupSummaryLabel = new JLabel();
+		aerodynamicLookupSummaryLabel.setForeground(infoTextColor);
 		subsub.add(aerodynamicLookupSummaryLabel, "gapleft para, spanx, growx");
 
 		sub.add(subsub, "spanx, wrap para");
@@ -373,6 +375,7 @@ class SimulationOptionsPanel extends JPanel {
 	public static void updateColors() {
 		textColor = GUIUtil.getUITheme().getTextColor();
 		dimTextColor = GUIUtil.getUITheme().getDimTextColor();
+		infoTextColor = GUIUtil.getUITheme().getInformationColor();
 	}
 	
 	private JPopupMenu getExtensionMenu() {
@@ -502,7 +505,6 @@ class SimulationOptionsPanel extends JPanel {
 				+ String.format(trans.get("AerodynamicLookupDialog.lbl.summaryStability"), stabilityDetail)
 				+ "</html>";
 		aerodynamicLookupSummaryLabel.setText(summary);
-		aerodynamicLookupSummaryLabel.setForeground(textColor);
 	}
 
 	private String buildLookupDetail(Path path, MachAoALookup table) {
