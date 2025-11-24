@@ -21,6 +21,7 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 	private final SimulationOptions options;
 	private AtmosphereHandler atmosphereHandler;
 	private WindHandler windHandler;
+	private GravityHandler gravityHandler;
 
 	public SimulationConditionsHandler(Rocket rocket, DocumentLoadingContext context) {
 		this.context = context;
@@ -42,6 +43,9 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 		} else if (element.equals("atmosphere")) {
 			atmosphereHandler = new AtmosphereHandler(attributes.get("model"), context);
 			return atmosphereHandler;
+		} else if (element.equals("gravity")) {
+			gravityHandler = new GravityHandler(attributes.get("model"));
+			return gravityHandler;
 		}
 		return PlainTextHandler.INSTANCE;
 	}
@@ -151,6 +155,11 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 				}
 			}
 			case "atmosphere" -> atmosphereHandler.storeSettings(options, warnings);
+			case "gravity" -> {
+				if (gravityHandler != null) {
+					gravityHandler.storeSettings(options, warnings);
+				}
+			}
 			case "timestep" -> {
 				if (Double.isNaN(d) || d <= 0) {
 					warnings.add("Illegal time step defined, ignoring.");

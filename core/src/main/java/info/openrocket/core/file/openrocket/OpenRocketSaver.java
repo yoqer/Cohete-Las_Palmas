@@ -17,6 +17,7 @@ import info.openrocket.core.logging.ErrorSet;
 import info.openrocket.core.logging.SimulationAbort;
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.material.Material;
+import info.openrocket.core.models.gravity.GravityModelType;
 import info.openrocket.core.models.wind.MultiLevelPinkNoiseWindModel;
 import info.openrocket.core.models.wind.WindModel;
 import info.openrocket.core.preferences.DocumentPreferences;
@@ -229,7 +230,7 @@ public class OpenRocketSaver extends RocketSaver {
 		/*
 		 * NOTE:  Remember to update the supported versions in DocumentConfig as well!
 		 */
-		return FILE_VERSION_DIVISOR + 10;
+		return FILE_VERSION_DIVISOR + 11;
 		
 	}
 	
@@ -385,6 +386,17 @@ public class OpenRocketSaver extends RocketSaver {
 			writeElement("basepressure", cond.getLaunchPressure());
 			indent--;
 			writeln("</atmosphere>");
+		}
+		
+		// Gravity model
+		if (cond.getGravityModelType() == GravityModelType.WGS) {
+			writeln("<gravity model=\"wgs\"/>");
+		} else if (cond.getGravityModelType() == GravityModelType.CONSTANT) {
+			writeln("<gravity model=\"constant\">");
+			indent++;
+			writeElement("value", cond.getConstantGravity());
+			indent--;
+			writeln("</gravity>");
 		}
 		
 		writeElement("timestep", cond.getTimeStep());
@@ -602,7 +614,7 @@ public class OpenRocketSaver extends RocketSaver {
 		// Retrieve the data from the branch
 		List<List<Double>> data = new ArrayList<>(types.length);
 		for (FlightDataType type : types) {
-			data.add(branch.get(type));
+			data.add(branch.getClone(type));
 		}
 		
 		// Build the <databranch> tag
@@ -694,7 +706,7 @@ public class OpenRocketSaver extends RocketSaver {
 		if (types.length == 0)
 			return 0;
 		
-		List<Double> timeData = branch.get(FlightDataType.TYPE_TIME);
+		final List<Double> timeData = branch.get(FlightDataType.TYPE_TIME);
 		if (timeData == null) {
 			// If time data not available, store all points
 			return branch.getLength();
