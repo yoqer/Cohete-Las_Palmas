@@ -8,7 +8,14 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.BasicStroke;
+import java.awt.Stroke;
 import java.io.Serializable;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 
@@ -20,6 +27,17 @@ import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.Zoomable;
+import org.jfree.chart.entity.ChartEntity;
+import org.jfree.chart.entity.EntityCollection;
+import org.jfree.chart.entity.LegendItemEntity;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import info.openrocket.swing.gui.plot.Plot.MetadataXYSeries;
 
 import com.jogamp.newt.event.InputEvent;
 
@@ -47,6 +65,12 @@ public class SimulationChart extends ChartPanel {
 	private Interaction interaction = null;
 	
 	private MouseWheelHandler mouseWheelHandler = null;
+
+    private String hoveredLegendLabel = null;
+
+    private final Set<String> selectedLegendLabels = new HashSet<>();
+
+    private final Map<String, Stroke> baseStrokes = new HashMap<>();
 	
 	public SimulationChart(JFreeChart chart) {
 		super(chart,
@@ -158,9 +182,80 @@ public class SimulationChart extends ChartPanel {
 		}
 		interaction = null;
 	}
-	
-	
-	/**
+
+    /**
+     * <p>Called whenever the mouse moves.</p>
+     * <p>Gets an entity at the location of the mouse, if this entity is a LegendItemEntity, calls updateHighlightingSet.</p>
+     */
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        super.mouseMoved(e);
+        String legendLabel = null;
+        ChartEntity entity = getChartRenderingInfo().getEntityCollection().getEntity(e.getX(), e.getY());
+
+        if (entity instanceof LegendItemEntity) {
+            legendLabel = entity.getToolTipText();
+        }
+
+        if ((legendLabel == null && hoveredLegendLabel != null)||(legendLabel != null && !legendLabel.equals(hoveredLegendLabel))) {
+            hoveredLegendLabel = legendLabel;
+            updateHighlightingSet();
+        }
+    }
+
+    /**
+     * <p>Responsible for adding and removing labels from the selectedLegendLabels set before calling updateHighlightingSet.</p>
+     */
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        super.mouseClicked(e);
+        if (e.getButton() != MouseEvent.BUTTON1) return;
+        ChartEntity entity = getChartRenderingInfo().getEntityCollection().getEntity(e.getX(), e.getY());
+
+        if (entity instanceof LegendItemEntity) {
+            String label = entity.getToolTipText();
+            if (selectedLegendLabels.contains(label)) {
+                selectedLegendLabels.remove(label);
+                if (hoveredLegendLabel.equals(label)) hoveredLegendLabel = null;
+            }
+            else selectedLegendLabels.add(label);
+            updateHighlightingSet();
+        }
+    }
+
+    private void updateHighlightingSet() {
+        Set<String> labelsToHighlight = new HashSet<>(selectedLegendLabels);
+        if (hoveredLegendLabel != null) {
+            labelsToHighlight.add(hoveredLegendLabel);
+        }
+        applyLegendHighlight(labelsToHighlight);
+    }
+
+    private void applyLegendHighlight(Set<String> labelsToHighlight) {
+        XYPlot plot = getChart().getXYPlot();
+        boolean hasHighlight = labelsToHighlight != null;
+
+        for (int r = 0; r < plot.getRendererCount(); r++) {
+            XYItemRenderer renderer = plot.getRenderer(r);
+            XYSeriesCollection dataset = (XYSeriesCollection) plot.getDataset(r);
+
+            for (int s = 0; s < dataset.getSeriesCount(); s++) {
+                String key = r + ":" + s;
+                int finalS = s;
+
+                //Stores the original stroke in the baseStrokes set so it can be recovered later to remove highlighting.
+                BasicStroke base = (BasicStroke) baseStrokes.computeIfAbsent(key, k -> renderer.getSeriesStroke(finalS));
+
+                BasicStroke stroke = base;
+                if (hasHighlight && labelsToHighlight.contains(dataset.getSeries(s).getDescription())) {
+                    stroke = new BasicStroke(base.getLineWidth() * 2.0f, base.getEndCap(), base.getLineJoin(), base.getMiterLimit(), base.getDashArray(), base.getDashPhase());
+                }
+
+                renderer.setSeriesStroke(s, stroke);
+            }
+        }
+    }
+    /**
 	 * 
 	 * Hacked up copy of MouseWheelHandler from JFreechart.  This version
 	 * has the special ability to only zoom on the domain if the alt key is pressed.
