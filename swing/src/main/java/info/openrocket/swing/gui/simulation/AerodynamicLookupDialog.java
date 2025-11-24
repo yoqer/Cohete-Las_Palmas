@@ -66,7 +66,7 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	public AerodynamicLookupDialog(Window owner, SimulationOptions options) {
-		super(owner, trans.get("simedtdlg.AeroLookup.title"), ModalityType.APPLICATION_MODAL);
+		super(owner, trans.get("AerodynamicLookupDialog.title"), ModalityType.APPLICATION_MODAL);
 		this.options = options;
 
 		this.dragCsv = options.getDragLookupCsvPath();
@@ -98,9 +98,9 @@ class AerodynamicLookupDialog extends JDialog {
 		JPanel content = new JPanel(new MigLayout("fill, insets dialog, gap para"));
 		setContentPane(content);
 
-		content.add(createLookupSection(trans.get("simedtdlg.AeroLookup.dragLabel"), false),
+		content.add(createLookupSection(trans.get("AerodynamicLookupDialog.lbl.drag"), false),
 				"spanx, growx, wrap rel");
-		content.add(createLookupSection(trans.get("simedtdlg.AeroLookup.stabilityLabel"), true),
+		content.add(createLookupSection(trans.get("AerodynamicLookupDialog.lbl.stability"), true),
 				"spanx, growx, wrap para");
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -124,12 +124,15 @@ class AerodynamicLookupDialog extends JDialog {
 		pathField.setColumns(25);
 		panel.add(pathField, "growx, pushx");
 
-		JButton browse = new JButton(trans.get("simedtdlg.AeroLookup.browse"));
+		// Load from file button
+		JButton browse = new JButton(trans.get("AerodynamicLookupDialog.btn.browse"));
 		panel.add(browse);
 
-		JButton clear = new JButton(trans.get("simedtdlg.AeroLookup.clear"));
+		// Clear button
+		JButton clear = new JButton(trans.get("AerodynamicLookupDialog.btn.clear"));
 		panel.add(clear, "wrap");
 
+		// Field separator
 		JLabel separatorLabel = new JLabel(trans.get("SimExpPan.lbl.Fieldsepstr"));
 		String tip = trans.get("SimExpPan.lbl.longA1") + trans.get("SimExpPan.lbl.longA2");
 		separatorLabel.setToolTipText(tip);
@@ -139,12 +142,13 @@ class AerodynamicLookupDialog extends JDialog {
 		separatorCombo.setToolTipText(tip);
 		panel.add(separatorCombo, "wrap");
 
-		JLabel summary = new JLabel(trans.get("simedtdlg.AeroLookup.summary.none"));
+		// Summary label
+		JLabel summary = new JLabel(trans.get("AerodynamicLookupDialog.summary.none"));
 		summary.setForeground(infoTextColor);
 		panel.add(summary, "spanx, growx, wrap para");
 
 		// Example format textarea
-		String exampleKey = stability ? "simedtdlg.AeroLookup.example.stability" : "simedtdlg.AeroLookup.example.drag";
+		String exampleKey = stability ? "AerodynamicLookupDialog.example.stability" : "AerodynamicLookupDialog.example.drag";
 		JTextArea example = new JTextArea(trans.get(exampleKey));
 		example.setEditable(false);
 		example.setFont(new java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN,
@@ -154,7 +158,7 @@ class AerodynamicLookupDialog extends JDialog {
 		example.setFocusable(false);
 		example.setRows(3);
 		JScrollPane exampleScroll = new JScrollPane(example);
-		exampleScroll.setBorder(BorderFactory.createTitledBorder(trans.get("simedtdlg.AeroLookup.formatHint")));
+		exampleScroll.setBorder(BorderFactory.createTitledBorder(trans.get("AerodynamicLookupDialog.lbl.formatHint")));
 		panel.add(exampleScroll, "spanx, growx");
 
 		if (stability) {
@@ -302,7 +306,7 @@ class AerodynamicLookupDialog extends JDialog {
 		}
 		if (path == null || table == null) {
 			field.setText("");
-			summaryLabel.setText(trans.get("simedtdlg.AeroLookup.summary.none"));
+			summaryLabel.setText(trans.get("AerodynamicLookupDialog.summary.none"));
 			if (clearButton != null) {
 				clearButton.setEnabled(false);
 			}
@@ -317,9 +321,9 @@ class AerodynamicLookupDialog extends JDialog {
 
 	private JFileChooser createCsvFileChooser(Path currentPath) {
 		JFileChooser chooser = new JFileChooser();
-		chooser.setDialogTitle(trans.get("simedtdlg.AeroLookup.chooseTitle"));
+		chooser.setDialogTitle(trans.get("AerodynamicLookupDialog.title.choose"));
 		FileNameExtensionFilter filter = new FileNameExtensionFilter(
-				trans.get("simedtdlg.AeroLookup.csvFilter"), "csv", "txt", "dat");
+				trans.get("AerodynamicLookupDialog.csvFilter"), "csv", "txt", "dat");
 		chooser.setFileFilter(filter);
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		if (currentPath != null) {
@@ -335,8 +339,8 @@ class AerodynamicLookupDialog extends JDialog {
 	private void showLookupError(Path path, Exception ex) {
 		String reason = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
 		JOptionPane.showMessageDialog(this,
-				String.format(trans.get("simedtdlg.AeroLookup.error"), path, reason),
-				trans.get("simedtdlg.AeroLookup.errorTitle"),
+				String.format(trans.get("AerodynamicLookupDialog.error.msg"), path, reason),
+				trans.get("AerodynamicLookupDialog.error.title"),
 				JOptionPane.ERROR_MESSAGE);
 	}
 
@@ -353,10 +357,10 @@ class AerodynamicLookupDialog extends JDialog {
 		if (table.hasAoA()) {
 			String aoaMin = formatDouble(table.getMinAoA());
 			String aoaMax = formatDouble(table.getMaxAoA());
-			return String.format(translator.get("simedtdlg.AeroLookup.summaryWithAoA"),
+			return String.format(translator.get("AerodynamicLookupDialog.summaryWithAoA"),
 					machMin, machMax, aoaMin, aoaMax, columns);
 		}
-		return String.format(translator.get("simedtdlg.AeroLookup.summaryNoAoA"),
+		return String.format(translator.get("AerodynamicLookupDialog.summaryNoAoA"),
 				machMin, machMax, columns);
 	}
 

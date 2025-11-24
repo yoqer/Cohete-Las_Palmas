@@ -278,11 +278,11 @@ class SimulationOptionsPanel extends JPanel {
 		subsub.add(unit, "wrap");
 
 		// Aerodynamic data
-		label = new JLabel(trans.get("simedtdlg.AeroLookup.summaryLabel"));
+		label = new JLabel(trans.get("AerodynamicLookupDialog.lbl.summary"));
 		subsub.add(label);
 
 		/// Configure
-		JButton configureLookupButton = new JButton(trans.get("simedtdlg.AeroLookup.configure"));
+		JButton configureLookupButton = new JButton(trans.get("AerodynamicLookupDialog.btn.configure"));
 		configureLookupButton.addActionListener(e -> openLookupDialog());
 		subsub.add(configureLookupButton, "wrap");
 
@@ -497,9 +497,9 @@ class SimulationOptionsPanel extends JPanel {
 		String dragDetail = buildLookupDetail(options.getDragLookupCsvPath(), options.getDragLookupTable());
 		String stabilityDetail = buildLookupDetail(options.getStabilityLookupCsvPath(), options.getStabilityLookupTable());
 		String summary = "<html>"
-				+ String.format(trans.get("simedtdlg.AeroLookup.summaryDrag"), dragDetail)
+				+ String.format(trans.get("AerodynamicLookupDialog.lbl.summaryDrag"), dragDetail)
 				+ "<br>"
-				+ String.format(trans.get("simedtdlg.AeroLookup.summaryStability"), stabilityDetail)
+				+ String.format(trans.get("AerodynamicLookupDialog.lbl.summaryStability"), stabilityDetail)
 				+ "</html>";
 		aerodynamicLookupSummaryLabel.setText(summary);
 		aerodynamicLookupSummaryLabel.setForeground(textColor);
@@ -507,7 +507,7 @@ class SimulationOptionsPanel extends JPanel {
 
 	private String buildLookupDetail(Path path, MachAoALookup table) {
 		if (path == null || table == null) {
-			return trans.get("simedtdlg.AeroLookup.summary.none");
+			return trans.get("AerodynamicLookupDialog.summary.none");
 		}
 		String fileName = path.getFileName() != null ? path.getFileName().toString() : path.toString();
 		String detail = AerodynamicLookupDialog.formatLookupSummary(trans, table);
