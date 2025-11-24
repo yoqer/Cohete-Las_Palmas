@@ -277,16 +277,17 @@ class SimulationOptionsPanel extends JPanel {
 		unit.setToolTipText(tip);
 		subsub.add(unit, "wrap");
 
+		// Aerodynamic data
 		label = new JLabel(trans.get("simedtdlg.AeroLookup.summaryLabel"));
-		label.setToolTipText(trans.get("simedtdlg.AeroLookup.desc"));
-		subsub.add(label, "gapright para");
+		subsub.add(label);
 
-		aerodynamicLookupSummaryLabel = new JLabel();
-		subsub.add(aerodynamicLookupSummaryLabel, "growx");
-
+		/// Configure
 		JButton configureLookupButton = new JButton(trans.get("simedtdlg.AeroLookup.configure"));
 		configureLookupButton.addActionListener(e -> openLookupDialog());
-		subsub.add(configureLookupButton, "wrap para");
+		subsub.add(configureLookupButton, "wrap");
+
+		aerodynamicLookupSummaryLabel = new JLabel();
+		subsub.add(aerodynamicLookupSummaryLabel, "gapleft para, spanx, growx");
 
 		sub.add(subsub, "spanx, wrap para");
 		

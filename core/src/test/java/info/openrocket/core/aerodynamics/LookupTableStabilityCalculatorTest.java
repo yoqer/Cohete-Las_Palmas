@@ -63,7 +63,7 @@ public class LookupTableStabilityCalculatorTest {
 
 		assertEquals(0.25, forces.getCN(), EPSILON);
 		assertEquals(0.025, forces.getCm(), EPSILON);
-		assertEquals(0.575, forces.getCP().x, EPSILON);
+		assertEquals(0.575, forces.getCP().getX(), EPSILON);
 		assertEquals(Math.toRadians(10) - Math.toRadians(5), calculator.getStallMargin(), EPSILON);
 	}
 
@@ -87,11 +87,11 @@ public class LookupTableStabilityCalculatorTest {
 		conditions.setMach(0.5);
 		conditions.setAOA(Math.toRadians(5));
 
-		Coordinate cp = calculator.getCP(config, conditions, new WarningSet());
+		info.openrocket.core.util.CoordinateIF cp = calculator.getCP(config, conditions, new WarningSet());
 		assertNotNull(cp);
-		assertEquals(0.575, cp.x, EPSILON);
-		assertEquals(0, cp.y, EPSILON);
-		assertEquals(0, cp.z, EPSILON);
+		assertEquals(0.575, cp.getX(), EPSILON);
+		assertEquals(0, cp.getY(), EPSILON);
+		assertEquals(0, cp.getZ(), EPSILON);
 	}
 
 	@Test
@@ -175,7 +175,7 @@ public class LookupTableStabilityCalculatorTest {
 		assertNotNull(total);
 		assertEquals(0.25, total.getCN(), EPSILON);
 		assertEquals(0.025, total.getCm(), EPSILON);
-		assertEquals(0.575, total.getCP().x, EPSILON);
+		assertEquals(0.575, total.getCP().getX(), EPSILON);
 	}
 
 	@Test
