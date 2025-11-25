@@ -240,6 +240,8 @@ class AerodynamicLookupDialog extends JDialog {
 			dragCsv = normalizePath(selected);
 			dragTable = table;
 			dragSeparator = separator;
+			// Clear stored CSV rows when loading new file - will read from file
+			options.setDragLookup(dragCsv, dragTable, null);
 			updateDisplays();
 		} catch (RuntimeException ex) {
 			showLookupError(selected, ex);
@@ -260,6 +262,8 @@ class AerodynamicLookupDialog extends JDialog {
 			stabilityCsv = normalizePath(selected);
 			stabilityTable = table;
 			stabilitySeparator = separator;
+			// Clear stored CSV rows when loading new file - will read from file
+			options.setStabilityLookup(stabilityCsv, stabilityTable, null);
 			updateDisplays();
 		} catch (RuntimeException ex) {
 			showLookupError(selected, ex);
@@ -275,6 +279,8 @@ class AerodynamicLookupDialog extends JDialog {
 			MachAoALookup table = CsvMachAoALookup.fromCsv(dragCsv, DRAG_VALUE_COLUMNS, separator);
 			dragTable = table;
 			dragSeparator = separator;
+			// Clear stored CSV rows when refreshing - will read fresh data from file
+			options.setDragLookup(dragCsv, dragTable, null);
 			updateDisplays();
 		} catch (RuntimeException ex) {
 			showLookupError(dragCsv, ex);
@@ -290,6 +296,8 @@ class AerodynamicLookupDialog extends JDialog {
 			MachAoALookup table = CsvMachAoALookup.fromCsv(stabilityCsv, STABILITY_VALUE_COLUMNS, separator);
 			stabilityTable = table;
 			stabilitySeparator = separator;
+			// Clear stored CSV rows when refreshing - will read fresh data from file
+			options.setStabilityLookup(stabilityCsv, stabilityTable, null);
 			updateDisplays();
 		} catch (RuntimeException ex) {
 			showLookupError(stabilityCsv, ex);
@@ -326,17 +334,22 @@ class AerodynamicLookupDialog extends JDialog {
 
 	private void applyAndClose() {
 		// Validate and apply drag lookup if modified
+		List<String> dragCsvRows = null;
 		if (dragModified && dragCsv != null) {
 			try {
 				String editedText = dragExampleArea.getText();
 				char separator = dragSeparatorCombo.getSeparatorChar();
-				MachAoALookup table = CsvMachAoALookup.parse(
-						editedText.lines()
-								.map(String::trim)
-								.filter(line -> !line.isEmpty() && !line.startsWith("#"))
-								.collect(Collectors.toList()),
-						DRAG_VALUE_COLUMNS, separator);
+				// Store all lines (including comments) to preserve them
+				List<String> allLines = editedText.lines()
+						.map(String::trim)
+						.collect(Collectors.toList());
+				// Filter comments only when parsing for the table
+				List<String> dataLines = allLines.stream()
+						.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+						.collect(Collectors.toList());
+				MachAoALookup table = CsvMachAoALookup.parse(dataLines, DRAG_VALUE_COLUMNS, separator);
 				dragTable = table;
+				dragCsvRows = allLines; // Store all lines including comments
 				dragModified = false;
 			} catch (Exception ex) {
 				showLookupError(dragCsv, ex);
@@ -345,17 +358,22 @@ class AerodynamicLookupDialog extends JDialog {
 		}
 		
 		// Validate and apply stability lookup if modified
+		List<String> stabilityCsvRows = null;
 		if (stabilityModified && stabilityCsv != null) {
 			try {
 				String editedText = stabilityExampleArea.getText();
 				char separator = stabilitySeparatorCombo.getSeparatorChar();
-				MachAoALookup table = CsvMachAoALookup.parse(
-						editedText.lines()
-								.map(String::trim)
-								.filter(line -> !line.isEmpty() && !line.startsWith("#"))
-								.collect(Collectors.toList()),
-						STABILITY_VALUE_COLUMNS, separator);
+				// Store all lines (including comments) to preserve them
+				List<String> allLines = editedText.lines()
+						.map(String::trim)
+						.collect(Collectors.toList());
+				// Filter comments only when parsing for the table
+				List<String> dataLines = allLines.stream()
+						.filter(line -> !line.isEmpty() && !line.startsWith("#"))
+						.collect(Collectors.toList());
+				MachAoALookup table = CsvMachAoALookup.parse(dataLines, STABILITY_VALUE_COLUMNS, separator);
 				stabilityTable = table;
+				stabilityCsvRows = allLines; // Store all lines including comments
 				stabilityModified = false;
 			} catch (Exception ex) {
 				showLookupError(stabilityCsv, ex);
@@ -367,13 +385,13 @@ class AerodynamicLookupDialog extends JDialog {
 		if (dragCsv == null || dragTable == null) {
 			options.clearDragLookup();
 		} else {
-			options.setDragLookup(dragCsv, dragTable);
+			options.setDragLookup(dragCsv, dragTable, dragCsvRows);
 		}
 
 		if (stabilityCsv == null || stabilityTable == null) {
 			options.clearStabilityLookup();
 		} else {
-			options.setStabilityLookup(stabilityCsv, stabilityTable);
+			options.setStabilityLookup(stabilityCsv, stabilityTable, stabilityCsvRows);
 		}
 
 		dispose();
@@ -456,14 +474,25 @@ class AerodynamicLookupDialog extends JDialog {
 		if (csvPath != null && table != null) {
 			// Show loaded data - make editable
 			try {
-				List<String> lines = Files.readAllLines(csvPath);
-				// Filter out empty lines and comments
-				List<String> dataLines = lines.stream()
-						.map(String::trim)
-						.filter(line -> !line.isEmpty() && !line.startsWith("#"))
-						.limit(20) // Limit to first 20 data lines for display
+				// Use stored CSV rows if available (preserves edits), otherwise read from file
+				List<String> lines;
+				if (stability) {
+					lines = options.getStabilityLookupCsvRows();
+				} else {
+					lines = options.getDragLookupCsvRows();
+				}
+				
+				if (lines == null || lines.isEmpty()) {
+					// No stored rows, read from file
+					lines = Files.readAllLines(csvPath);
+				}
+				
+				// Display all lines (including comments) - limit to first 20 lines for display
+				// Preserve comments and empty lines for user editing
+				List<String> displayLines = lines.stream()
+						.limit(20) // Limit to first 20 lines for display
 						.collect(Collectors.toList());
-				String loadedData = String.join("\n", dataLines);
+				String loadedData = String.join("\n", displayLines);
 				
 				// Set text without triggering modification (listener is removed)
 				exampleArea.setText(loadedData);

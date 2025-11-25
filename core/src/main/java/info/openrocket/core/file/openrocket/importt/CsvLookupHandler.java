@@ -72,10 +72,11 @@ class CsvLookupHandler extends AbstractElementHandler {
 				// For now, use comma as default
 				char separator = detectSeparator(rows);
 				MachAoALookup table = CsvMachAoALookup.parse(rows, requiredColumns, separator);
+				// Store both the table and the original CSV rows to preserve edits
 				if (isDrag) {
-					options.setDragLookup(filePath, table);
+					options.setDragLookup(filePath, table, rows);
 				} else {
-					options.setStabilityLookup(filePath, table);
+					options.setStabilityLookup(filePath, table, rows);
 				}
 				return;
 			} catch (RuntimeException ex) {

@@ -107,6 +107,8 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	private Path stabilityLookupCsvPath;
 	private MachAoALookup dragLookupTable;
 	private MachAoALookup stabilityLookupTable;
+	private List<String> dragLookupCsvRows;
+	private List<String> stabilityLookupCsvRows;
 
 	public SimulationOptions() {
 		averageWindModel = new PinkNoiseWindModel(randomSeed);
@@ -442,19 +444,29 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	}
 
 	public void setDragLookup(Path csvPath, MachAoALookup table) {
+		setDragLookup(csvPath, table, null);
+	}
+
+	public void setDragLookup(Path csvPath, MachAoALookup table, List<String> csvRows) {
 		Path normalized = normalizePath(csvPath);
 		if (normalized != null && table == null) {
 			throw new IllegalArgumentException("table must not be null when csvPath is provided");
 		}
+		this.dragLookupCsvRows = csvRows != null ? new ArrayList<>(csvRows) : null;
 		updateDragLookup(normalized, table);
 	}
 
 	public void clearDragLookup() {
+		this.dragLookupCsvRows = null;
 		updateDragLookup(null, null);
 	}
 
 	public boolean hasDragLookup() {
 		return dragLookupTable != null;
+	}
+
+	public List<String> getDragLookupCsvRows() {
+		return dragLookupCsvRows != null ? new ArrayList<>(dragLookupCsvRows) : null;
 	}
 
 	public Path getStabilityLookupCsvPath() {
@@ -472,19 +484,29 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	}
 
 	public void setStabilityLookup(Path csvPath, MachAoALookup table) {
+		setStabilityLookup(csvPath, table, null);
+	}
+
+	public void setStabilityLookup(Path csvPath, MachAoALookup table, List<String> csvRows) {
 		Path normalized = normalizePath(csvPath);
 		if (normalized != null && table == null) {
 			throw new IllegalArgumentException("table must not be null when csvPath is provided");
 		}
+		this.stabilityLookupCsvRows = csvRows != null ? new ArrayList<>(csvRows) : null;
 		updateStabilityLookup(normalized, table);
 	}
 
 	public void clearStabilityLookup() {
+		this.stabilityLookupCsvRows = null;
 		updateStabilityLookup(null, null);
 	}
 
 	public boolean hasStabilityLookup() {
 		return stabilityLookupTable != null;
+	}
+
+	public List<String> getStabilityLookupCsvRows() {
+		return stabilityLookupCsvRows != null ? new ArrayList<>(stabilityLookupCsvRows) : null;
 	}
 
 	private void updateDragLookup(Path path, MachAoALookup table) {
@@ -548,8 +570,10 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 			copy.windModelType = this.windModelType;
 			copy.dragLookupCsvPath = this.dragLookupCsvPath;
 			copy.dragLookupTable = this.dragLookupTable;
+			copy.dragLookupCsvRows = this.dragLookupCsvRows != null ? new ArrayList<>(this.dragLookupCsvRows) : null;
 			copy.stabilityLookupCsvPath = this.stabilityLookupCsvPath;
 			copy.stabilityLookupTable = this.stabilityLookupTable;
+			copy.stabilityLookupCsvRows = this.stabilityLookupCsvRows != null ? new ArrayList<>(this.stabilityLookupCsvRows) : null;
 
 			// Create a new list for listeners
 			copy.listeners = new ArrayList<>();

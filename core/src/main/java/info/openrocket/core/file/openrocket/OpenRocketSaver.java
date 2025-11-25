@@ -404,10 +404,10 @@ public class OpenRocketSaver extends RocketSaver {
 		writeElement("timestep", cond.getTimeStep());
 		writeElement("maxtime", cond.getMaxSimulationTime());
 		if (cond.getDragLookupCsvPath() != null || cond.getDragLookupTable() != null) {
-			writeCsvLookup("draglookup", cond.getDragLookupCsvPath());
+			writeCsvLookup("draglookup", cond.getDragLookupCsvPath(), cond.getDragLookupCsvRows());
 		}
 		if (cond.getStabilityLookupCsvPath() != null || cond.getStabilityLookupTable() != null) {
-			writeCsvLookup("stabilitylookup", cond.getStabilityLookupCsvPath());
+			writeCsvLookup("stabilitylookup", cond.getStabilityLookupCsvPath(), cond.getStabilityLookupCsvRows());
 		}
 		
 		indent--;
@@ -761,6 +761,14 @@ public class OpenRocketSaver extends RocketSaver {
 	 * </element>
 	 */
 	private void writeCsvLookup(String element, Path csvPath) throws IOException {
+		writeCsvLookup(element, csvPath, null);
+	}
+
+	/**
+	 * Write a CSV lookup table element with embedded row data.
+	 * If csvRows is provided, use those instead of reading from file.
+	 */
+	private void writeCsvLookup(String element, Path csvPath, List<String> csvRows) throws IOException {
 		String fileAttr = "";
 		if (csvPath != null) {
 			fileAttr = " file=\"" + TextUtil.escapeXML(csvPath.toString()) + "\"";
@@ -769,8 +777,16 @@ public class OpenRocketSaver extends RocketSaver {
 		writeln("<" + element + fileAttr + ">");
 		indent++;
 
-		// Read and write CSV rows if file exists
-		if (csvPath != null && Files.exists(csvPath)) {
+		// Use stored CSV rows if available, otherwise read from file
+		if (csvRows != null && !csvRows.isEmpty()) {
+			// Write stored edited rows
+			for (String line : csvRows) {
+				if (!line.trim().isEmpty()) {
+					writeElement("row", line);
+				}
+			}
+		} else if (csvPath != null && Files.exists(csvPath)) {
+			// Fall back to reading from file
 			try {
 				List<String> lines = Files.readAllLines(csvPath);
 				for (String line : lines) {
