@@ -251,11 +251,24 @@ CSV file format
 
 - **Header row**: The first non-empty, non-comment line must contain column names
 - **Column names**: Case-insensitive, spaces and underscores are ignored. "Angle of Attack" or "AoA" both work
-- **Comments**: Lines starting with ``#`` are ignored
-- **Blank lines**: Empty lines are ignored
-- **Separator**: Comma (``,``) is the default separator
+- **Comments**: Lines starting with ``#`` are preserved in the file but ignored during parsing
+- **Blank lines**: Empty lines are preserved in the file but ignored during parsing
+- **Separator**: Comma (``,``) is the default separator, but you can configure semicolon, tab, or space separators
 - **Interpolation**: Values are linearly interpolated between table points in both Mach and AoA dimensions
 - **Clamping**: Values outside the table range are clamped to the nearest edge value
+
+Editing lookup table data
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you've loaded a CSV file, you can edit the data directly in the configuration dialog. The text area shows the loaded data, which you can modify as needed. Your edits are automatically saved to the `.ork` file when you click :guilabel:`OK`.
+
+**Important features:**
+
+- **Data embedding**: The CSV data is embedded directly in the `.ork` file, so your rocket design is self-contained and portable
+- **Edit preservation**: Any edits you make are preserved when you close and reopen the dialog or simulation window
+- **Comment preservation**: Comment lines (starting with ``#``) are preserved in your edits
+- **Refresh button**: Use the refresh button (↻) next to :guilabel:`Load from file...` to reload the original CSV file if it still exists on disk
+- **Field separator**: You can change the CSV field separator (comma, semicolon, tab, or space) - the example format updates automatically
 
 When lookup tables are used:
 
