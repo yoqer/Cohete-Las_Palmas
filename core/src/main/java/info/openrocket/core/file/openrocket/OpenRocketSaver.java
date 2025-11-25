@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -401,11 +403,11 @@ public class OpenRocketSaver extends RocketSaver {
 		
 		writeElement("timestep", cond.getTimeStep());
 		writeElement("maxtime", cond.getMaxSimulationTime());
-		if (cond.getDragLookupCsvPath() != null) {
-			writeElement("draglookupcsv", cond.getDragLookupCsvPath().toString());
+		if (cond.getDragLookupCsvPath() != null || cond.getDragLookupTable() != null) {
+			writeCsvLookup("draglookup", cond.getDragLookupCsvPath());
 		}
-		if (cond.getStabilityLookupCsvPath() != null) {
-			writeElement("stabilitylookupcsv", cond.getStabilityLookupCsvPath().toString());
+		if (cond.getStabilityLookupCsvPath() != null || cond.getStabilityLookupTable() != null) {
+			writeCsvLookup("stabilitylookup", cond.getStabilityLookupCsvPath());
 		}
 		
 		indent--;
@@ -749,7 +751,42 @@ public class OpenRocketSaver extends RocketSaver {
 		String s = INDENT.repeat(Math.max(0, indent)) + str + "\n";
 		dest.write(s);
 	}
-	
+
+	/**
+	 * Write a CSV lookup table element with embedded row data.
+	 * Format:
+	 * <element file="path/to/file.csv">
+	 *   <row>Mach,AoA,Cd</row>
+	 *   <row>0.30,0,0.35</row>
+	 * </element>
+	 */
+	private void writeCsvLookup(String element, Path csvPath) throws IOException {
+		String fileAttr = "";
+		if (csvPath != null) {
+			fileAttr = " file=\"" + TextUtil.escapeXML(csvPath.toString()) + "\"";
+		}
+
+		writeln("<" + element + fileAttr + ">");
+		indent++;
+
+		// Read and write CSV rows if file exists
+		if (csvPath != null && Files.exists(csvPath)) {
+			try {
+				List<String> lines = Files.readAllLines(csvPath);
+				for (String line : lines) {
+					if (!line.trim().isEmpty()) {
+						writeElement("row", line);
+					}
+				}
+			} catch (IOException ex) {
+				// If we can't read the file, just save the path reference
+				log.warn("Could not read CSV file for embedding: " + csvPath, ex);
+			}
+		}
+
+		indent--;
+		writeln("</" + element + ">");
+	}
 	
 	
 	

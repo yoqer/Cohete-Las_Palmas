@@ -8,6 +8,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.swing.gui.components.FieldSeparatorComboBox;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.util.GUIUtil;
+import info.openrocket.swing.gui.util.Icons;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.BorderFactory;
@@ -55,6 +56,7 @@ class AerodynamicLookupDialog extends JDialog {
 
 	private JLabel dragSummaryLabel;
 	private JButton clearDragButton;
+	private JButton dragRefreshButton;
 	private FieldSeparatorComboBox dragSeparatorCombo;
 	private JTextArea dragExampleArea;
 	private JScrollPane dragExampleScroll;
@@ -64,6 +66,7 @@ class AerodynamicLookupDialog extends JDialog {
 
 	private JLabel stabilitySummaryLabel;
 	private JButton clearStabilityButton;
+	private JButton stabilityRefreshButton;
 	private FieldSeparatorComboBox stabilitySeparatorCombo;
 	private JTextArea stabilityExampleArea;
 	private JScrollPane stabilityExampleScroll;
@@ -135,7 +138,13 @@ class AerodynamicLookupDialog extends JDialog {
 
 		// Load from file button
 		JButton loadButton = new JButton(trans.get("AerodynamicLookupDialog.btn.loadFromFile"));
-		panel.add(loadButton);
+		panel.add(loadButton, "split 2");
+
+		// Refresh button
+		JButton refreshButton = new JButton(Icons.REFRESH);
+		refreshButton.setToolTipText(trans.get("AerodynamicLookupDialog.btn.refresh.ttip"));
+		refreshButton.setEnabled(false); // Initially disabled until data is loaded
+		panel.add(refreshButton);
 
 		// Clear button
 		JButton clear = new JButton(trans.get("AerodynamicLookupDialog.btn.clear"));
@@ -174,11 +183,13 @@ class AerodynamicLookupDialog extends JDialog {
 		if (stability) {
 			stabilitySummaryLabel = summary;
 			clearStabilityButton = clear;
+			stabilityRefreshButton = refreshButton;
 			stabilitySeparatorCombo = separatorCombo;
 			stabilityExampleArea = example;
 			stabilityExampleScroll = exampleScroll;
 			stabilityExampleBorder = exampleBorder;
 			loadButton.addActionListener(e -> chooseStabilityLookup());
+			refreshButton.addActionListener(e -> refreshStabilityLookup());
 			clear.addActionListener(e -> {
 				stabilityCsv = null;
 				stabilityTable = null;
@@ -192,11 +203,13 @@ class AerodynamicLookupDialog extends JDialog {
 		} else {
 			dragSummaryLabel = summary;
 			clearDragButton = clear;
+			dragRefreshButton = refreshButton;
 			dragSeparatorCombo = separatorCombo;
 			dragExampleArea = example;
 			dragExampleScroll = exampleScroll;
 			dragExampleBorder = exampleBorder;
 			loadButton.addActionListener(e -> chooseDragLookup());
+			refreshButton.addActionListener(e -> refreshDragLookup());
 			clear.addActionListener(e -> {
 				dragCsv = null;
 				dragTable = null;
@@ -281,6 +294,34 @@ class AerodynamicLookupDialog extends JDialog {
 		} catch (RuntimeException ex) {
 			showLookupError(stabilityCsv, ex);
 		}
+	}
+
+	private void refreshDragLookup() {
+		if (dragCsv == null) {
+			return;
+		}
+		if (!Files.exists(dragCsv)) {
+			JOptionPane.showMessageDialog(this,
+					String.format(trans.get("AerodynamicLookupDialog.error.fileNotFound"), dragCsv),
+					trans.get("AerodynamicLookupDialog.error.title"),
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		reloadDragLookup();
+	}
+
+	private void refreshStabilityLookup() {
+		if (stabilityCsv == null) {
+			return;
+		}
+		if (!Files.exists(stabilityCsv)) {
+			JOptionPane.showMessageDialog(this,
+					String.format(trans.get("AerodynamicLookupDialog.error.fileNotFound"), stabilityCsv),
+					trans.get("AerodynamicLookupDialog.error.title"),
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		reloadStabilityLookup();
 	}
 
 	private void applyAndClose() {
@@ -371,11 +412,23 @@ class AerodynamicLookupDialog extends JDialog {
 			if (clearButton != null) {
 				clearButton.setEnabled(false);
 			}
+			// Disable refresh button when no data is loaded
+			if (isDrag && dragRefreshButton != null) {
+				dragRefreshButton.setEnabled(false);
+			} else if (!isDrag && stabilityRefreshButton != null) {
+				stabilityRefreshButton.setEnabled(false);
+			}
 			return;
 		}
 		updateSummaryLabel(!isDrag); // isDrag: true=drag, false=stability; updateSummaryLabel expects stability flag
 		if (clearButton != null) {
 			clearButton.setEnabled(true);
+		}
+		// Enable refresh button when data is loaded
+		if (isDrag && dragRefreshButton != null) {
+			dragRefreshButton.setEnabled(true);
+		} else if (!isDrag && stabilityRefreshButton != null) {
+			stabilityRefreshButton.setEnabled(true);
 		}
 	}
 
