@@ -145,7 +145,22 @@ class SimulationOptionsPanel extends JPanel {
 		};
 		SimulationStepperMethodChoiceCombo.addActionListener(SimulationStepperMethodChoiceComboTTipListener);
 		SimulationStepperMethodChoiceComboTTipListener.actionPerformed(null);
-		subsub.add(SimulationStepperMethodChoiceCombo, "span 3, wrap para");
+		subsub.add(SimulationStepperMethodChoiceCombo, "span 3, wrap");
+
+		// Aerodynamic data
+		label = new JLabel(trans.get("AerodynamicLookupDialog.lbl.summary"));
+		subsub.add(label);
+
+		/// Configure
+		JButton configureLookupButton = new JButton(trans.get("AerodynamicLookupDialog.btn.configure"));
+		configureLookupButton.addActionListener(e -> openLookupDialog());
+		subsub.add(configureLookupButton, "wrap");
+
+		aerodynamicLookupSummaryLabel = new JLabel();
+		aerodynamicLookupSummaryLabel.setForeground(infoTextColor);
+		subsub.add(aerodynamicLookupSummaryLabel, "gapleft para, spanx, growx, wrap para");
+
+		sub.add(subsub, "spanx, wrap para");
 
 		/*label = new JLabel("6-DOF Runge-Kutta 4");
 		label.setToolTipText(tip);
@@ -277,21 +292,6 @@ class SimulationOptionsPanel extends JPanel {
 		unit = new UnitSelector(m);
 		unit.setToolTipText(tip);
 		subsub.add(unit, "wrap");
-
-		// Aerodynamic data
-		label = new JLabel(trans.get("AerodynamicLookupDialog.lbl.summary"));
-		subsub.add(label);
-
-		/// Configure
-		JButton configureLookupButton = new JButton(trans.get("AerodynamicLookupDialog.btn.configure"));
-		configureLookupButton.addActionListener(e -> openLookupDialog());
-		subsub.add(configureLookupButton, "wrap");
-
-		aerodynamicLookupSummaryLabel = new JLabel();
-		aerodynamicLookupSummaryLabel.setForeground(infoTextColor);
-		subsub.add(aerodynamicLookupSummaryLabel, "gapleft para, spanx, growx");
-
-		sub.add(subsub, "spanx, wrap para");
 		
 		// Reset to default button
 		JButton resetBtn = new JButton(trans.get("simedtdlg.but.resettodefault"));
