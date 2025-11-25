@@ -428,10 +428,13 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	
 	
 	public double getLaunchRodDirection() {
-		if (this.getBoolean(LAUNCH_INTO_WIND, true)) {
-			this.setLaunchRodDirection(this.getDouble(WIND_DIRECTION, Math.PI / 2));
+		if (this.getBoolean(LAUNCH_INTO_WIND, false)) {
+			// When launching into wind, sync the launch rod direction with wind direction
+			double windDirection = this.getDouble(WIND_DIRECTION, Math.PI / 2);
+			this.setLaunchRodDirection(windDirection);
+			return windDirection;
 		}
-		return this.getDouble(WIND_DIRECTION, Math.PI / 2);
+		return this.getDouble(LAUNCH_ROD_DIRECTION, Math.PI / 2);
 	}
 	
 	public void setLaunchRodDirection(double launchRodDirection) {
