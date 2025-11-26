@@ -531,53 +531,112 @@ public class CaliperManager {
 		}
 
 		Point screenPoint = new Point(screenX, screenY);
-		Point2D.Double modelPoint = screenToModel.apply(screenPoint);
-		if (modelPoint == null) {
+		
+		// Get the transform from model to screen coordinates for hit testing
+		java.awt.geom.AffineTransform transform = getModelToScreenTransform();
+		if (transform == null) {
 			return false;
 		}
+		
+		// Get visible rectangle for horizontal caliper handle positioning
+		Rectangle visibleRect = figure.getVisibleRect();
 
-		// Check if click is near a caliper line
-		double handleTolerance = 0.01; // 1 cm tolerance in model coordinates
-
+		// Use screen-space hit testing instead of model-space tolerance
+		// This is more reliable across different DPI settings and platforms
+		// Check both handle and line itself for dragging
 		if (mode == CaliperMode.VERTICAL) {
-			// Check vertical caliper lines (X proximity)
-			if (Math.abs(modelPoint.x - caliper1X) < handleTolerance) {
-				draggingCaliperLine = caliper1Line;
-				// Update info message when dragging starts
-				if (infoMessageUpdater != null) {
-					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+			// Check vertical caliper lines - try handle first, then line
+			if (caliper1Line != null) {
+				// Check handle bounds
+				java.awt.geom.Rectangle2D.Double handleBounds = caliper1Line.getHandleBounds(transform);
+				boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+				
+				// Check if near the line itself
+				boolean hitLine = caliper1Line.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+				
+				if (hitHandle || hitLine) {
+					draggingCaliperLine = caliper1Line;
+					// Update info message when dragging starts
+					if (infoMessageUpdater != null) {
+						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+					}
+					return true;
 				}
-				return true;
 			}
-			if (Math.abs(modelPoint.x - caliper2X) < handleTolerance) {
-				draggingCaliperLine = caliper2Line;
-				// Update info message when dragging starts
-				if (infoMessageUpdater != null) {
-					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+			if (caliper2Line != null) {
+				// Check handle bounds
+				java.awt.geom.Rectangle2D.Double handleBounds = caliper2Line.getHandleBounds(transform);
+				boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+				
+				// Check if near the line itself
+				boolean hitLine = caliper2Line.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+				
+				if (hitHandle || hitLine) {
+					draggingCaliperLine = caliper2Line;
+					// Update info message when dragging starts
+					if (infoMessageUpdater != null) {
+						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+					}
+					return true;
 				}
-				return true;
 			}
 		} else {
-			// Check horizontal caliper lines (Y proximity)
-			if (Math.abs(modelPoint.y - caliper1Y) < handleTolerance) {
-				draggingHorizontalCaliperLine = caliper1HorizontalLine;
-				// Update info message when dragging starts
-				if (infoMessageUpdater != null) {
-					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+			// Check horizontal caliper lines - try handle first, then line
+			if (caliper1HorizontalLine != null && visibleRect != null) {
+				// Check handle bounds
+				java.awt.geom.Rectangle2D.Double handleBounds = caliper1HorizontalLine.getHandleBounds(transform, visibleRect);
+				boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+				
+				// Check if near the line itself
+				boolean hitLine = caliper1HorizontalLine.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+				
+				if (hitHandle || hitLine) {
+					draggingHorizontalCaliperLine = caliper1HorizontalLine;
+					// Update info message when dragging starts
+					if (infoMessageUpdater != null) {
+						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+					}
+					return true;
 				}
-				return true;
 			}
-			if (Math.abs(modelPoint.y - caliper2Y) < handleTolerance) {
-				draggingHorizontalCaliperLine = caliper2HorizontalLine;
-				// Update info message when dragging starts
-				if (infoMessageUpdater != null) {
-					infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+			if (caliper2HorizontalLine != null && visibleRect != null) {
+				// Check handle bounds
+				java.awt.geom.Rectangle2D.Double handleBounds = caliper2HorizontalLine.getHandleBounds(transform, visibleRect);
+				boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+				
+				// Check if near the line itself
+				boolean hitLine = caliper2HorizontalLine.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+				
+				if (hitHandle || hitLine) {
+					draggingHorizontalCaliperLine = caliper2HorizontalLine;
+					// Update info message when dragging starts
+					if (infoMessageUpdater != null) {
+						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+					}
+					return true;
 				}
-				return true;
 			}
 		}
 
 		return false;
+	}
+	
+	/**
+	 * Get the transform from model to screen coordinates.
+	 * 
+	 * @return the AffineTransform, or null if not available
+	 */
+	private java.awt.geom.AffineTransform getModelToScreenTransform() {
+		try {
+			Point origin = figure.getSubjectOrigin();
+			double scale = figure.getAbsoluteScale();
+			java.awt.geom.AffineTransform transform = new java.awt.geom.AffineTransform();
+			transform.translate(origin.x, origin.y);
+			transform.scale(scale, -scale); // Y is inverted
+			return transform;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	/**
