@@ -23,18 +23,33 @@ import java.awt.geom.Rectangle2D;
  */
 public class CaliperLine implements FigureElement {
 
-	private static final float HANDLE_RECT_WIDTH = 22.0f;  // Narrow width for elongated look
-	private static final float HANDLE_RECT_HEIGHT = 36.0f;  // Tall rectangle
-	private static final float HANDLE_TRIANGLE_HEIGHT = 26.0f;  // Inverted triangle below
-	private static final float LINE_WIDTH_NORMAL = 2.0f;  // Normal line thickness
-	private static final float LINE_WIDTH_HOVER = 4.0f;  // Thicker line when hovering
-	private static final Font HANDLE_LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 30);
-	private static final Font INDICATOR_LABEL_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 24);  // Font for indicator label
+	// Base sizes at 96 DPI - will be scaled based on actual DPI
+	private static final float BASE_HANDLE_RECT_WIDTH = 22.0f;  // Narrow width for elongated look
+	private static final float BASE_HANDLE_RECT_HEIGHT = 36.0f;  // Tall rectangle
+	private static final float BASE_HANDLE_TRIANGLE_HEIGHT = 26.0f;  // Inverted triangle below
+	private static final float BASE_LINE_WIDTH_NORMAL = 2.0f;  // Normal line thickness
+	private static final float BASE_LINE_WIDTH_HOVER = 4.0f;  // Thicker line when hovering
+	private static final float BASE_HANDLE_LABEL_FONT_SIZE = 20.0f;  // Base font size (reduced from 30)
+	private static final float BASE_INDICATOR_LABEL_FONT_SIZE = 16.0f;  // Base font size for indicator (reduced from 24)
 	
 	// Out-of-view indicator
-	private static final float ARROW_SIZE = 20.0f;  // Size of the arrow indicator
-	private static final float ARROW_STROKE_WIDTH = 3.0f;  // Thickness of arrow lines
-	private static final float LABEL_OFFSET = 8.0f;  // Distance from arrow to label
+	private static final float BASE_ARROW_SIZE = 20.0f;  // Size of the arrow indicator
+	private static final float BASE_ARROW_STROKE_WIDTH = 3.0f;  // Thickness of arrow lines
+	private static final float BASE_LABEL_OFFSET = 8.0f;  // Distance from arrow to label
+	
+	private static final double BASE_DPI = 96.0;  // Base DPI for scaling
+	
+	// DPI-scaled values (calculated once)
+	private static float HANDLE_RECT_WIDTH;
+	private static float HANDLE_RECT_HEIGHT;
+	private static float HANDLE_TRIANGLE_HEIGHT;
+	private static float LINE_WIDTH_NORMAL;
+	private static float LINE_WIDTH_HOVER;
+	private static Font HANDLE_LABEL_FONT;
+	private static Font INDICATOR_LABEL_FONT;
+	private static float ARROW_SIZE;
+	private static float ARROW_STROKE_WIDTH;
+	private static float LABEL_OFFSET;
 
 	private double x;  // X position in model coordinates
 	private boolean isHovered = false;  // Whether the mouse is hovering over this line
@@ -47,6 +62,7 @@ public class CaliperLine implements FigureElement {
 
 	static {
 		initColors();
+		updateSizes();
 	}
 
 	/**
@@ -75,6 +91,30 @@ public class CaliperLine implements FigureElement {
 				Math.min(255, baseColor.getBlue() + 50),
 				baseColor.getAlpha()
 		);
+	}
+	
+	/**
+	 * Update all sizes based on current DPI.
+	 */
+	private static void updateSizes() {
+		double dpi = GUIUtil.getDPI();
+		double scale = dpi / BASE_DPI;
+		
+		HANDLE_RECT_WIDTH = (float) (BASE_HANDLE_RECT_WIDTH * scale);
+		HANDLE_RECT_HEIGHT = (float) (BASE_HANDLE_RECT_HEIGHT * scale);
+		HANDLE_TRIANGLE_HEIGHT = (float) (BASE_HANDLE_TRIANGLE_HEIGHT * scale);
+		LINE_WIDTH_NORMAL = (float) (BASE_LINE_WIDTH_NORMAL * scale);
+		LINE_WIDTH_HOVER = (float) (BASE_LINE_WIDTH_HOVER * scale);
+		ARROW_SIZE = (float) (BASE_ARROW_SIZE * scale);
+		ARROW_STROKE_WIDTH = (float) (BASE_ARROW_STROKE_WIDTH * scale);
+		LABEL_OFFSET = (float) (BASE_LABEL_OFFSET * scale);
+		
+		// Update fonts
+		float handleFontSize = (float) (BASE_HANDLE_LABEL_FONT_SIZE * scale);
+		float indicatorFontSize = (float) (BASE_INDICATOR_LABEL_FONT_SIZE * scale);
+		Font baseFont = new Font(Font.SANS_SERIF, Font.BOLD, 12); // Base font
+		HANDLE_LABEL_FONT = baseFont.deriveFont(Font.BOLD, handleFontSize);
+		INDICATOR_LABEL_FONT = baseFont.deriveFont(Font.BOLD, indicatorFontSize);
 	}
 
 	/**
@@ -257,6 +297,83 @@ public class CaliperLine implements FigureElement {
 		Point2D.Double screenPoint = new Point2D.Double();
 		transform.transform(modelPoint, screenPoint);
 		return screenPoint.x;
+	}
+	
+	/**
+	 * Get the bounds of the handle in screen coordinates for hit testing.
+	 *
+	 * @param transform the transform from model to screen coordinates
+	 * @return the handle bounds in screen coordinates, or null if invalid
+	 */
+	public Rectangle2D.Double getHandleBounds(AffineTransform transform) {
+		Point2D.Double modelPoint = new Point2D.Double(x, 0);
+		Point2D.Double screenPoint = new Point2D.Double();
+		transform.transform(modelPoint, screenPoint);
+		
+		if (Double.isNaN(screenPoint.x) || Double.isInfinite(screenPoint.x)) {
+			return null;
+		}
+		
+		double handleX_screen = screenPoint.x;
+		double handleY_screen = 0.0;  // Start at the very top
+		
+		// Calculate handle bounds: rectangle + triangle
+		double rectLeft = handleX_screen - HANDLE_RECT_WIDTH / 2;
+		double rectRight = handleX_screen + HANDLE_RECT_WIDTH / 2;
+		double rectTop = handleY_screen;
+		double rectBottom = handleY_screen + HANDLE_RECT_HEIGHT;
+		double triangleBaseY = rectBottom + HANDLE_TRIANGLE_HEIGHT;
+		
+		// Return bounds that encompass the entire handle (rectangle + triangle)
+		double minX = rectLeft;
+		double maxX = rectRight;
+		double minY = rectTop;
+		double maxY = triangleBaseY;
+		
+		// Add some padding for easier clicking
+		double padding = HANDLE_RECT_WIDTH * 0.3;
+		return new Rectangle2D.Double(
+			minX - padding,
+			minY - padding,
+			(maxX - minX) + 2 * padding,
+			(maxY - minY) + 2 * padding
+		);
+	}
+	
+	/**
+	 * Check if a screen point is near the caliper line (within hit tolerance).
+	 * This allows dragging anywhere on the line, not just the handle.
+	 *
+	 * @param screenX the screen X coordinate
+	 * @param screenY the screen Y coordinate
+	 * @param transform the transform from model to screen coordinates
+	 * @param visibleRect the visible viewport rectangle
+	 * @return true if the point is near the line
+	 */
+	public boolean isPointNearLine(double screenX, double screenY, AffineTransform transform, Rectangle visibleRect) {
+		if (visibleRect == null) {
+			return false;
+		}
+		
+		// Get the screen X position of the line
+		double lineX = getScreenX(transform);
+		if (Double.isNaN(lineX) || Double.isInfinite(lineX)) {
+			return false;
+		}
+		
+		// Check if point is within tolerance of the line's X position
+		// Use a DPI-scaled tolerance (base 10 pixels at 96 DPI)
+		double dpi = GUIUtil.getDPI();
+		double tolerance = (10.0 * dpi) / BASE_DPI;
+		double distance = Math.abs(screenX - lineX);
+		
+		if (distance > tolerance) {
+			return false;
+		}
+		
+		// Also check that the point is within the visible area vertically
+		// (we don't want to drag if clicking way outside the viewport)
+		return screenY >= visibleRect.y && screenY <= visibleRect.y + visibleRect.height;
 	}
 	
 	/**
