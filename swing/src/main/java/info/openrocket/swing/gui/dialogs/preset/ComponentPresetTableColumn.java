@@ -59,7 +59,7 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
 
 		UnitGroup unitGroup;
 		Unit selectedUnit;
-		
+
 		public DoubleWithUnit( TypedKey<Double> key, int modelIndex ) {
 			super(key,modelIndex);
 			this.unitGroup = key.getUnitGroup();
@@ -86,7 +86,7 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
                 Double area = null;
                 Double cd = preset.get(ComponentPreset.CD);
 
-                // Pega area
+                // Get area
                 if (preset.has(ComponentPreset.SURFACE_AREA)) {
                     area = preset.get(ComponentPreset.SURFACE_AREA);
                 } else if (preset.has(ComponentPreset.DIAMETER)) {
@@ -94,13 +94,13 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
                     area = Math.PI * Math.pow(diameter / 2.0, 2.0);
                 }
 
-                // Calcula CD_AREA
+                // Compute CD_AREA
                 if (area != null && cd != null) {
                     value = area * cd;
                 }
             }
 
-            // Retorna Value com unidade
+            // Return Value with unit
             if (value != null) {
                 return new Value(value, selectedUnit);
             } else {

@@ -166,10 +166,10 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 				ComponentPreset.LINE_COUNT,
 				ComponentPreset.LINE_LENGTH,
 				ComponentPreset.LINE_MATERIAL,
-				ComponentPreset.CD, //
+				ComponentPreset.CD,
 				ComponentPreset.PACKED_DIAMETER,
 				ComponentPreset.PACKED_LENGTH,
-                ComponentPreset.MASS, //ajout de la masse
+                ComponentPreset.MASS,
                 ComponentPreset.CD_AREA
                });
 
@@ -257,7 +257,6 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 			UnitGroup.UNITS_LENGTH);
 	public final static TypedKey<Double> PACKED_DIAMETER = new TypedKey<>("PackedDiameter", Double.class,
 			UnitGroup.UNITS_LENGTH);
-	// Parachute Mass declaration see: MASS
 
 	public final static List<TypedKey<?>> ORDERED_KEY_LIST = Collections.unmodifiableList(Arrays.asList(
 			// DO NOT add to this list without redefining "table.column"
