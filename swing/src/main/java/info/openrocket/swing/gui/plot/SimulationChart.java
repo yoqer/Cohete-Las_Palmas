@@ -184,8 +184,9 @@ public class SimulationChart extends ChartPanel {
 	}
 
     /**
-     * <p>Called whenever the mouse moves.</p>
-     * <p>Gets an entity at the location of the mouse, if this entity is a LegendItemEntity, calls updateHighlightingSet.</p>
+     * Called whenever the mouse moves.
+     *
+     * Gets an entity at the location of the mouse, if this entity is a LegendItemEntity, calls updateHighlightingSet.
      */
     @Override
     public void mouseMoved(MouseEvent e) {
@@ -204,7 +205,7 @@ public class SimulationChart extends ChartPanel {
     }
 
     /**
-     * <p>Responsible for adding and removing labels from the selectedLegendLabels set before calling updateHighlightingSet.</p>
+     * Responsible for adding and removing labels from the selectedLegendLabels set before calling updateHighlightingSet.
      */
     @Override
     public void mouseClicked(MouseEvent e) {
