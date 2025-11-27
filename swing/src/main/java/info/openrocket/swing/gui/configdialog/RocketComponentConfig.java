@@ -196,12 +196,12 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		tabbedPane.addTab(trans.get("RocketCompCfg.tab.Comment"), null, commentTab(),
 				trans.get("RocketCompCfg.tab.Comment.ttip"));
 
-    JScrollPane scrollPane = new JScrollPane(tabbedPane);
-    scrollPane.setBorder(null);
-    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollPane = new JScrollPane(tabbedPane);
+        scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-    this.add(scrollPane, "newline, grow, push, wrap");
+        this.add(scrollPane, "newline, grow, push, wrap");
 
 		addButtons();
 
