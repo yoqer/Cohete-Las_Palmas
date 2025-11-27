@@ -118,9 +118,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 	
 	
 	private JPanel generalPane() {
-		JPanel mainPanel = new JPanel(new MigLayout());
+		JPanel mainPanel = new JPanel(new MigLayout("fillx, ins n n 0 n"));
 		
-		JPanel panel = new JPanel(new MigLayout("gap rel unrel, ins 0", "[][65lp::][30lp::]", ""));
+		JPanel panel = new JPanel(new MigLayout("fillx, gap rel unrel, ins 0", "[150][65lp::][30lp::]", ""));
 
 		{ ////  Number of fins:
 			panel.add(new JLabel(trans.get("FreeformFinSetCfg.lbl.Numberoffins")));
@@ -177,10 +177,10 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap 30lp");
 		}
 
-		mainPanel.add(panel, "aligny 0, gapright 40lp");
+		mainPanel.add(panel, "aligny 0, gapright 40lp, grow");
 
 		// Right side panel
-		panel = new JPanel(new MigLayout("gap rel unrel, ins 0", "[][65lp::][30lp::]", ""));
+		panel = new JPanel(new MigLayout("fillx, gap rel unrel, ins 0", "[][65lp::][30lp::]", ""));
 
 		{//// -------- Placement ------
 			//// Position relative to:
@@ -216,7 +216,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			panel.add(filletMaterialPanel(), "span, grow, wrap");
 		}
 		
-		mainPanel.add(panel, "aligny 0");
+		mainPanel.add(panel, "aligny 0, grow");
 
 		return mainPanel;
 	}
