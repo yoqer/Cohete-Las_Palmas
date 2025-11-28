@@ -49,6 +49,7 @@ public class SpinnerWithSlider extends JPanel {
 	private UnitSelector unitSelector;
 	private final BoundedRangeModel sliderModel;
 	private final DoubleModel model;
+	private final boolean showUnitSelector;
 
 	private static final double REFERENCE_DPI = 96.0;
 	private static final double BASE_PROGRESS_BAR_HEIGHT = 4.0;
@@ -78,7 +79,19 @@ public class SpinnerWithSlider extends JPanel {
 	 * @param max   maximum value for the progress bar
 	 */
 	public SpinnerWithSlider(DoubleModel model, double min, double max) {
-		this(model, model.getSliderModel(min, max));
+		this(model, model.getSliderModel(min, max), true);
+	}
+
+	/**
+	 * Creates a SpinnerWithSlider with a linear progress bar range.
+	 *
+	 * @param model the backing DoubleModel for the value
+	 * @param min   minimum value for the progress bar
+	 * @param max   maximum value for the progress bar
+	 * @param showUnitSelector whether to show the unit selector (default: true)
+	 */
+	public SpinnerWithSlider(DoubleModel model, double min, double max, boolean showUnitSelector) {
+		this(model, model.getSliderModel(min, max), showUnitSelector);
 	}
 
 	/**
@@ -89,7 +102,19 @@ public class SpinnerWithSlider extends JPanel {
 	 * @param max   model defining the maximum progress bar value
 	 */
 	public SpinnerWithSlider(DoubleModel model, DoubleModel min, DoubleModel max) {
-		this(model, model.getSliderModel(min, max));
+		this(model, model.getSliderModel(min, max), true);
+	}
+
+	/**
+	 * Creates a SpinnerWithSlider with dynamic progress bar bounds.
+	 *
+	 * @param model the backing DoubleModel for the value
+	 * @param min   model defining the minimum progress bar value
+	 * @param max   model defining the maximum progress bar value
+	 * @param showUnitSelector whether to show the unit selector (default: true)
+	 */
+	public SpinnerWithSlider(DoubleModel model, DoubleModel min, DoubleModel max, boolean showUnitSelector) {
+		this(model, model.getSliderModel(min, max), showUnitSelector);
 	}
 
 	/**
@@ -102,7 +127,21 @@ public class SpinnerWithSlider extends JPanel {
 	 * @param max   maximum value for the progress bar
 	 */
 	public SpinnerWithSlider(DoubleModel model, double min, double mid, double max) {
-		this(model, model.getSliderModel(min, mid, max));
+		this(model, model.getSliderModel(min, mid, max), true);
+	}
+
+	/**
+	 * Creates a SpinnerWithSlider with a non-linear (exponential) progress bar range.
+	 * Values scale linearly from min to mid, then exponentially from mid to max.
+	 *
+	 * @param model the backing DoubleModel for the value
+	 * @param min   minimum value for the progress bar
+	 * @param mid   midpoint value (where linear scaling transitions to exponential)
+	 * @param max   maximum value for the progress bar
+	 * @param showUnitSelector whether to show the unit selector (default: true)
+	 */
+	public SpinnerWithSlider(DoubleModel model, double min, double mid, double max, boolean showUnitSelector) {
+		this(model, model.getSliderModel(min, mid, max), showUnitSelector);
 	}
 
 	/**
@@ -115,12 +154,27 @@ public class SpinnerWithSlider extends JPanel {
 	 * @param max   model defining the maximum progress bar value
 	 */
 	public SpinnerWithSlider(DoubleModel model, double min, double mid, DoubleModel max) {
-		this(model, model.getSliderModel(min, mid, max));
+		this(model, model.getSliderModel(min, mid, max), true);
 	}
 
-	private SpinnerWithSlider(DoubleModel model, BoundedRangeModel sliderModel) {
+	/**
+	 * Creates a SpinnerWithSlider with a non-linear progress bar range and dynamic maximum.
+	 * Values scale linearly from min to mid, then exponentially from mid to max.
+	 *
+	 * @param model the backing DoubleModel for the value
+	 * @param min   minimum value for the progress bar
+	 * @param mid   midpoint value (where linear scaling transitions to exponential)
+	 * @param max   model defining the maximum progress bar value
+	 * @param showUnitSelector whether to show the unit selector (default: true)
+	 */
+	public SpinnerWithSlider(DoubleModel model, double min, double mid, DoubleModel max, boolean showUnitSelector) {
+		this(model, model.getSliderModel(min, mid, max), showUnitSelector);
+	}
+
+	private SpinnerWithSlider(DoubleModel model, BoundedRangeModel sliderModel, boolean showUnitSelector) {
 		this.model = model;
 		this.sliderModel = sliderModel;
+		this.showUnitSelector = showUnitSelector;
 		initialize();
 	}
 
@@ -130,7 +184,7 @@ public class SpinnerWithSlider extends JPanel {
 
 		setLayout(new MigLayout("insets 0, gap 0", "[grow][shrink]", "[]"));
 
-		if (model.getUnitGroup() != UnitGroup.UNITS_NONE) {
+		if (showUnitSelector && model.getUnitGroup() != UnitGroup.UNITS_NONE) {
 			unitSelector = new UnitSelector(model);
 			add(spinner, "growx, split 2");
 			add(unitSelector, "growx 0");
