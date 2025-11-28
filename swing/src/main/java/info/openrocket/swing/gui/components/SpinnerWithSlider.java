@@ -19,6 +19,7 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerModel;
 import javax.swing.UIManager;
 
+import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.SpinnerEditor;
@@ -43,6 +44,7 @@ import net.miginfocom.swing.MigLayout;
  * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class SpinnerWithSlider extends JPanel {
+	private static final Translator trans = Application.getTranslator();
 
 	private DraggableSpinner spinner;
 	private UnitSelector unitSelector;
@@ -353,6 +355,7 @@ public class SpinnerWithSlider extends JPanel {
 					btn.addMouseListener(handler);
 					btn.addMouseMotionListener(handler);
 					btn.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
+					btn.setToolTipText(trans.get("SpinnerWithSlider.progressBar.ttip"));
 				}
 			}
 		}
