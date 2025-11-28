@@ -200,12 +200,14 @@ public class SpinnerWithSlider extends JPanel {
 	 */
 	private static class DraggableSpinner extends JSpinner {
 		private final BoundedRangeModel sliderModel;
+		private final DoubleModel model;
 		private Color progressColor;
 		private final int progressBarHeight;
 		private final int extraHeight;
 
 		public DraggableSpinner(DoubleModel model, BoundedRangeModel sliderModel) {
 			super(model.getSpinnerModel());
+			this.model = model;
 			this.sliderModel = sliderModel;
 
 			double dpi = GUIUtil.getDPI();
@@ -268,15 +270,69 @@ public class SpinnerWithSlider extends JPanel {
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-			int min = sliderModel.getMinimum();
-			int max = sliderModel.getMaximum();
-			int val = sliderModel.getValue();
+			int sliderMin = sliderModel.getMinimum();
+			int sliderMax = sliderModel.getMaximum();
+			int sliderVal = sliderModel.getValue();
 
-			if (max > min) {
-				double pct = Math.max(0.0, Math.min(1.0, (double)(val - min) / (max - min)));
+			if (sliderMax > sliderMin) {
+				// Try to get the actual min/max values from the slider model using reflection
+				double actualMin = Double.NEGATIVE_INFINITY;
+				double actualMax = Double.POSITIVE_INFINITY;
+				boolean shouldCenterAtZero = false;
+
+				try {
+					// Access the ValueSliderModel's min and max DoubleModel fields
+					java.lang.reflect.Field minField = sliderModel.getClass().getDeclaredField("min");
+					java.lang.reflect.Field maxField = sliderModel.getClass().getDeclaredField("max");
+					minField.setAccessible(true);
+					maxField.setAccessible(true);
+					
+					DoubleModel minModel = (DoubleModel) minField.get(sliderModel);
+					DoubleModel maxModel = (DoubleModel) maxField.get(sliderModel);
+					
+					// Get values in current unit
+					actualMin = model.getCurrentUnit().toUnit(minModel.getValue());
+					actualMax = model.getCurrentUnit().toUnit(maxModel.getValue());
+					
+					// Check if range crosses zero
+					shouldCenterAtZero = (actualMin < 0 && actualMax > 0);
+				} catch (Exception e) {
+					// If reflection fails, fall back to normal behavior
+					shouldCenterAtZero = false;
+				}
+
 				// Use disabled color when spinner is disabled
 				g2.setColor(isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor);
-				g2.fillRect(0, getHeight() - progressBarHeight, (int)(getWidth() * pct), progressBarHeight);
+
+				if (shouldCenterAtZero) {
+					// Draw centered at 0
+					double currentValue = model.getCurrentUnit().toUnit(model.getValue());
+					int width = getWidth();
+					int centerX = width / 2;
+					
+					if (Math.abs(currentValue) < 1e-10) {
+						// At zero, draw nothing (or a small dot if desired)
+						// For now, draw nothing
+					} else if (currentValue > 0) {
+						// Positive: draw from center to right
+						double pct = Math.min(1.0, currentValue / actualMax);
+						int barWidth = (int)(width / 2.0 * pct);
+						if (barWidth > 0) {
+							g2.fillRect(centerX, getHeight() - progressBarHeight, barWidth, progressBarHeight);
+						}
+					} else {
+						// Negative: draw from center to left
+						double pct = Math.min(1.0, Math.abs(currentValue) / Math.abs(actualMin));
+						int barWidth = (int)(width / 2.0 * pct);
+						if (barWidth > 0) {
+							g2.fillRect(centerX - barWidth, getHeight() - progressBarHeight, barWidth, progressBarHeight);
+						}
+					}
+				} else {
+					// Normal behavior: draw from left to right
+					double pct = Math.max(0.0, Math.min(1.0, (double)(sliderVal - sliderMin) / (sliderMax - sliderMin)));
+					g2.fillRect(0, getHeight() - progressBarHeight, (int)(getWidth() * pct), progressBarHeight);
+				}
 			}
 			g2.dispose();
 		}
