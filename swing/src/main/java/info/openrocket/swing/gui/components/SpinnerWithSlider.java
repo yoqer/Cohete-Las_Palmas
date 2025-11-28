@@ -18,11 +18,13 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerModel;
+import javax.swing.UIManager;
 
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import net.miginfocom.swing.MigLayout;
@@ -52,6 +54,21 @@ public class SpinnerWithSlider extends JPanel {
 	private static final double BASE_PROGRESS_BAR_HEIGHT = 4.0;
 	private static final double BASE_SENSITIVITY = 2.0;
 	private static final double BASE_PROGRESS_BAR_PADDING = 1.0; // Extra padding above progress bar
+
+	private static Color disabledProgressColor;
+
+	static {
+		initColors();
+	}
+
+	private static void initColors() {
+		updateColors();
+		UITheme.Theme.addUIThemeChangeListener(SpinnerWithSlider::updateColors);
+	}
+
+	public static void updateColors() {
+		disabledProgressColor = GUIUtil.getUITheme().getDisabledProgressColor();
+	}
 
 	/**
 	 * Creates a SpinnerWithSlider with a linear progress bar range.
@@ -142,8 +159,9 @@ public class SpinnerWithSlider extends JPanel {
 			int padding = (int) Math.round(BASE_PROGRESS_BAR_PADDING * (dpi / REFERENCE_DPI));
 			this.extraHeight = progressBarHeight + padding;
 
+			// Get enabled progress color
 			try {
-				progressColor = javax.swing.UIManager.getColor("Component.accentColor");
+				progressColor = UIManager.getColor("Component.accentColor");
 			} catch (Exception e) { /* Fallback */ }
 			if (progressColor == null) {
 				progressColor = new Color(100, 150, 255);
@@ -202,7 +220,8 @@ public class SpinnerWithSlider extends JPanel {
 
 			if (max > min) {
 				double pct = Math.max(0.0, Math.min(1.0, (double)(val - min) / (max - min)));
-				g2.setColor(progressColor);
+				// Use disabled color when spinner is disabled
+				g2.setColor(isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor);
 				g2.fillRect(0, getHeight() - progressBarHeight, (int)(getWidth() * pct), progressBarHeight);
 			}
 			g2.dispose();

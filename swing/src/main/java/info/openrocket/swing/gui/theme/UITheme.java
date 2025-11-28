@@ -94,6 +94,7 @@ public class UITheme {
         Color getFlightDataTextActiveColor();
         Color getFlightDataTextInactiveColor();
         Color getMultiCompEditColor();
+        Color getDisabledProgressColor();
 
         // Component colors
         String getDefaultBodyComponentColor();
@@ -342,6 +343,11 @@ public class UITheme {
             @Override
             public Color getMultiCompEditColor() {
                 return new Color(170, 0, 100);
+            }
+
+            @Override
+            public Color getDisabledProgressColor() {
+                return new Color(180, 180, 180);
             }
 
             @Override
@@ -766,6 +772,11 @@ public class UITheme {
             }
 
             @Override
+            public Color getDisabledProgressColor() {
+                return new Color(120, 120, 120);
+            }
+
+            @Override
             public String getDefaultBodyComponentColor() {
                 return "150,162,255";
             }
@@ -1184,6 +1195,11 @@ public class UITheme {
             @Override
             public Color getMultiCompEditColor() {
                 return new Color(255, 165, 200);
+            }
+
+            @Override
+            public Color getDisabledProgressColor() {
+                return new Color(120, 120, 120);
             }
 
             @Override
@@ -1615,6 +1631,11 @@ public class UITheme {
             @Override
             public Color getMultiCompEditColor() {
                 return getCurrentTheme().getMultiCompEditColor();
+            }
+
+            @Override
+            public Color getDisabledProgressColor() {
+                return getCurrentTheme().getDisabledProgressColor();
             }
 
             @Override
