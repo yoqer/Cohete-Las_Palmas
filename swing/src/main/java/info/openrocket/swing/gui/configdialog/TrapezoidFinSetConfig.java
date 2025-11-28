@@ -173,13 +173,8 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 						UnitGroup.UNITS_ANGLE, -Math.PI, Math.PI);
 				register(baseRotationModel);
 
-				final JSpinner baseRotationSpinner = new JSpinner(baseRotationModel.getSpinnerModel());
-				baseRotationSpinner.setEditor(new SpinnerEditor(baseRotationSpinner));
-				placementPanel.add(baseRotationSpinner, "growx");
-				order.add(((SpinnerEditor) baseRotationSpinner.getEditor()).getTextField());
-
 				SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(baseRotationModel);
-				placementPanel.add(spinnerWithSlider, "growx, wrap");
+				placementPanel.add(spinnerWithSlider, "growx");
 				order.add(spinnerWithSlider.getTextField());
 			}
 		}
