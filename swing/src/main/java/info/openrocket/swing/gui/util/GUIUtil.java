@@ -159,7 +159,12 @@ public class GUIUtil {
 		int dpi = Application.getPreferences().getInt("DPI", 0); // Tenths of a dpi
 		
 		if (dpi < 10) {
-			dpi = Toolkit.getDefaultToolkit().getScreenResolution() * 10;
+			try {
+				dpi = Toolkit.getDefaultToolkit().getScreenResolution() * 10;
+			} catch (java.awt.HeadlessException e) {
+				dpi = 960;
+			}
+			
 		}
 		if (dpi < 10)
 			dpi = 960;
