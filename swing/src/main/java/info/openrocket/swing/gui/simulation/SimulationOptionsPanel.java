@@ -39,14 +39,12 @@ import info.openrocket.core.util.GeodeticComputationStrategy;
 
 import info.openrocket.core.simulation.SimulationStepperMethod;
 import net.miginfocom.swing.MigLayout;
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.theme.UITheme;
@@ -67,9 +65,7 @@ class SimulationOptionsPanel extends JPanel {
 	final JPopupMenu extensionMenu;
 	JMenu extensionMenuCopyExtension;
 
-	private JSpinner gravitySpinner;
-	private UnitSelector gravityUnit;
-	private BasicSlider gravitySlider;
+	private SpinnerWithSlider gravitySpinner;
 	private JLabel gravityLabel;
 
 	private static Color textColor;
@@ -90,9 +86,7 @@ class SimulationOptionsPanel extends JPanel {
 		String tip;
 		JLabel label;
 		DoubleModel m;
-		JSpinner spin;
-		UnitSelector unit;
-		BasicSlider slider;
+		SpinnerWithSlider spinnerWithSlider;
 		
 		// // Simulation options
 		sub = new JPanel(new MigLayout("fill, gap rel unrel",
@@ -197,17 +191,9 @@ class SimulationOptionsPanel extends JPanel {
 		
 		m = new DoubleModel(conditions, "ConstantGravity", UnitGroup.UNITS_ACCELERATION, 0);
 		
-		gravitySpinner = new JSpinner(m.getSpinnerModel());
-		gravitySpinner.setEditor(new SpinnerEditor(gravitySpinner));
+		gravitySpinner = new SpinnerWithSlider(m, 0, 20);
 		gravitySpinner.setToolTipText(tip);
-		subsub.add(gravitySpinner, "hidemode 3");
-		
-		gravityUnit = new UnitSelector(m);
-		gravityUnit.setToolTipText(tip);
-		subsub.add(gravityUnit, "hidemode 3");
-		gravitySlider = new BasicSlider(m.getSliderModel(0, 20));
-		gravitySlider.setToolTipText(tip);
-		subsub.add(gravitySlider, "w 100, hidemode 3, wrap");
+		subsub.add(gravitySpinner, "hidemode 3, wrap");
 		
 		// Update visibility of constant gravity components based on selected model
 		ActionListener gravityModelListener = new ActionListener() {
@@ -217,8 +203,6 @@ class SimulationOptionsPanel extends JPanel {
 				boolean isConstant = selectedType == GravityModelType.CONSTANT;
 				gravityLabel.setVisible(isConstant);
 				gravitySpinner.setVisible(isConstant);
-				gravityUnit.setVisible(isConstant);
-				gravitySlider.setVisible(isConstant);
 				subsub.revalidate();
 				subsub.repaint();
 			}
@@ -241,17 +225,9 @@ class SimulationOptionsPanel extends JPanel {
 		m = new DoubleModel(conditions, "TimeStep", UnitGroup.UNITS_TIME_STEP,
 				0.01, 1);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		subsub.add(spin, "");
-		
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		subsub.add(unit, "");
-		slider = new BasicSlider(m.getSliderModel(0.01, 0.2));
-		slider.setToolTipText(tip);
-		subsub.add(slider, "w 100, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0.01, 0.2);
+		spinnerWithSlider.setToolTipText(tip);
+		subsub.add(spinnerWithSlider, "wrap");
 
 		// // Maximum simulation time:
 		label = new JLabel(trans.get("simedtdlg.lbl.MaxSimTime"));
@@ -262,14 +238,9 @@ class SimulationOptionsPanel extends JPanel {
 		m = new DoubleModel(conditions, "MaxSimulationTime",
 				UnitGroup.UNITS_LONG_TIME, 1);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		subsub.add(spin, "");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		subsub.add(unit, "wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 1, 1200);
+		spinnerWithSlider.setToolTipText(tip);
+		subsub.add(spinnerWithSlider, "wrap");
 
 		
 		sub.add(subsub, "spanx, wrap para");

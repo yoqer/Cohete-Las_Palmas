@@ -42,8 +42,7 @@ import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 public class SimulationConditionsPanel extends JPanel {
 	private static final Translator trans = Application.getTranslator();
@@ -72,11 +71,9 @@ public class SimulationConditionsPanel extends JPanel {
 		JPanel sub;
 		DoubleModel pressureModel;
 		DoubleModel m;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		DoubleModel temperatureModel;
 		String tip;
-		BasicSlider slider;
-		UnitSelector unit;
 
 		//// Wind settings:  Average wind speed, turbulence intensity, std. deviation, and direction
 		sub = new JPanel(new MigLayout("fill, ins 20 20 0 20", "[grow]", ""));
@@ -124,20 +121,10 @@ public class SimulationConditionsPanel extends JPanel {
 
 		temperatureModel = new DoubleModel(target, "LaunchTemperature", UnitGroup.UNITS_TEMPERATURE, 0);
 
-		spin = new JSpinner(temperatureModel.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		isa.addEnableComponent(spin, false);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(temperatureModel);
-		unit.setToolTipText(tip);
-		isa.addEnableComponent(unit, false);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(temperatureModel.getSliderModel(253.15, 308.15)); // -20 ... 35
-		slider.setToolTipText(tip);
-		isa.addEnableComponent(slider, false);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(temperatureModel, 253.15, 308.15); // -20 ... 35
+		spinnerWithSlider.setToolTipText(tip);
+		isa.addEnableComponent(spinnerWithSlider, false);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		// Pressure:
@@ -150,20 +137,10 @@ public class SimulationConditionsPanel extends JPanel {
 
 		pressureModel = new DoubleModel(target, "LaunchPressure", UnitGroup.UNITS_PRESSURE, 0);
 
-		spin = new JSpinner(pressureModel.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		isa.addEnableComponent(spin, false);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(pressureModel);
-		unit.setToolTipText(tip);
-		isa.addEnableComponent(unit, false);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(pressureModel.getSliderModel(0.950e5, 1.050e5));
-		slider.setToolTipText(tip);
-		isa.addEnableComponent(slider, false);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(pressureModel, 0.950e5, 1.050e5);
+		spinnerWithSlider.setToolTipText(tip);
+		isa.addEnableComponent(spinnerWithSlider, false);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		isa.addChangeListener(new StateChangeListener() {
@@ -193,17 +170,9 @@ public class SimulationConditionsPanel extends JPanel {
 
 		m = new DoubleModel(target, "LaunchLatitude", UnitGroup.UNITS_LATITUDE, -90, 90);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel());
-		slider.setToolTipText(tip);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -90, 90);
+		spinnerWithSlider.setToolTipText(tip);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		// Longitude:
@@ -214,17 +183,9 @@ public class SimulationConditionsPanel extends JPanel {
 
 		m = new DoubleModel(target, "LaunchLongitude", UnitGroup.UNITS_LONGITUDE, -180, 180);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel());
-		slider.setToolTipText(tip);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -180, 180);
+		spinnerWithSlider.setToolTipText(tip);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		// Altitude:
@@ -237,17 +198,9 @@ public class SimulationConditionsPanel extends JPanel {
 
 		m = new DoubleModel(target, "LaunchAltitude", UnitGroup.UNITS_DISTANCE, 0, ExtendedISAModel.getMaximumAllowedAltitude());
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel(0, 250, 1000));
-		slider.setToolTipText(tip);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 250, 1000);
+		spinnerWithSlider.setToolTipText(tip);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		//// Launch rod
@@ -267,17 +220,9 @@ public class SimulationConditionsPanel extends JPanel {
 
 		m = new DoubleModel(target, "LaunchRodLength", UnitGroup.UNITS_LENGTH, 0);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel(0, 1, 5));
-		slider.setToolTipText(tip);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 1, 5);
+		spinnerWithSlider.setToolTipText(tip);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 		// Keep launch rod parallel to the wind.
 
@@ -303,18 +248,10 @@ public class SimulationConditionsPanel extends JPanel {
 		m = new DoubleModel(target, "LaunchRodAngle", UnitGroup.UNITS_ANGLE,
 				-SimulationOptions.MAX_LAUNCH_ROD_ANGLE, SimulationOptions.MAX_LAUNCH_ROD_ANGLE);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		spin.setToolTipText(tip);
-		sub.add(spin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel(-SimulationOptions.MAX_LAUNCH_ROD_ANGLE, 0,
-				SimulationOptions.MAX_LAUNCH_ROD_ANGLE));
-		slider.setToolTipText(tip);
-		sub.add(slider, "w 75lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -SimulationOptions.MAX_LAUNCH_ROD_ANGLE, 0,
+				SimulationOptions.MAX_LAUNCH_ROD_ANGLE);
+		spinnerWithSlider.setToolTipText(tip);
+		sub.add(spinnerWithSlider, "growx, wrap");
 
 
 		// Direction:
@@ -333,21 +270,11 @@ public class SimulationConditionsPanel extends JPanel {
 		m = new DoubleModel(target, "LaunchRodDirection", 1.0, UnitGroup.UNITS_ANGLE,
 				0, 2*Math.PI);
 
-		JSpinner directionSpin = new JSpinner(m.getSpinnerModel());
-		directionSpin.setEditor(new SpinnerEditor(directionSpin));
-		directionSpin.setToolTipText(tip);
-		sub.add(directionSpin, "growx");
-
-		unit = new UnitSelector(m);
-		unit.setToolTipText(tip);
-		sub.add(unit, "growx");
-		BasicSlider directionSlider = new BasicSlider(m.getSliderModel(0, 2*Math.PI));
-		directionSlider.setToolTipText(tip);
-		sub.add(directionSlider, "w 75lp, wrap");
+		SpinnerWithSlider directionSpinner = new SpinnerWithSlider(m, 0, 2*Math.PI);
+		directionSpinner.setToolTipText(tip);
+		sub.add(directionSpinner, "growx, wrap");
 		intoWind.addEnableComponent(directionLabel, false);
-		intoWind.addEnableComponent(directionSpin, false);
-		intoWind.addEnableComponent(unit, false);
-		intoWind.addEnableComponent(directionSlider, false);
+		intoWind.addEnableComponent(directionSpinner, false);
 	}
 
 	public static void addSimulationConditionsPanel(JPanel parent, SimulationOptionsInterface target) {
@@ -559,29 +486,24 @@ public class SimulationConditionsPanel extends JPanel {
 			throw new IllegalArgumentException("max value must be Double or DoubleModel");
 		}
 
-		JSpinner spin = new JSpinner(model.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		if (tooltipText != null) {
-			spin.setToolTipText(tooltipText);
-		}
-		panel.add(spin, "growx");
-
-		if (easterEgg) {
-			addEasterEgg(spin, panel);
-		}
-
-		UnitSelector unitSelector = new UnitSelector(model);
-		panel.add(unitSelector, "growx");
-
-		BasicSlider slider;
+		SpinnerWithSlider spinnerWithSlider;
 		if (maxSlider instanceof Double) {
-			slider = new BasicSlider(model.getSliderModel(0, (Double) maxSlider));
+			spinnerWithSlider = new SpinnerWithSlider(model, 0, (Double) maxSlider);
 		} else if (maxSlider instanceof DoubleModel) {
-			slider = new BasicSlider(model.getSliderModel(0, (DoubleModel) maxSlider));
+			DoubleModel zeroModel = new DoubleModel(0, unit);
+			spinnerWithSlider = new SpinnerWithSlider(model, zeroModel, (DoubleModel) maxSlider);
 		} else {
 			throw new IllegalArgumentException("maxSlider value must be Double or DoubleModel");
 		}
-		panel.add(slider, "w 75lp, wrap");
+		
+		if (tooltipText != null) {
+			spinnerWithSlider.setToolTipText(tooltipText);
+		}
+		panel.add(spinnerWithSlider, "growx, wrap");
+
+		if (easterEgg) {
+			addEasterEgg(spinnerWithSlider.getSpinner(), panel);
+		}
 
 		return model;
 	}
@@ -616,7 +538,7 @@ public class SimulationConditionsPanel extends JPanel {
 	 * @param spinner the magic spinner!
 	 */
 	private static void addEasterEgg(JSpinner spinner, Component parent) {
-		JTextField textField = ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField();
+		JTextField textField = ((SpinnerEditor) spinner.getEditor()).getTextField();
 		textField.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyTyped(KeyEvent e) {
