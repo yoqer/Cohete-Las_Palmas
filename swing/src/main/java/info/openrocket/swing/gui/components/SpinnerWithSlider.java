@@ -376,13 +376,29 @@ public class SpinnerWithSlider extends JPanel {
 
 			/**
 			 * Applies the given number of steps to the spinner value.
+			 * Respects the slider's min/max bounds, not the DoubleModel's bounds.
+			 * The slider position ranges from 0 (min) to 1000 (max).
 			 * @param steps Number of steps (positive = increase, negative = decrease)
 			 * @param useFineSteps Whether to use fine stepping (1/10th of normal step)
 			 */
 			private void applySteps(int steps, boolean useFineSteps) {
 				SpinnerModel spinnerModel = DraggableSpinner.this.getModel();
+				// Slider position range: 0 = min, 1000 = max
+				final int SLIDER_MIN = sliderModel.getMinimum();
+				final int SLIDER_MAX = sliderModel.getMaximum();
 
 				for (int i = 0; i < Math.abs(steps); i++) {
+					// Check if we're at the slider's boundary before trying to step
+					int currentSliderPos = sliderModel.getValue();
+					if (steps > 0 && currentSliderPos >= SLIDER_MAX) {
+						// Already at slider's maximum, stop
+						break;
+					}
+					if (steps < 0 && currentSliderPos <= SLIDER_MIN) {
+						// Already at slider's minimum, stop
+						break;
+					}
+
 					Object newValue;
 					if (steps > 0) {
 						newValue = useFineSteps ? getFineNextValue(spinnerModel) : spinnerModel.getNextValue();
@@ -391,6 +407,15 @@ public class SpinnerWithSlider extends JPanel {
 					}
 					if (newValue != null) {
 						DraggableSpinner.this.setValue(newValue);
+						// Check again after setting value to see if we hit the boundary
+						int newSliderPos = sliderModel.getValue();
+						if ((steps > 0 && newSliderPos >= SLIDER_MAX) || (steps < 0 && newSliderPos <= SLIDER_MIN)) {
+							// Reached slider boundary, stop
+							break;
+						}
+					} else {
+						// Reached min/max boundary (from spinner model), stop applying steps
+						break;
 					}
 				}
 			}
