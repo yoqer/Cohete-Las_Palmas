@@ -54,6 +54,7 @@ public class SpinnerWithSlider extends JPanel {
 	private static final double BASE_PROGRESS_BAR_HEIGHT = 4.0;
 	private static final double BASE_SENSITIVITY = 2.0;
 	private static final double BASE_PROGRESS_BAR_PADDING = 1.0; // Extra padding above progress bar
+	private static final double BASE_MIN_BAR_WIDTH = 2.0; // Minimum bar width when value is at zero
 
 	private static Color disabledProgressColor;
 
@@ -206,6 +207,7 @@ public class SpinnerWithSlider extends JPanel {
 		private final DoubleModel model;
 		private Color progressColor;
 		private final int progressBarHeight;
+		private final int minBarWidth;
 		private final int extraHeight;
 		
 		// Cached values for performance - updated lazily
@@ -232,6 +234,7 @@ public class SpinnerWithSlider extends JPanel {
 
 			double dpi = GUIUtil.getDPI();
 			this.progressBarHeight = (int) Math.round(BASE_PROGRESS_BAR_HEIGHT * (dpi / REFERENCE_DPI));
+			this.minBarWidth = (int) Math.round(BASE_MIN_BAR_WIDTH * (dpi / REFERENCE_DPI));
 			int padding = (int) Math.round(BASE_PROGRESS_BAR_PADDING * (dpi / REFERENCE_DPI));
 			this.extraHeight = progressBarHeight + padding;
 
@@ -389,10 +392,18 @@ public class SpinnerWithSlider extends JPanel {
 							barWidth = (int)(width / 2.0 * pct);
 							barX = centerX - barWidth;
 						}
+					} else {
+						// At zero: show minimum bar width centered
+						barWidth = minBarWidth;
+						barX = centerX - minBarWidth / 2;
 					}
 				} else {
 					double pct = (double)(sliderVal - sliderMin) / (sliderMax - sliderMin);
 					barWidth = (int)(width * Math.max(0.0, Math.min(1.0, pct)));
+					// Ensure minimum bar width for non-centered sliders too
+					if (barWidth == 0 && sliderVal == sliderMin) {
+						barWidth = minBarWidth;
+					}
 				}
 				
 				lastSliderValue = sliderVal;
