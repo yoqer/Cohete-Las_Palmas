@@ -9,7 +9,6 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
 import info.openrocket.core.rocketcomponent.ComponentChangeListener;
@@ -23,12 +22,10 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 
 @SuppressWarnings("serial")
@@ -69,13 +66,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		DoubleModel m = new DoubleModel(component, "ComponentMass", UnitGroup.UNITS_MASS, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.05, 0.5)), "w 100lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.05, 0.5);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		/// Approximate Density
 		panel.add(new JLabel(trans.get("MassComponentCfg.lbl.Density")));
@@ -83,13 +76,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "Density", UnitGroup.UNITS_DENSITY_BULK, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(500, 2000, 10000)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 500, 2000, 10000);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		
@@ -100,13 +89,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 0.5)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 0.5);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Tube diameter
@@ -117,13 +102,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		register(od);
 		// Diameter = 2*Radius
 		
-		spin = new JSpinner(od.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(od), "growx");
-		panel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		////// Automatic
 		final JCheckBox checkAutoPackedRadius = new JCheckBox(od.getAutomaticAction());
@@ -179,13 +160,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		DoubleModel m = new DoubleModel(component, "RadialPosition", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 150lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Radial direction:
@@ -194,13 +171,9 @@ public class MassComponentConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "RadialDirection", UnitGroup.UNITS_ANGLE);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Reset button

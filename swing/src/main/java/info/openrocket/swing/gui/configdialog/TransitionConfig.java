@@ -21,14 +21,12 @@ import info.openrocket.core.rocketcomponent.Transition;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.TransitionShapeModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 public class TransitionConfig extends RocketComponentConfig {
 	private static final long serialVersionUID = -1851275950604625741L;
@@ -37,8 +35,7 @@ public class TransitionConfig extends RocketComponentConfig {
 	private JComboBox<Transition.Shape> typeBox;
 
 	private JLabel shapeLabel;
-	private JSpinner shapeSpinner;
-	private BasicSlider shapeSlider;
+	private SpinnerWithSlider shapeSpinner;
 	private final JCheckBox checkAutoAftRadius;
 	private final JCheckBox checkAutoForeRadius;
 	private DescriptionArea description;
@@ -52,6 +49,7 @@ public class TransitionConfig extends RocketComponentConfig {
 		super(d, c, parent);
 		
 		final JPanel panel = new JPanel(new MigLayout("gap rel unrel, fillx", "[][65lp::][30lp::]", ""));
+		SpinnerWithSlider spinnerWithSlider;
 
 		////  Shape selection
 		//// Transition shape:
@@ -90,17 +88,13 @@ public class TransitionConfig extends RocketComponentConfig {
 			final DoubleModel shapeModel = new DoubleModel(component, "ShapeParameter", UnitGroup.UNITS_SHAPE_PARAMETER, 0, 1);
 			register(shapeModel);
 
-			this.shapeSpinner = new JSpinner(shapeModel.getSpinnerModel());
-			shapeSpinner.setEditor(new SpinnerEditor(shapeSpinner));
-			panel.add(shapeSpinner, "growx");
-			order.add(((SpinnerEditor) shapeSpinner.getEditor()).getTextField());
-
 			DoubleModel min = new DoubleModel(component, "ShapeParameterMin");
 			DoubleModel max = new DoubleModel(component, "ShapeParameterMax");
 			register(min);
 			register(max);
-			this.shapeSlider = new BasicSlider(shapeModel.getSliderModel(min, max));
-			panel.add(shapeSlider, "skip, w 100lp, wrap");
+			this.shapeSpinner = new SpinnerWithSlider(shapeModel, min, max, false);
+			panel.add(shapeSpinner, "growx, wrap");
+			order.add(shapeSpinner.getTextField());
 
 			updateEnabled();
 		}
@@ -112,13 +106,9 @@ public class TransitionConfig extends RocketComponentConfig {
 			final DoubleModel lengthModel = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 			register(lengthModel);
 
-			final JSpinner lengthSpinner = new JSpinner(lengthModel.getSpinnerModel());
-			lengthSpinner.setEditor(new SpinnerEditor(lengthSpinner));
-			panel.add(lengthSpinner, "growx");
-			order.add(((SpinnerEditor) lengthSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(lengthModel), "growx");
-			panel.add(new BasicSlider(lengthModel.getSliderModel(0, 0.05, 0.3)), "w 100lp, wrap");
+			SpinnerWithSlider lengthSpinner = new SpinnerWithSlider(lengthModel, 0, 0.05, 0.3);
+			panel.add(lengthSpinner, "growx, spanx 2, wrap");
+			order.add(lengthSpinner.getTextField());
 		}
 
 		{ /// Fore diameter:
@@ -128,13 +118,9 @@ public class TransitionConfig extends RocketComponentConfig {
 			final DoubleModel foreRadiusModel = new DoubleModel(component, "ForeRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(foreRadiusModel);
 
-			final JSpinner foreRadiusSpinner = new JSpinner(foreRadiusModel.getSpinnerModel());
-			foreRadiusSpinner.setEditor(new SpinnerEditor(foreRadiusSpinner));
-			panel.add(foreRadiusSpinner, "growx");
-			order.add(((SpinnerEditor) foreRadiusSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(foreRadiusModel), "growx");
-			panel.add(new BasicSlider(foreRadiusModel.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap 0px");
+			spinnerWithSlider = new SpinnerWithSlider(foreRadiusModel, 0, 0.04, 0.2);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 0px");
+			order.add(spinnerWithSlider.getTextField());
 
 			checkAutoForeRadius = new JCheckBox(foreRadiusModel.getAutomaticAction());
 			//// Automatic
@@ -151,13 +137,9 @@ public class TransitionConfig extends RocketComponentConfig {
 			final DoubleModel aftRadiusModel = new DoubleModel(component, "AftRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(aftRadiusModel);
 
-			final JSpinner aftRadiusSpinner = new JSpinner(aftRadiusModel .getSpinnerModel());
-			aftRadiusSpinner.setEditor(new SpinnerEditor(aftRadiusSpinner));
-			panel.add(aftRadiusSpinner, "growx");
-			order.add(((SpinnerEditor) aftRadiusSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(aftRadiusModel), "growx");
-			panel.add(new BasicSlider(aftRadiusModel.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap 0px");
+			spinnerWithSlider = new SpinnerWithSlider(aftRadiusModel, 0, 0.04, 0.2);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 0px");
+			order.add(spinnerWithSlider.getTextField());
 
 			checkAutoAftRadius = new JCheckBox(aftRadiusModel.getAutomaticAction());
 			//// Automatic
@@ -172,16 +154,13 @@ public class TransitionConfig extends RocketComponentConfig {
 
 			final DoubleModel thicknessModel = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 			register(thicknessModel);
-
-			final JSpinner thicknessSpinner = new JSpinner(thicknessModel.getSpinnerModel());
-			thicknessSpinner.setEditor(new SpinnerEditor(thicknessSpinner));
-			panel.add(thicknessSpinner, "growx");
-			order.add(((SpinnerEditor) thicknessSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(thicknessModel), "growx");
-			panel.add(new BasicSlider(thicknessModel.getSliderModel(0,
-					new DoubleModel(component, "MaxRadius", UnitGroup.UNITS_LENGTH))),
-					"w 100lp, wrap 0px");
+			DoubleModel maxRadius = new DoubleModel(component, "MaxRadius", UnitGroup.UNITS_LENGTH);
+			register(maxRadius);
+			DoubleModel zeroModel = new DoubleModel(0, UnitGroup.UNITS_LENGTH);
+			register(zeroModel);
+			spinnerWithSlider = new SpinnerWithSlider(thicknessModel, zeroModel, maxRadius);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 0px");
+			order.add(spinnerWithSlider.getTextField());
 
 			//// Filled
 			final JCheckBox thicknessCheckbox = new JCheckBox(new BooleanModel(component, "Filled"));
@@ -229,7 +208,6 @@ public class TransitionConfig extends RocketComponentConfig {
 		boolean e = ((Transition) component).getShapeType().usesParameter();
 		shapeLabel.setEnabled(e);
 		shapeSpinner.setEnabled(e);
-		shapeSlider.setEnabled(e);
 	}
 
 	/**

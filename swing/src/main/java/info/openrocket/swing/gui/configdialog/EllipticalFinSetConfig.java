@@ -22,8 +22,7 @@ import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.IntegerModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 @SuppressWarnings("serial")
 public class EllipticalFinSetConfig extends FinSetConfig {
@@ -61,14 +60,9 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 				-FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(-FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS)),
-				"w 100lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, -FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		
@@ -78,13 +72,9 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 		m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.05, 0.2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.05, 0.2);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		////  Height
@@ -93,13 +83,9 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 		m = new DoubleModel(component, "Height", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.05, 0.2)), "w 100lp, wrap 30lp");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.05, 0.2);
+		panel.add(spinnerWithSlider, "growx, wrap 30lp");
+		order.add(spinnerWithSlider.getTextField());
 
 		////  Cross section
 		{//// Fin cross section:
@@ -117,13 +103,9 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 			m = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(m), "growx");
-			panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap 30lp");
+			spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.01);
+			panel.add(spinnerWithSlider, "growx, wrap 30lp");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		mainPanel.add(panel, "aligny 0, gapright 40lp");
@@ -145,13 +127,9 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 				m = new DoubleModel(component, "BaseRotation", UnitGroup.UNITS_ANGLE);
 				register(m);
 
-				spin = new JSpinner(m.getSpinnerModel());
-				spin.setEditor(new SpinnerEditor(spin));
-				placementPanel.add(spin, "growx");
-				order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-				placementPanel.add(new UnitSelector(m), "growx");
-				placementPanel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 100lp, wrap");
+				spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+				placementPanel.add(spinnerWithSlider, "growx, wrap");
+				order.add(spinnerWithSlider.getTextField());
 			}
 		}
 

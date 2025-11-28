@@ -4,8 +4,7 @@ import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.IntegerModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.startup.Application;
@@ -45,16 +44,13 @@ public class InstancesPanel extends JPanel implements Invalidatable, Invalidatin
             add(new JLabel(trans.get("InstancesPanel.lbl.InstanceSeparation")));
             DoubleModel separationModel = new DoubleModel(component, "InstanceSeparation", UnitGroup.UNITS_LENGTH);
             register(separationModel);
-            JSpinner separationSpinner = new JSpinner( separationModel.getSpinnerModel());
-            separationSpinner.setEditor(new SpinnerEditor(separationSpinner));
-            add(separationSpinner, "growx");
-            order.add(((SpinnerEditor) separationSpinner.getEditor()).getTextField());
-            add(new UnitSelector(separationModel), "growx");
             double maxSeparationDistance = 0.1;
             if (component.getParent() != null && component.getParent().getLength() > 0) {
                 maxSeparationDistance = component.getParent().getLength();
             }
-            add(new BasicSlider(separationModel.getSliderModel(-maxSeparationDistance, maxSeparationDistance)), "w 100lp, wrap para");
+            SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(separationModel, -maxSeparationDistance, maxSeparationDistance);
+            add(spinnerWithSlider, "growx, spanx 2, wrap para");
+            order.add(spinnerWithSlider.getTextField());
         }
     }
 

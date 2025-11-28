@@ -4,7 +4,6 @@ package info.openrocket.swing.gui.configdialog;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -15,11 +14,9 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 @SuppressWarnings("serial")
 public class LaunchLugConfig extends RocketComponentConfig {
@@ -41,14 +38,10 @@ public class LaunchLugConfig extends RocketComponentConfig {
 		DoubleModel m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		focusElement = spin;
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.02, 0.1)), "w 100lp, wrap 20lp");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.02, 0.1);
+		focusElement = spinnerWithSlider.getSpinner();
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap 20lp");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Body tube diameter
@@ -59,13 +52,9 @@ public class LaunchLugConfig extends RocketComponentConfig {
 		register(od);
 		// Diameter = 2*Radius
 		
-		spin = new JSpinner(od.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(od), "growx");
-		panel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap rel");
+		spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap rel");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		////  Inner diameter:
@@ -75,14 +64,9 @@ public class LaunchLugConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "InnerRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(new DoubleModel(0), od)), "w 100lp, wrap rel");
+		spinnerWithSlider = new SpinnerWithSlider(m, new DoubleModel(0), od);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap rel");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		////  Wall thickness
@@ -92,13 +76,9 @@ public class LaunchLugConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap 30lp");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.01);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap 30lp");
+		order.add(spinnerWithSlider.getTextField());
 
 		// -------- Instances ------
 		InstancesPanel ip = new InstancesPanel(component, order);
@@ -122,13 +102,9 @@ public class LaunchLugConfig extends RocketComponentConfig {
 			m = new DoubleModel(component, "AngleOffset", UnitGroup.UNITS_ANGLE, -Math.PI, Math.PI);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			placementPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			placementPanel.add(new UnitSelector(m), "growx");
-			placementPanel.add(new BasicSlider(m.getSliderModel()), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+			placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		//// Material

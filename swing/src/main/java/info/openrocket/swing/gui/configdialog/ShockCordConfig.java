@@ -13,18 +13,15 @@ import info.openrocket.core.rocketcomponent.ShockCord;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -42,7 +39,7 @@ public class ShockCordConfig extends RocketComponentConfig {
 		primary.add(panel, "grow");
 		JLabel label;
 		DoubleModel m;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 
 		//	Attributes
 
@@ -53,13 +50,9 @@ public class ShockCordConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "CordLength", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 1, 10)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 1, 10);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		// Material
 		//// Shock cord material:
@@ -84,13 +77,9 @@ public class ShockCordConfig extends RocketComponentConfig {
 				m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 				register(m);
 
-				spin = new JSpinner(m.getSpinnerModel());
-				spin.setEditor(new SpinnerEditor(spin));
-				placementPanel.add(spin, "growx");
-				order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-				placementPanel.add(new UnitSelector(m), "growx");
-				placementPanel.add(new BasicSlider(m.getSliderModel(0, 0.1, 0.5)), "w 100lp, wrap");
+				spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 0.5);
+				placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+				order.add(spinnerWithSlider.getTextField());
 			}
 
 
@@ -99,13 +88,9 @@ public class ShockCordConfig extends RocketComponentConfig {
 
 				DoubleModel od = new DoubleModel(component, "Radius", 2, UnitGroup.UNITS_LENGTH, 0);
 				register(od);
-				spin = new JSpinner(od.getSpinnerModel());
-				spin.setEditor(new SpinnerEditor(spin));
-				placementPanel.add(spin, "growx");
-				order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-				placementPanel.add(new UnitSelector(od), "growx");
-				placementPanel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+				spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+				placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+				order.add(spinnerWithSlider.getTextField());
 
 				////// Automatic
 				final JCheckBox checkAutoPackedRadius = new JCheckBox(od.getAutomaticAction());
@@ -151,13 +136,9 @@ public class ShockCordConfig extends RocketComponentConfig {
 		DoubleModel m = new DoubleModel(component, "RadialPosition", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 150lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		//// Radial direction:
@@ -166,13 +147,9 @@ public class ShockCordConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "RadialDirection", UnitGroup.UNITS_ANGLE);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		//// Reset button

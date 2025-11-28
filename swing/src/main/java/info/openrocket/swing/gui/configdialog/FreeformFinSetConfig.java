@@ -64,10 +64,9 @@ import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.IntegerModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.dialogs.ScaleDialog;
 import info.openrocket.swing.gui.scalefigure.FinPointFigure;
 import info.openrocket.swing.gui.scalefigure.ScaleScrollPane;
@@ -143,13 +142,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			final DoubleModel cantAngleModel = new DoubleModel(component, "CantAngle", UnitGroup.UNITS_ANGLE, -FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
 			register(cantAngleModel);
 
-			final JSpinner cantAngleSpinner = new JSpinner(cantAngleModel.getSpinnerModel());
-			cantAngleSpinner.setEditor(new SpinnerEditor(cantAngleSpinner));
-			panel.add(cantAngleSpinner, "growx");
-			order.add(((SpinnerEditor) cantAngleSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(cantAngleModel), "growx");
-			panel.add(new BasicSlider(cantAngleModel.getSliderModel(-FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS)), "w 100lp, wrap 30lp");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(cantAngleModel, -FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 30lp");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{ ////  Cross section
@@ -168,13 +163,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			final DoubleModel m = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 
-			final JSpinner spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(m), "growx");
-			panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap 30lp");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.01);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 30lp");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		mainPanel.add(panel, "aligny 0, gapright 40lp");
@@ -196,13 +187,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				DoubleModel m = new DoubleModel(component, "BaseRotation", UnitGroup.UNITS_ANGLE);
 				register(m);
 
-				JSpinner spin = new JSpinner(m.getSpinnerModel());
-				spin.setEditor(new SpinnerEditor(spin));
-				placementPanel.add(spin, "growx");
-				order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-				placementPanel.add(new UnitSelector(m), "growx");
-				placementPanel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 100lp, wrap");
+				SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+				placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+				order.add(spinnerWithSlider.getTextField());
 			}
 		}
 

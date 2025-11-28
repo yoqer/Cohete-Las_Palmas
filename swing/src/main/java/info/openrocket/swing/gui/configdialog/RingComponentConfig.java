@@ -5,7 +5,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -17,10 +16,8 @@ import info.openrocket.core.rocketcomponent.ThicknessRingComponent;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 @SuppressWarnings("serial")
 public class RingComponentConfig extends RocketComponentConfig {
@@ -36,7 +33,7 @@ public class RingComponentConfig extends RocketComponentConfig {
 
 		JPanel panel = new JPanel(new MigLayout("gap rel unrel, ins 0", "[][65lp::][30lp::]", ""));
 		DoubleModel m;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		DoubleModel od = null;
 
 		//// Attributes ----
@@ -48,16 +45,12 @@ public class RingComponentConfig extends RocketComponentConfig {
 			m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
+			spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
 			if (component instanceof ThicknessRingComponent) {
-				focusElement = spin;
+				focusElement = spinnerWithSlider.getSpinner();
 			}
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(m), "growx");
-			panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 100lp, wrap");
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		//// Outer diameter
@@ -68,13 +61,9 @@ public class RingComponentConfig extends RocketComponentConfig {
 			od = new DoubleModel(component, "OuterRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(od);
 
-			spin = new JSpinner(od.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-			
-			panel.add(new UnitSelector(od), "growx");
-			panel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 			
 			if (od.isAutomaticAvailable()) {
 				JCheckBox check = new JCheckBox(od.getAutomaticAction());
@@ -95,17 +84,12 @@ public class RingComponentConfig extends RocketComponentConfig {
 			m = new DoubleModel(component, "InnerRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 			
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-			
-			panel.add(new UnitSelector(m), "growx");
 			if (od == null)
-				panel.add(new BasicSlider(m.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+				spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.04, 0.2);
 			else
-				panel.add(new BasicSlider(m.getSliderModel(new DoubleModel(0), od)),
-						"w 100lp, wrap");
+				spinnerWithSlider = new SpinnerWithSlider(m, new DoubleModel(0), od);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 			
 			if (m.isAutomaticAvailable()) {
 				JCheckBox check = new JCheckBox(m.getAutomaticAction());
@@ -126,13 +110,9 @@ public class RingComponentConfig extends RocketComponentConfig {
 			m = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 			
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-			
-			panel.add(new UnitSelector(m), "growx");
-			panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.01);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		primary.add(panel, "grow, gapright 20lp");

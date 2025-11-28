@@ -23,8 +23,7 @@ import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.IntegerModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 
 public class TrapezoidFinSetConfig extends FinSetConfig {
@@ -64,14 +63,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			final DoubleModel cantModel = new DoubleModel(component, "CantAngle", UnitGroup.UNITS_ANGLE, -FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
 			register(cantModel);
 
-			final JSpinner cantSpinner = new JSpinner(cantModel.getSpinnerModel());
-			cantSpinner.setEditor(new SpinnerEditor(cantSpinner));
-			panel.add(cantSpinner, "growx");
-			order.add(((SpinnerEditor) cantSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(cantModel), "growx");
-			panel.add(new BasicSlider(cantModel.getSliderModel(-FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS)),
-					"w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(cantModel, -FinSet.MAX_CANT_RADIANS, FinSet.MAX_CANT_RADIANS);
+			panel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Root chord:
@@ -80,13 +74,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			final DoubleModel rootChordModel = new DoubleModel(component, "RootChord", UnitGroup.UNITS_LENGTH, 0);
 			register(rootChordModel);
 
-			final JSpinner rootChordSpinner = new JSpinner(rootChordModel.getSpinnerModel());
-			rootChordSpinner.setEditor(new SpinnerEditor(rootChordSpinner));
-			panel.add(rootChordSpinner, "growx");
-			order.add(((SpinnerEditor) rootChordSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(rootChordModel), "growx");
-			panel.add(new BasicSlider(rootChordModel.getSliderModel(0, 0.05, 0.2)), "w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(rootChordModel, 0, 0.05, 0.2);
+			panel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Tip chord:
@@ -95,13 +85,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			final DoubleModel tipChordModel = new DoubleModel(component, "TipChord", UnitGroup.UNITS_LENGTH, 0);
 			register(tipChordModel);
 
-			final JSpinner tipChordSpinner = new JSpinner(tipChordModel.getSpinnerModel());
-			tipChordSpinner.setEditor(new SpinnerEditor(tipChordSpinner));
-			panel.add(tipChordSpinner, "growx");
-			order.add(((SpinnerEditor) tipChordSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(tipChordModel), "growx");
-			panel.add(new BasicSlider(tipChordModel.getSliderModel(0, 0.05, 0.2)), "w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(tipChordModel, 0, 0.05, 0.2);
+			panel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Height:
@@ -110,13 +96,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			final DoubleModel heightModel = new DoubleModel(component, "Height", UnitGroup.UNITS_LENGTH, 0);
 			register(heightModel);
 
-			final JSpinner heightSpinner = new JSpinner(heightModel.getSpinnerModel());
-			heightSpinner.setEditor(new SpinnerEditor(heightSpinner));
-			panel.add(heightSpinner, "growx");
-			order.add(((SpinnerEditor) heightSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(heightModel), "growx");
-			panel.add(new BasicSlider(heightModel.getSliderModel(0, 0.05, 0.2)), "w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(heightModel, 0, 0.05, 0.2);
+			panel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Sweep length:
@@ -125,19 +107,15 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			final DoubleModel sweepDistanceModel = new DoubleModel(component, "Sweep", UnitGroup.UNITS_LENGTH);
 			register(sweepDistanceModel);
 			component.addChangeListener(sweepDistanceModel);
-			final JSpinner sweepDistanceSpinner = new JSpinner(sweepDistanceModel.getSpinnerModel());
-			sweepDistanceSpinner.setEditor(new SpinnerEditor(sweepDistanceSpinner));
-			panel.add(sweepDistanceSpinner, "growx");
-			order.add(((SpinnerEditor) sweepDistanceSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(sweepDistanceModel), "growx");
-
+			
 			// sweep slider from -1.1*TipChord to 1.1*RootChord
 			DoubleModel tc = new DoubleModel(component, "TipChord", -1.1, UnitGroup.UNITS_LENGTH);
 			DoubleModel rc = new DoubleModel(component, "RootChord", 1.1, UnitGroup.UNITS_LENGTH);
 			register(tc);
 			register(rc);
-			panel.add(new BasicSlider(sweepDistanceModel.getSliderModel(tc, rc)), "w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(sweepDistanceModel, tc, rc);
+			panel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Sweep angle:
@@ -148,14 +126,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			register(sweepAngleModel);
 			component.addChangeListener(sweepAngleModel);
 
-			final JSpinner sweepAngleSpinner = new JSpinner(sweepAngleModel.getSpinnerModel());
-			sweepAngleSpinner.setEditor(new SpinnerEditor(sweepAngleSpinner));
-			panel.add(sweepAngleSpinner, "growx");
-			order.add(((SpinnerEditor) sweepAngleSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(sweepAngleModel), "growx");
-			panel.add(new BasicSlider(sweepAngleModel.getSliderModel(-Math.PI / 4, Math.PI / 4)),
-					"w 100lp, wrap 30lp");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(sweepAngleModel, -Math.PI / 4, Math.PI / 4);
+			panel.add(spinnerWithSlider, "growx, wrap 30lp");
+			order.add(spinnerWithSlider.getTextField());
 		}
 
 		{////  Fin cross section:
@@ -178,8 +151,6 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 			panel.add(thicknessSpinner, "growx");
 			order.add(((SpinnerEditor) thicknessSpinner.getEditor()).getTextField());
 
-			panel.add(new UnitSelector(thicknessModel), "growx");
-			panel.add(new BasicSlider(thicknessModel.getSliderModel(0, 0.01)), "w 100lp, wrap para");
 		}
 
 		mainPanel.add(panel, "aligny 0, gapright 40lp");
@@ -207,8 +178,9 @@ public class TrapezoidFinSetConfig extends FinSetConfig {
 				placementPanel.add(baseRotationSpinner, "growx");
 				order.add(((SpinnerEditor) baseRotationSpinner.getEditor()).getTextField());
 
-				placementPanel.add(new UnitSelector(baseRotationModel), "growx");
-				placementPanel.add(new BasicSlider(baseRotationModel.getSliderModel()), "w 100lp, wrap");
+				SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(baseRotationModel);
+				placementPanel.add(spinnerWithSlider, "growx, wrap");
+				order.add(spinnerWithSlider.getTextField());
 			}
 		}
 

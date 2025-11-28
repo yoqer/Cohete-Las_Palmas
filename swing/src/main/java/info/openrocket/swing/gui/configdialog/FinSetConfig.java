@@ -21,10 +21,9 @@ import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.MaterialModel;
-import info.openrocket.swing.gui.components.BasicSlider;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.widgets.GroupableAndSearchableComboBox;
 import info.openrocket.swing.gui.widgets.MaterialComboBox;
 import net.miginfocom.swing.MigLayout;
@@ -37,7 +36,6 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -154,7 +152,7 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 		DoubleModel length2;
 		DoubleModel maxTabHeight;
 		DoubleModel length_2;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		JButton autoCalc;
 		
 		length = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
@@ -177,14 +175,9 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 		final DoubleModel tabLength = new DoubleModel(component, "TabLength", UnitGroup.UNITS_LENGTH, 0);
 		register(tabLength);
 
-		spin = new JSpinner(tabLength.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx 1");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(tabLength), "growx 1");
-		panel.add(new BasicSlider(tabLength.getSliderModel(DoubleModel.ZERO, length)),
-				"w 100lp, growx 5, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(tabLength, DoubleModel.ZERO, length);
+		panel.add(spinnerWithSlider, "growx 1, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 
 		//// Tab height:
@@ -196,14 +189,9 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 		final DoubleModel tabHeightModel = new DoubleModel(component, "TabHeight", UnitGroup.UNITS_LENGTH, 0, ((FinSet)component).getMaxTabHeight());
 		register(tabHeightModel);
 		component.addChangeListener( tabHeightModel );
-		spin = new JSpinner(tabHeightModel.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(tabHeightModel), "growx");
-		panel.add(new BasicSlider(tabHeightModel.getSliderModel(DoubleModel.ZERO, maxTabHeight)),
-				"w 100lp, growx 5, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(tabHeightModel, DoubleModel.ZERO, maxTabHeight);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		////  Tab position:
 		label = new JLabel(trans.get("FinSetConfig.lbl.Tabposition"));
@@ -214,13 +202,9 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 		final DoubleModel tabOffset = new DoubleModel(component, "TabOffset", UnitGroup.UNITS_LENGTH);
 		register(tabOffset);
 		component.addChangeListener( tabOffset);
-		spin = new JSpinner(tabOffset.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(tabOffset), "growx");
-		panel.add(new BasicSlider(tabOffset.getSliderModel(length_2, length2)), "w 100lp, growx 5, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(tabOffset, length_2, length2);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		//// relative to
 		label = new JLabel(trans.get("FinSetConfig.lbl.relativeto"));
@@ -553,26 +537,17 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 	    DoubleModel m = new DoubleModel(component, "FilletRadius", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-	    JSpinner spin = new JSpinner(m.getSpinnerModel());
-	    spin.setEditor(new SpinnerEditor(spin));
-	    spin.setToolTipText(tip);
-	    filletPanel.add(spin, "growx, w 40");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-	    UnitSelector us = new UnitSelector(m);
-	    filletPanel.add(us, "growx");
-	    us.setToolTipText(tip);
-
-	    BasicSlider bs = new BasicSlider(m.getSliderModel(0, 0.1));
-	    filletPanel.add(bs, "w 100lp, wrap para");
-	    bs.setToolTipText(tip);
+	    SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1);
+	    spinnerWithSlider.setToolTipText(tip);
+	    filletPanel.add(spinnerWithSlider, "growx, wrap para");
+		order.add(spinnerWithSlider.getTextField());
 
 		// Fillet Material:
 	    JLabel label = new JLabel(trans.get("FinSetConfig.lbl.Finfilletmaterial"));
 	    label.setToolTipText(tip);
 	    //// The component material affects the weight of the component.
 	    label.setToolTipText(trans.get("MaterialPanel.lbl.ttip.ComponentMaterialAffects"));
-	    filletPanel.add(label, "spanx 4, wrap rel");
+	    filletPanel.add(label, "spanx, wrap rel");
 
 		MaterialModel mm = new MaterialModel(filletPanel, document, component, Material.Type.BULK, "FilletMaterial");
 		register(mm);

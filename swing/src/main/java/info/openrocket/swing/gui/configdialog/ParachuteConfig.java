@@ -19,6 +19,7 @@ import info.openrocket.core.material.MaterialGroup;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
 import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.MassObject;
+import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.widgets.GroupableAndSearchableComboBox;
 import info.openrocket.swing.gui.widgets.MaterialComboBox;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
@@ -38,11 +39,9 @@ import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.HtmlLabel;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
-import info.openrocket.swing.gui.components.UnitSelector;
 
 public class ParachuteConfig extends RecoveryDeviceConfig {
 	
@@ -67,12 +66,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		DoubleModel m = new DoubleModel(component, "Diameter", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		canopyPanel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		canopyPanel.add(new UnitSelector(m), "growx");
-		canopyPanel.add(new BasicSlider(m.getSliderModel(0, 0.4, 1.5)), "w 150lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.4, 1.5);
+		canopyPanel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		// TODO COMPLETE Spill hole development
 /*		pacanopyPanelnel.add(new JLabel(trans.get("ParachuteCfg.lbl.SpillDia") + CommonStrings.daggerDouble));
@@ -112,11 +108,10 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "CD", UnitGroup.UNITS_COEFFICIENT, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setToolTipText(tip);
-		spin.setEditor(new SpinnerEditor(spin));
-		canopyPanel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 2, false);
+		spinnerWithSlider.setToolTipText(tip);
+		canopyPanel.add(spinnerWithSlider, "growx, spanx");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Reset button
 		JButton button = new JButton(trans.get("ParachuteCfg.but.Reset"));
@@ -143,7 +138,7 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		IntegerModel im = new IntegerModel(component, "LineCount", 0);
 		register(im);
 		
-		spin = new JSpinner(im.getSpinnerModel());
+		JSpinner spin = new JSpinner(im.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin));
 		shroudPanel.add(spin, "growx, wrap");
 		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
@@ -154,12 +149,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "LineLength", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		shroudPanel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		shroudPanel.add(new UnitSelector(m), "growx");
-		shroudPanel.add(new BasicSlider(m.getSliderModel(0, 0.4, 1.5)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.4, 1.5);
+		shroudPanel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		//// Material:
 		shroudPanel.add(new JLabel(trans.get("ParachuteCfg.lbl.Material")), "spanx, wrap rel");
@@ -188,13 +180,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 			m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			placementPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			placementPanel.add(new UnitSelector(m), "growx");
-			placementPanel.add(new BasicSlider(m.getSliderModel(0, 0.1, 0.5)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 0.5);
+			placementPanel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 
 
 			//// Packed diameter:
@@ -203,13 +191,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 			final DoubleModel od = new DoubleModel(component, "Radius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(od);
 
-			spin = new JSpinner(od.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			placementPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			placementPanel.add(new UnitSelector(od), "growx");
-			placementPanel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+			placementPanel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 
 			////// Automatic
 			final JCheckBox checkAutoPackedRadius = new JCheckBox(od.getAutomaticAction());
@@ -272,17 +256,10 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 			m = new DoubleModel(deploymentConfig, "DeployAltitude", UnitGroup.UNITS_DISTANCE, 0);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			altitudeComponents.add(spin);
-			deploymentPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-			UnitSelector unit = new UnitSelector(m);
-			altitudeComponents.add(unit);
-			deploymentPanel.add(unit, "growx");
-			BasicSlider slider = new BasicSlider(m.getSliderModel(100, 1000));
-			altitudeComponents.add(slider);
-			deploymentPanel.add(slider, "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(m, 100, 1000);
+			altitudeComponents.add(spinnerWithSlider);
+			deploymentPanel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 
 			deploymentPanel.add(new StyledLabel(CommonStrings.override_description, -1), "spanx, wrap");
 
@@ -319,13 +296,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		DoubleModel m = new DoubleModel(component, "RadialPosition", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 150lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Radial direction:
@@ -334,13 +307,9 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "RadialDirection", UnitGroup.UNITS_ANGLE);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Reset button

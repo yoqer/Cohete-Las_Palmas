@@ -70,6 +70,10 @@ public class SpinnerWithSlider extends JPanel {
 		disabledProgressColor = GUIUtil.getUITheme().getDisabledProgressColor();
 	}
 
+	public SpinnerWithSlider(DoubleModel model) {
+		this(model, model.getSliderModel(), true);
+	}
+
 	/**
 	 * Creates a SpinnerWithSlider with a linear progress bar range.
 	 *

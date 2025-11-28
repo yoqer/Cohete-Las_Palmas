@@ -55,6 +55,7 @@ import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
@@ -78,7 +79,7 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		JPanel panel = new JPanel(new MigLayout("gap rel unrel, ins 0", "[][65lp::][30lp::][]"));
 
 		DoubleModel m;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		DoubleModel od;
 
 		//// ---------------------------- Attributes ----------------------------
@@ -88,14 +89,10 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		focusElement = spin;
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
+		focusElement = spinnerWithSlider.getSpinner();
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Outer diameter
 		panel.add(new JLabel(trans.get("ThicknessRingCompCfg.tab.Outerdiam")));
@@ -104,13 +101,9 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		od = new DoubleModel(component, "OuterRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 		register(od);
 
-		spin = new JSpinner(od.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(od), "growx");
-		panel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		if (od.isAutomaticAvailable()) {
 			JCheckBox check = new JCheckBox(od.getAutomaticAction());
@@ -126,13 +119,9 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "InnerRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(new DoubleModel(0), od)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, new DoubleModel(0), od);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		if (m.isAutomaticAvailable()) {
 			JCheckBox check = new JCheckBox(m.getAutomaticAction());
@@ -148,14 +137,10 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		//// Thickness
 		m = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
-
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.01)), "w 100lp, wrap");
+		
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.01);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		mainPanel.add(panel, "aligny 0, gapright 40lp");
 
@@ -216,18 +201,11 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		DoubleModel m = new DoubleModel(component, "RadialPosition", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
 		//// Distance from the rocket centerline
-		spin.setToolTipText(trans.get("ringcompcfg.Distancefrom"));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		BasicSlider bs = new BasicSlider(m.getSliderModel(0, 0.1, 1.0));
-		//// Distance from the rocket centerline
-		bs.setToolTipText(trans.get("ringcompcfg.Distancefrom"));
-		panel.add(bs, "w 130lp, wrap");
+		spinnerWithSlider.setToolTipText(trans.get("ringcompcfg.Distancefrom"));
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		//// Radial direction
@@ -239,18 +217,11 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		m = new DoubleModel(component, "RadialDirection", UnitGroup.UNITS_ANGLE);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
+		spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
 		//// The radial direction from the rocket centerline
-		spin.setToolTipText(trans.get("ringcompcfg.radialdirectionfrom"));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(m), "growx");
-		bs = new BasicSlider(m.getSliderModel(-Math.PI, Math.PI));
-		//// The radial direction from the rocket centerline
-		bs.setToolTipText(trans.get("ringcompcfg.radialdirectionfrom"));
-		panel.add(bs, "w 130lp, wrap");
+		spinnerWithSlider.setToolTipText(trans.get("ringcompcfg.radialdirectionfrom"));
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		//// Reset button
@@ -387,18 +358,11 @@ public class InnerTubeConfig extends RocketComponentConfig {
 				-Math.PI, Math.PI);
 		register(dm);
 
-		JSpinner spin = new JSpinner(dm.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(dm);
 		//// Rotation angle of the cluster configuration
-		spin.setToolTipText(trans.get("InnerTubeCfg.lbl.ttip.Rotation"));
-		subPanel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		subPanel.add(new UnitSelector(dm), "growx");
-		BasicSlider bs = new BasicSlider(dm.getSliderModel());
-		//// Rotation angle of the cluster configuration
-		bs.setToolTipText(trans.get("InnerTubeCfg.lbl.ttip.Rotation"));
-		subPanel.add(bs, "w 100lp, wrap para");
+		spinnerWithSlider.setToolTipText(trans.get("InnerTubeCfg.lbl.ttip.Rotation"));
+		subPanel.add(spinnerWithSlider, "growx, spanx 2, wrap para");
+		order.add(spinnerWithSlider.getTextField());
 
 
 

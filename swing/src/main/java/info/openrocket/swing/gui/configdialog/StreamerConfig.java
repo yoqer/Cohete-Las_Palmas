@@ -38,10 +38,9 @@ import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.MaterialModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.HtmlLabel;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
-import info.openrocket.swing.gui.components.UnitSelector;
 
 
 public class StreamerConfig extends RecoveryDeviceConfig {
@@ -56,6 +55,8 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 
 		//	Left side
 		JPanel panel = new JPanel(new MigLayout("fillx, ins 0", "[][65lp::][30lp::][]"));
+		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		
 		//// ---------------------------- Attributes ----------------------------
 
@@ -65,12 +66,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		DoubleModel m = new DoubleModel(component, "StripLength", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.6, 1.5)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.6, 1.5);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		//// Strip width:
 		panel.add(new JLabel(trans.get("StreamerCfg.lbl.Stripwidth")));
@@ -78,12 +76,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "StripWidth", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.2)), "w 150lp, wrap 10lp");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.2);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap 10lp");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Strip area:
 		panel.add(new JLabel(trans.get("StreamerCfg.lbl.Striparea")));
@@ -91,12 +86,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "Area", UnitGroup.UNITS_AREA, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.04, 0.25)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.04, 0.25);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		//// Aspect ratio:
 		panel.add(new JLabel(trans.get("StreamerCfg.lbl.Aspectratio")));
@@ -104,12 +96,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "AspectRatio", UnitGroup.UNITS_NONE, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		//		panel.add(new UnitSelector(m),"growx");
-		panel.add(new BasicSlider(m.getSliderModel(2, 15)), "skip, w 150lp, wrap 10lp");
+		spinnerWithSlider = new SpinnerWithSlider(m, 2, 15, false);
+		panel.add(spinnerWithSlider, "growx, wrap 10lp");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Material:
 		panel.add(new JLabel(trans.get("StreamerCfg.lbl.Material")));
@@ -168,33 +157,25 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 			m = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 			register(m);
 
-			spin = new JSpinner(m.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			placementPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			placementPanel.add(new UnitSelector(m), "growx");
-			placementPanel.add(new BasicSlider(m.getSliderModel(0, 0.1, 0.5)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 0.5);
+			placementPanel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 
 			//// Packed diameter:
 			placementPanel.add(new JLabel(trans.get("StreamerCfg.lbl.Packeddiam")));
 
 			DoubleModel od = new DoubleModel(component, "Radius", 2, UnitGroup.UNITS_LENGTH, 0);
 			register(od);
-			spin = new JSpinner(od.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			placementPanel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			placementPanel.add(new UnitSelector(od), "growx");
-			placementPanel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap");
+			spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+			placementPanel.add(spinnerWithSlider, "growx, wrap");
+			order.add(spinnerWithSlider.getTextField());
 
 			////// Automatic
 			final JCheckBox checkAutoPackedRadius = new JCheckBox(od.getAutomaticAction());
 			checkAutoPackedRadius.setText(trans.get("ParachuteCfg.checkbox.AutomaticPacked"));
 			checkAutoPackedRadius.setToolTipText(trans.get("ParachuteCfg.checkbox.AutomaticPacked.ttip"));
 			checkAutoPackedRadius.setEnabled(((MassObject) component).getMaxParentRadius() > 0);
-			placementPanel.add(checkAutoPackedRadius, "skip, spanx 2");
+			placementPanel.add(checkAutoPackedRadius, "skip");
 			component.getParent().addComponentChangeListener(new ComponentChangeListener() {
 				@Override
 				public void componentChanged(ComponentChangeEvent e) {
@@ -252,17 +233,10 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(deploymentConfig, "DeployAltitude", UnitGroup.UNITS_DISTANCE, 0);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		altitudeComponents.add(spin);
-		deploymentPanel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		UnitSelector unit = new UnitSelector(m);
-		altitudeComponents.add(unit);
-		deploymentPanel.add(unit, "growx");
-		BasicSlider slider = new BasicSlider(m.getSliderModel(100, 1000));
-		altitudeComponents.add(slider);
-		deploymentPanel.add(slider, "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 100, 1000);
+		altitudeComponents.add(spinnerWithSlider);
+		deploymentPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		deploymentPanel.add(new StyledLabel(CommonStrings.override_description, -1), "spanx, wrap");
 
@@ -301,13 +275,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		DoubleModel m = new DoubleModel(component, "RadialPosition", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(0, 0.1, 1.0)), "w 150lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 1.0);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Radial direction:
 		panel.add(new JLabel(trans.get("StreamerCfg.lbl.Radialdirection")));
@@ -315,13 +285,9 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		m = new DoubleModel(component, "RadialDirection", UnitGroup.UNITS_ANGLE);
 		register(m);
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(m), "growx");
-		panel.add(new BasicSlider(m.getSliderModel(-Math.PI, Math.PI)), "w 150lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
+		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		//// Reset button

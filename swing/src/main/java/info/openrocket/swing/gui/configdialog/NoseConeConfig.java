@@ -11,18 +11,14 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JSpinner;
 
 import net.miginfocom.swing.MigLayout;
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.TransitionShapeModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.l10n.Translator;
@@ -41,8 +37,7 @@ public class NoseConeConfig extends RocketComponentConfig {
 	private DescriptionArea description;
 	
 	private JLabel shapeLabel;
-	private JSpinner shapeSpinner;
-	private JSlider shapeSlider;
+	private SpinnerWithSlider shapeSpinner;
 	private final JCheckBox checkAutoBaseRadius;
 	private static final Translator trans = Application.getTranslator();
 	
@@ -82,17 +77,13 @@ public class NoseConeConfig extends RocketComponentConfig {
 			final DoubleModel parameterModel = new DoubleModel(component, "ShapeParameter", UnitGroup.UNITS_SHAPE_PARAMETER, 0, 1);
 			register(parameterModel);
 
-			this.shapeSpinner = new JSpinner(parameterModel.getSpinnerModel());
-			shapeSpinner.setEditor(new SpinnerEditor(shapeSpinner));
-			panel.add(shapeSpinner, "growx");
-			order.add(((SpinnerEditor) shapeSpinner.getEditor()).getTextField());
-
 			DoubleModel min = new DoubleModel(component, "ShapeParameterMin");
 			DoubleModel max = new DoubleModel(component, "ShapeParameterMax");
 			register(min);
 			register(max);
-			this.shapeSlider = new BasicSlider(parameterModel.getSliderModel(min, max));
-			panel.add(shapeSlider, "skip, w 100lp, wrap para");
+			this.shapeSpinner = new SpinnerWithSlider(parameterModel, min, max, false);
+			panel.add(shapeSpinner, "growx, wrap para");
+			order.add(shapeSpinner.getTextField());
 
 			updateEnabled();
 		}
@@ -102,13 +93,9 @@ public class NoseConeConfig extends RocketComponentConfig {
 
 			final DoubleModel lengthModel = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 			register(lengthModel);
-			JSpinner spin = new JSpinner(lengthModel.getSpinnerModel());
-			spin.setEditor(new SpinnerEditor(spin));
-			panel.add(spin, "growx");
-			order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(lengthModel), "growx");
-			panel.add(new BasicSlider(lengthModel.getSliderModel(0, 0.1, 0.7)), "w 100lp, wrap");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(lengthModel, 0, 0.1, 0.7);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			order.add(spinnerWithSlider.getTextField());
 		}
 		{
 			/// Base diameter:
@@ -117,13 +104,9 @@ public class NoseConeConfig extends RocketComponentConfig {
 
 			final DoubleModel baseRadius = new DoubleModel(component, "BaseRadius", 2.0, UnitGroup.UNITS_LENGTH, 0); // Diameter = 2*Radius
 			register(baseRadius);
-			final JSpinner radiusSpinner = new JSpinner(baseRadius.getSpinnerModel());
-			radiusSpinner.setEditor(new SpinnerEditor(radiusSpinner));
-			panel.add(radiusSpinner, "growx");
-			order.add(((SpinnerEditor) radiusSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(baseRadius), "growx");
-			panel.add(new BasicSlider(baseRadius.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap 0px");
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(baseRadius, 0, 0.04, 0.2);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 0px");
+			order.add(spinnerWithSlider.getTextField());
 
 			checkAutoBaseRadius = new JCheckBox(baseRadius.getAutomaticAction());
 			//// Automatic
@@ -138,15 +121,13 @@ public class NoseConeConfig extends RocketComponentConfig {
 
 			final DoubleModel thicknessModel = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 			register(thicknessModel);
-			final JSpinner thicknessSpinner = new JSpinner(thicknessModel.getSpinnerModel());
-			thicknessSpinner.setEditor(new SpinnerEditor(thicknessSpinner));
-			panel.add(thicknessSpinner, "growx");
-			order.add(((SpinnerEditor) thicknessSpinner.getEditor()).getTextField());
-
-			panel.add(new UnitSelector(thicknessModel), "growx");
-			panel.add(new BasicSlider(thicknessModel.getSliderModel(0,
-							new DoubleModel(component, "MaxRadius", UnitGroup.UNITS_LENGTH))),
-					"w 100lp, wrap 0px");
+			DoubleModel maxRadius = new DoubleModel(component, "MaxRadius", UnitGroup.UNITS_LENGTH);
+			register(maxRadius);
+			DoubleModel zeroModel = new DoubleModel(0, UnitGroup.UNITS_LENGTH);
+			register(zeroModel);
+			SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(thicknessModel, zeroModel, maxRadius);
+			panel.add(spinnerWithSlider, "growx, spanx 2, wrap 0px");
+			order.add(spinnerWithSlider.getTextField());
 
 
 			BooleanModel bm = new BooleanModel(component, "Filled");
@@ -214,7 +195,6 @@ public class NoseConeConfig extends RocketComponentConfig {
 		boolean e = ((NoseCone) component).getShapeType().usesParameter();
 		shapeLabel.setEnabled(e);
 		shapeSpinner.setEnabled(e);
-		shapeSlider.setEnabled(e);
 	}
 
 	/**
