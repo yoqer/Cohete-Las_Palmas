@@ -11,6 +11,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.lang.reflect.Field;
+
+import javax.swing.Timer;
 
 import javax.swing.AbstractButton;
 import javax.swing.BoundedRangeModel;
@@ -204,6 +207,18 @@ public class SpinnerWithSlider extends JPanel {
 		private Color progressColor;
 		private final int progressBarHeight;
 		private final int extraHeight;
+		
+		// Cached values for performance
+		private Field cachedMinField;
+		private Field cachedMaxField;
+		private boolean shouldCenterAtZero = false;
+		private double cachedActualMin = Double.NEGATIVE_INFINITY;
+		private double cachedActualMax = Double.POSITIVE_INFINITY;
+		private boolean cacheValid = false;
+		
+		// Repaint throttling for better drag performance
+		private final Timer repaintTimer;
+		private boolean pendingRepaint = false;
 
 		public DraggableSpinner(DoubleModel model, BoundedRangeModel sliderModel) {
 			super(model.getSpinnerModel());
@@ -223,8 +238,97 @@ public class SpinnerWithSlider extends JPanel {
 				progressColor = new Color(100, 150, 255);
 			}
 
+			// Initialize reflection fields once
+			initializeReflection();
+			
+			// Setup repaint throttling timer (repaints at most every 16ms ~60fps)
+			repaintTimer = new Timer(16, e -> {
+				if (pendingRepaint) {
+					repaintProgressBar();
+					pendingRepaint = false;
+				}
+			});
+			repaintTimer.setRepeats(false);
+			
 			setupButtonLogic();
-			this.addChangeListener(e -> repaint());
+			this.addChangeListener(e -> {
+				// Invalidate cache when model changes
+				cacheValid = false;
+				// Throttle repaints for better performance during dragging
+				scheduleRepaint();
+			});
+			
+			// Also listen to slider model changes to invalidate cache
+			sliderModel.addChangeListener(e -> {
+				cacheValid = false;
+				scheduleRepaint();
+			});
+		}
+		
+		/**
+		 * Schedules a repaint with throttling to avoid excessive repaints during dragging.
+		 */
+		private void scheduleRepaint() {
+			if (!pendingRepaint) {
+				pendingRepaint = true;
+				if (!repaintTimer.isRunning()) {
+					repaintTimer.start();
+				}
+			}
+		}
+		
+		/**
+		 * Repaints only the progress bar area for better performance.
+		 */
+		private void repaintProgressBar() {
+			if (isDisplayable()) {
+				int y = getHeight() - progressBarHeight - (int) Math.round(BASE_PROGRESS_BAR_PADDING * (GUIUtil.getDPI() / REFERENCE_DPI));
+				repaint(0, y, getWidth(), progressBarHeight + (int) Math.round(BASE_PROGRESS_BAR_PADDING * (GUIUtil.getDPI() / REFERENCE_DPI)));
+			}
+		}
+		
+		private void initializeReflection() {
+			try {
+				cachedMinField = sliderModel.getClass().getDeclaredField("min");
+				cachedMaxField = sliderModel.getClass().getDeclaredField("max");
+				cachedMinField.setAccessible(true);
+				cachedMaxField.setAccessible(true);
+			} catch (Exception e) {
+				// Reflection not available, will use normal behavior
+				cachedMinField = null;
+				cachedMaxField = null;
+			}
+		}
+		
+		private void updateCache() {
+			if (cacheValid) {
+				return;
+			}
+			
+			shouldCenterAtZero = false;
+			cachedActualMin = Double.NEGATIVE_INFINITY;
+			cachedActualMax = Double.POSITIVE_INFINITY;
+			
+			if (cachedMinField != null && cachedMaxField != null) {
+				try {
+					DoubleModel minModel = (DoubleModel) cachedMinField.get(sliderModel);
+					DoubleModel maxModel = (DoubleModel) cachedMaxField.get(sliderModel);
+					
+					// Get values in current unit
+					cachedActualMin = model.getCurrentUnit().toUnit(minModel.getValue());
+					cachedActualMax = model.getCurrentUnit().toUnit(maxModel.getValue());
+					
+					// Check if range crosses zero
+					shouldCenterAtZero = (cachedActualMin < 0 && cachedActualMax > 0);
+					cacheValid = true;
+				} catch (Exception e) {
+					// If reflection fails, fall back to normal behavior
+					shouldCenterAtZero = false;
+					cacheValid = true; // Mark as valid to avoid retrying
+				}
+			} else {
+				cacheValid = true; // Mark as valid to avoid retrying
+			}
 		}
 
 		@Override
@@ -267,71 +371,54 @@ public class SpinnerWithSlider extends JPanel {
 		public void paint(Graphics g) {
 			super.paint(g);
 
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
 			int sliderMin = sliderModel.getMinimum();
 			int sliderMax = sliderModel.getMaximum();
 			int sliderVal = sliderModel.getValue();
 
-			if (sliderMax > sliderMin) {
-				// Try to get the actual min/max values from the slider model using reflection
-				double actualMin = Double.NEGATIVE_INFINITY;
-				double actualMax = Double.POSITIVE_INFINITY;
-				boolean shouldCenterAtZero = false;
+			if (sliderMax <= sliderMin) {
+				return;
+			}
 
-				try {
-					// Access the ValueSliderModel's min and max DoubleModel fields
-					java.lang.reflect.Field minField = sliderModel.getClass().getDeclaredField("min");
-					java.lang.reflect.Field maxField = sliderModel.getClass().getDeclaredField("max");
-					minField.setAccessible(true);
-					maxField.setAccessible(true);
-					
-					DoubleModel minModel = (DoubleModel) minField.get(sliderModel);
-					DoubleModel maxModel = (DoubleModel) maxField.get(sliderModel);
-					
-					// Get values in current unit
-					actualMin = model.getCurrentUnit().toUnit(minModel.getValue());
-					actualMax = model.getCurrentUnit().toUnit(maxModel.getValue());
-					
-					// Check if range crosses zero
-					shouldCenterAtZero = (actualMin < 0 && actualMax > 0);
-				} catch (Exception e) {
-					// If reflection fails, fall back to normal behavior
-					shouldCenterAtZero = false;
-				}
+			// Update cache if needed
+			updateCache();
 
-				// Use disabled color when spinner is disabled
-				g2.setColor(isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor);
+			// Use disabled color when spinner is disabled
+			Color drawColor = isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor;
+			
+			// Create graphics context without antialiasing for better performance (just drawing rectangles)
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setColor(drawColor);
 
-				if (shouldCenterAtZero) {
-					// Draw centered at 0
-					double currentValue = model.getCurrentUnit().toUnit(model.getValue());
-					int width = getWidth();
-					int centerX = width / 2;
-					
-					if (Math.abs(currentValue) < 1e-10) {
-						// At zero, draw nothing (or a small dot if desired)
-						// For now, draw nothing
-					} else if (currentValue > 0) {
-						// Positive: draw from center to right
-						double pct = Math.min(1.0, currentValue / actualMax);
-						int barWidth = (int)(width / 2.0 * pct);
-						if (barWidth > 0) {
-							g2.fillRect(centerX, getHeight() - progressBarHeight, barWidth, progressBarHeight);
-						}
-					} else {
-						// Negative: draw from center to left
-						double pct = Math.min(1.0, Math.abs(currentValue) / Math.abs(actualMin));
-						int barWidth = (int)(width / 2.0 * pct);
-						if (barWidth > 0) {
-							g2.fillRect(centerX - barWidth, getHeight() - progressBarHeight, barWidth, progressBarHeight);
-						}
+			if (shouldCenterAtZero) {
+				// Draw centered at 0
+				double currentValue = model.getCurrentUnit().toUnit(model.getValue());
+				int width = getWidth();
+				int centerX = width / 2;
+				int y = getHeight() - progressBarHeight;
+				
+				if (Math.abs(currentValue) < 1e-10) {
+					// At zero, draw nothing
+				} else if (currentValue > 0) {
+					// Positive: draw from center to right
+					double pct = Math.min(1.0, currentValue / cachedActualMax);
+					int barWidth = (int)(width / 2.0 * pct);
+					if (barWidth > 0) {
+						g2.fillRect(centerX, y, barWidth, progressBarHeight);
 					}
 				} else {
-					// Normal behavior: draw from left to right
-					double pct = Math.max(0.0, Math.min(1.0, (double)(sliderVal - sliderMin) / (sliderMax - sliderMin)));
-					g2.fillRect(0, getHeight() - progressBarHeight, (int)(getWidth() * pct), progressBarHeight);
+					// Negative: draw from center to left
+					double pct = Math.min(1.0, Math.abs(currentValue) / Math.abs(cachedActualMin));
+					int barWidth = (int)(width / 2.0 * pct);
+					if (barWidth > 0) {
+						g2.fillRect(centerX - barWidth, y, barWidth, progressBarHeight);
+					}
+				}
+			} else {
+				// Normal behavior: draw from left to right
+				double pct = Math.max(0.0, Math.min(1.0, (double)(sliderVal - sliderMin) / (sliderMax - sliderMin)));
+				int barWidth = (int)(getWidth() * pct);
+				if (barWidth > 0) {
+					g2.fillRect(0, getHeight() - progressBarHeight, barWidth, progressBarHeight);
 				}
 			}
 			g2.dispose();
