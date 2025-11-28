@@ -3,6 +3,7 @@ package info.openrocket.swing.gui.components;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -50,6 +51,7 @@ public class SpinnerWithSlider extends JPanel {
 	private static final double REFERENCE_DPI = 96.0;
 	private static final double BASE_PROGRESS_BAR_HEIGHT = 4.0;
 	private static final double BASE_SENSITIVITY = 2.0;
+	private static final double BASE_PROGRESS_BAR_PADDING = 1.0; // Extra padding above progress bar
 
 	/**
 	 * Creates a SpinnerWithSlider with a linear progress bar range.
@@ -129,6 +131,7 @@ public class SpinnerWithSlider extends JPanel {
 		private final BoundedRangeModel sliderModel;
 		private Color progressColor;
 		private final int progressBarHeight;
+		private final int extraHeight;
 
 		public DraggableSpinner(DoubleModel model, BoundedRangeModel sliderModel) {
 			super(model.getSpinnerModel());
@@ -136,6 +139,8 @@ public class SpinnerWithSlider extends JPanel {
 
 			double dpi = GUIUtil.getDPI();
 			this.progressBarHeight = (int) Math.round(BASE_PROGRESS_BAR_HEIGHT * (dpi / REFERENCE_DPI));
+			int padding = (int) Math.round(BASE_PROGRESS_BAR_PADDING * (dpi / REFERENCE_DPI));
+			this.extraHeight = progressBarHeight + padding;
 
 			try {
 				progressColor = javax.swing.UIManager.getColor("Component.accentColor");
@@ -146,6 +151,24 @@ public class SpinnerWithSlider extends JPanel {
 
 			setupButtonLogic();
 			this.addChangeListener(e -> repaint());
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			Dimension preferred = super.getPreferredSize();
+			if (preferred != null) {
+				return new Dimension(preferred.width, preferred.height + extraHeight);
+			}
+			return preferred;
+		}
+
+		@Override
+		public Dimension getMinimumSize() {
+			Dimension minimum = super.getMinimumSize();
+			if (minimum != null) {
+				return new Dimension(minimum.width, minimum.height + extraHeight);
+			}
+			return minimum;
 		}
 
 		private void setupButtonLogic() {
