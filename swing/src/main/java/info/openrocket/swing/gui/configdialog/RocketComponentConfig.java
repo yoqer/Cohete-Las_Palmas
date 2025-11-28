@@ -44,7 +44,6 @@ import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.PresetModel;
 import info.openrocket.swing.gui.adaptors.TextComponentSelectionKeyListener;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
 import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
@@ -517,14 +516,13 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		JCheckBox checkSub;
 		BooleanModel bm;
 		SpinnerWithSlider spinnerWithSlider;
-		JSpinner spin;  // For CD override which doesn't have unit selector
-		BasicSlider bs;  // For CD override which doesn't have unit selector
 		
 		// OVERRIDE MASS ----------------------------------
 		JPanel checkboxes = new JPanel(new MigLayout("inset 0"));
 		bm = new BooleanModel(component, "MassOverridden");
 		register(bm);
 		check = new JCheckBox(bm);
+
 		//// Override mass:
 		check.setText(trans.get("RocketCompCfg.checkbox.Overridemass"));
 		check.setToolTipText(trans.get("RocketCompCfg.checkbox.Overridemass.ttip"));
@@ -556,7 +554,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		}
 
 		panel.add(checkboxes, "growx 1, gapright 20lp");
-		
+
+		//// Mass override spinner
 		DoubleModel m = new DoubleModel(component, "OverrideMass", UnitGroup.UNITS_MASS, 0);
 		register(m);
 
@@ -609,7 +608,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		}
 
 		panel.add(checkboxes, "growx 1, gapright 20lp");
-		
+
+		//// CG override spinner
 		m = new DoubleModel(component, "OverrideCGX", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 		// Calculate suitable length for slider
@@ -693,29 +693,21 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		}
 
 		panel.add(checkboxes, "growx 1, gapright 20lp");
-		
+
+		//// CD override spinner
 		m = new DoubleModel(component, "OverrideCD", UnitGroup.UNITS_COEFFICIENT, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 		register(m);
-		spin = new JSpinner(m.getSpinnerModel());
-
-		spin.setEditor(new SpinnerEditor(spin));
-		bm.addEnableComponent(spin, true);
-		panel.add(spin, "growx 1");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		
-		bs = new BasicSlider(m.getSliderModel(-1.0, 1.0));
-		bm.addEnableComponent(bs);
-		panel.add(bs, "skip, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, -1.0, 1.0, false);
+		bm.addEnableComponent(spinnerWithSlider, true);
+		panel.add(spinnerWithSlider, "growx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		if (component.getCDOverriddenBy() != null) {
 			check.setEnabled(false);
 			bm.removeEnableComponent(checkSub);
-			bm.removeEnableComponent(spin);
-			bm.removeEnableComponent(bs);
+			bm.removeEnableComponent(spinnerWithSlider);
 			checkSub.setEnabled(false);
-			spin.setEnabled(false);
-			bs.setEnabled(false);
+			spinnerWithSlider.setEnabled(false);
 		}
 
 		// END OVERRIDE CD --------------------------------------------------

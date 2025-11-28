@@ -19,9 +19,8 @@ import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
-import info.openrocket.swing.gui.components.BasicSlider;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.motor.IgnitionEvent;
 import info.openrocket.core.motor.MotorConfiguration;
@@ -44,13 +43,13 @@ public class MotorConfig extends JPanel implements Invalidatable, InvalidatingWi
 		this.mount = motorMount;
 		
 		BooleanModel model;
-		
+
+		// This component is a motor mount
 		model = new BooleanModel(motorMount, "MotorMount");
 		register(model);
 		JCheckBox check = new JCheckBox(model);
-		////This component is a motor mount
 		check.setText(trans.get("MotorCfg.checkbox.compmotormount"));
-		this.add(check, "wrap");
+		this.add(check, "spanx, wrap");
 		order.add(check);
 		
 		final JPanel panel = new JPanel(new MigLayout("fill"));
@@ -64,13 +63,9 @@ public class MotorConfig extends JPanel implements Invalidatable, InvalidatingWi
 		DoubleModel dm = new DoubleModel(motorMount, "MotorOverhang", UnitGroup.UNITS_LENGTH);
 		register(dm);
 
-		JSpinner spin = new JSpinner(dm.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "span, split, width :65lp:");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		panel.add(new UnitSelector(dm), "width :30lp:");
-		panel.add(new BasicSlider(dm.getSliderModel(-0.02, 0.06)), "w 100lp, wrap unrel");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(dm, -0.02, 0.06);
+		panel.add(spinnerWithSlider, "span, wrap unrel");
+		order.add(spinnerWithSlider.getTextField());
 		
 		
 		// Select ignition event
@@ -91,7 +86,7 @@ public class MotorConfig extends JPanel implements Invalidatable, InvalidatingWi
 		
 		dm = new DoubleModel(motorInstance, "IgnitionDelay", 0);
 		register(dm);
-		spin = new JSpinner(dm.getSpinnerModel());
+		JSpinner spin = new JSpinner(dm.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin, 3));
 		panel.add(spin, "gap rel rel");
 		order.add(((SpinnerEditor) spin.getEditor()).getTextField());

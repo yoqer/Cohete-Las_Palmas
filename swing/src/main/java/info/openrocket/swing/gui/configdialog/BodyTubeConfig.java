@@ -5,7 +5,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -19,12 +18,10 @@ import info.openrocket.core.rocketcomponent.SymmetricComponent;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 
 @SuppressWarnings("serial")
 public class BodyTubeConfig extends RocketComponentConfig {
@@ -36,7 +33,7 @@ public class BodyTubeConfig extends RocketComponentConfig {
 	public BodyTubeConfig(OpenRocketDocument d, RocketComponent c, JDialog parent) {
 		super(d, c, parent);
 
-		JPanel panel = new JPanel(new MigLayout("gap rel unrel", "[][65lp::][30lp::][]", ""));
+		JPanel panel = new JPanel(new MigLayout("gap rel unrel", "[][65lp::][]", ""));
 
 		////  Body tube length
 		panel.add(new JLabel(trans.get("BodyTubecfg.lbl.Bodytubelength")));
@@ -45,14 +42,10 @@ public class BodyTubeConfig extends RocketComponentConfig {
 		DoubleModel length = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		register(length);
 
-		JSpinner spin = new JSpinner(length.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		focusElement = spin;
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(length), "growx");
-		panel.add(new BasicSlider(length.getSliderModel(0, 0.5, maxLength)), "w 100lp, wrap");
+		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(length, 0, 0.5, maxLength);
+		focusElement = spinnerWithSlider.getSpinner();
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Body tube diameter
 		panel.add(new JLabel(trans.get("BodyTubecfg.lbl.Outerdiameter")));
@@ -60,13 +53,9 @@ public class BodyTubeConfig extends RocketComponentConfig {
 		// Diameter = 2*Radius
 		final DoubleModel od = new DoubleModel(component, "OuterRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 		register(od);
-		spin = new JSpinner(od.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(od), "growx");
-		panel.add(new BasicSlider(od.getSliderModel(0, 0.04, 0.2)), "w 100lp, wrap 0px");
+		spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
+		panel.add(spinnerWithSlider, "growx, wrap 0px");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Automatic
 		javax.swing.Action outerAutoAction = od.getAutomaticAction();
@@ -82,13 +71,9 @@ public class BodyTubeConfig extends RocketComponentConfig {
 		// Diameter = 2*Radius
 		final DoubleModel innerRadiusModel = new DoubleModel(component, "InnerRadius", 2, UnitGroup.UNITS_LENGTH, 0);
 		register(innerRadiusModel);
-		spin = new JSpinner(innerRadiusModel.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(innerRadiusModel), "growx");
-		panel.add(new BasicSlider(innerRadiusModel.getSliderModel(new DoubleModel(0), od)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(innerRadiusModel, new DoubleModel(0), od);
+		panel.add(spinnerWithSlider, "growx, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Wall thickness
@@ -96,13 +81,9 @@ public class BodyTubeConfig extends RocketComponentConfig {
 
 		final DoubleModel thicknessModel = new DoubleModel(component, "Thickness", UnitGroup.UNITS_LENGTH, 0);
 		register(thicknessModel);
-		spin = new JSpinner(thicknessModel.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		panel.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		panel.add(new UnitSelector(thicknessModel), "growx");
-		panel.add(new BasicSlider(thicknessModel.getSliderModel(0, 0.01)), "w 100lp, wrap 0px");
+		spinnerWithSlider = new SpinnerWithSlider(thicknessModel, 0, 0.01);
+		panel.add(spinnerWithSlider, "growx, wrap 0px");
+		order.add(spinnerWithSlider.getTextField());
 
 		//// Filled
 		BooleanModel bm = new BooleanModel(component, "Filled");

@@ -62,11 +62,10 @@ import info.openrocket.swing.gui.adaptors.BooleanModel;
 import info.openrocket.swing.gui.adaptors.DecalModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.ColorIcon;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.components.TextureComboBox;
 import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.EditDecalHelper;
@@ -721,19 +720,10 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		// Set the initial value to the reset state, not the shine value of the default appearance of this component
 		if (mDefault.getValue() && previousUserSelectedAppearance != null)
 			shineModel.setValue(previousUserSelectedAppearance.getShine());
-		final JSpinner spinShine = new JSpinner(shineModel.getSpinnerModel());
-		spinShine.setEditor(new SpinnerEditor(spinShine));
-		final BasicSlider slideShine = new BasicSlider(shineModel.getSliderModel(0, 1));
-		final UnitSelector unitShine = new UnitSelector(shineModel);
-
-		mDefault.addEnableComponent(slideShine, false);
-		mDefault.addEnableComponent(spinShine, false);
-		mDefault.addEnableComponent(unitShine, false);
-
-		panel.add(spinShine, "split 3, w 60");
-		panel.add(unitShine);
-		panel.add(slideShine, "w 100lp");
-		order.add(order.indexOf(colorHexField) + 1, ((SpinnerEditor) spinShine.getEditor()).getTextField());
+		final SpinnerWithSlider spinnerShine = new SpinnerWithSlider(shineModel, 0, 1);
+		mDefault.addEnableComponent(spinnerShine, false);
+		panel.add(spinnerShine, "w 60");
+		order.add(order.indexOf(colorHexField) + 1, spinnerShine.getTextField());
 
 		// Offset
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.offset")), "gapleft para");
@@ -761,35 +751,19 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		DoubleModel opacityModel = new DoubleModel(builder, "Opacity",
 				UnitGroup.UNITS_RELATIVE, 0, 1);
 		register(opacityModel);
-		JSpinner spinOpacity = new JSpinner(opacityModel.getSpinnerModel());
-		spinOpacity.setEditor(new SpinnerEditor(spinOpacity));
-		BasicSlider slideOpacity = new BasicSlider(opacityModel.getSliderModel(0, 1));
-		UnitSelector unitOpacity = new UnitSelector(opacityModel);
-
-		mDefault.addEnableComponent(slideOpacity, false);
-		mDefault.addEnableComponent(spinOpacity, false);
-		mDefault.addEnableComponent(unitOpacity, false);
-
-		panel.add(spinOpacity, "split 3, w 60");
-		panel.add(unitOpacity);
-		panel.add(slideOpacity, "w 100lp");
-		order.add(order.indexOf(((SpinnerEditor) spinShine.getEditor()).getTextField()) + 1,
-				((SpinnerEditor) spinOpacity.getEditor()).getTextField());
+		SpinnerWithSlider spinnerOpacity = new SpinnerWithSlider(opacityModel, 0, 1);
+		mDefault.addEnableComponent(spinnerOpacity, false);
+		panel.add(spinnerOpacity, "w 60");
+		order.add(order.indexOf(spinnerShine.getTextField()) + 1, spinnerOpacity.getTextField());
 
 		// Rotation
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.rotation")), "gapleft para");
 		DoubleModel rotationModel = new DoubleModel(builder, "Rotation", UnitGroup.UNITS_ANGLE);
 		register(rotationModel);
-		JSpinner rotation = new JSpinner(rotationModel.getSpinnerModel());
-		rotation.setEditor(new SpinnerEditor(rotation));
-		mDefault.addEnableComponent(rotation, false);
-		panel.add(rotation, "split 3, w 50");
-		order.add(((SpinnerEditor) rotation.getEditor()).getTextField());
-		panel.add(new UnitSelector(rotationModel));
-		BasicSlider bs = new BasicSlider(rotationModel.getSliderModel(
-				-Math.PI, Math.PI));
-		mDefault.addEnableComponent(bs, false);
-		panel.add(bs, "w 100lp, wrap");
+		SpinnerWithSlider spinnerRotation = new SpinnerWithSlider(rotationModel, -Math.PI, Math.PI);
+		mDefault.addEnableComponent(spinnerRotation, false);
+		panel.add(spinnerRotation, "wrap");
+		order.add(spinnerRotation.getTextField());
 
 		// Repeat
 		panel.add(new JLabel(trans.get("AppearanceCfg.lbl.texture.repeat")), "skip 2, gapleft para");
