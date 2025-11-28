@@ -5,15 +5,11 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.lang.reflect.Field;
-
-import javax.swing.Timer;
 
 import javax.swing.AbstractButton;
 import javax.swing.BoundedRangeModel;
@@ -208,7 +204,7 @@ public class SpinnerWithSlider extends JPanel {
 		private final int progressBarHeight;
 		private final int extraHeight;
 		
-		// Cached values for performance
+		// Cached values for performance - updated lazily
 		private Field cachedMinField;
 		private Field cachedMaxField;
 		private boolean shouldCenterAtZero = false;
@@ -216,9 +212,14 @@ public class SpinnerWithSlider extends JPanel {
 		private double cachedActualMax = Double.POSITIVE_INFINITY;
 		private boolean cacheValid = false;
 		
-		// Repaint throttling for better drag performance
-		private final Timer repaintTimer;
-		private boolean pendingRepaint = false;
+		// Cached progress bar rendering values
+		private int lastSliderValue = -1;
+		private int lastBarWidth = 0;
+		private int lastBarX = 0;
+		private int lastWidth = 0;
+		
+		// Flag to suppress repaints during batch operations
+		private boolean suppressRepaint = false;
 
 		public DraggableSpinner(DoubleModel model, BoundedRangeModel sliderModel) {
 			super(model.getSpinnerModel());
@@ -241,49 +242,31 @@ public class SpinnerWithSlider extends JPanel {
 			// Initialize reflection fields once
 			initializeReflection();
 			
-			// Setup repaint throttling timer (repaints at most every 16ms ~60fps)
-			repaintTimer = new Timer(16, e -> {
-				if (pendingRepaint) {
-					repaintProgressBar();
-					pendingRepaint = false;
-				}
-			});
-			repaintTimer.setRepeats(false);
-			
 			setupButtonLogic();
-			this.addChangeListener(e -> {
-				// Invalidate cache when model changes
-				cacheValid = false;
-				// Throttle repaints for better performance during dragging
-				scheduleRepaint();
-			});
 			
-			// Also listen to slider model changes to invalidate cache
-			sliderModel.addChangeListener(e -> {
-				cacheValid = false;
-				scheduleRepaint();
-			});
+			// Invalidate cache when model changes
+			this.addChangeListener(e -> cacheValid = false);
+			sliderModel.addChangeListener(e -> cacheValid = false);
 		}
 		
 		/**
-		 * Schedules a repaint with throttling to avoid excessive repaints during dragging.
+		 * Sets whether to suppress repaints during batch value changes.
 		 */
-		private void scheduleRepaint() {
-			if (!pendingRepaint) {
-				pendingRepaint = true;
-				if (!repaintTimer.isRunning()) {
-					repaintTimer.start();
-				}
+		void setSuppressRepaint(boolean suppress) {
+			this.suppressRepaint = suppress;
+		}
+		
+		@Override
+		public void repaint() {
+			if (!suppressRepaint) {
+				super.repaint();
 			}
 		}
 		
-		/**
-		 * Repaints only the progress bar area for better performance.
-		 */
-		private void repaintProgressBar() {
-			if (isDisplayable()) {
-				int y = getHeight() - progressBarHeight - (int) Math.round(BASE_PROGRESS_BAR_PADDING * (GUIUtil.getDPI() / REFERENCE_DPI));
-				repaint(0, y, getWidth(), progressBarHeight + (int) Math.round(BASE_PROGRESS_BAR_PADDING * (GUIUtil.getDPI() / REFERENCE_DPI)));
+		@Override
+		public void repaint(long tm, int x, int y, int width, int height) {
+			if (!suppressRepaint) {
+				super.repaint(tm, x, y, width, height);
 			}
 		}
 		
@@ -374,54 +357,54 @@ public class SpinnerWithSlider extends JPanel {
 			int sliderMin = sliderModel.getMinimum();
 			int sliderMax = sliderModel.getMaximum();
 			int sliderVal = sliderModel.getValue();
+			int width = getWidth();
 
-			if (sliderMax <= sliderMin) {
+			if (sliderMax <= sliderMin || width <= 0) {
 				return;
 			}
 
 			// Update cache if needed
 			updateCache();
-
-			// Use disabled color when spinner is disabled
-			Color drawColor = isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor;
 			
-			// Create graphics context without antialiasing for better performance (just drawing rectangles)
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setColor(drawColor);
-
-			if (shouldCenterAtZero) {
-				// Draw centered at 0
-				double currentValue = model.getCurrentUnit().toUnit(model.getValue());
-				int width = getWidth();
-				int centerX = width / 2;
-				int y = getHeight() - progressBarHeight;
-				
-				if (Math.abs(currentValue) < 1e-10) {
-					// At zero, draw nothing
-				} else if (currentValue > 0) {
-					// Positive: draw from center to right
-					double pct = Math.min(1.0, currentValue / cachedActualMax);
-					int barWidth = (int)(width / 2.0 * pct);
-					if (barWidth > 0) {
-						g2.fillRect(centerX, y, barWidth, progressBarHeight);
+			// Calculate bar dimensions - use cached values if unchanged
+			int barX = 0;
+			int barWidth = 0;
+			
+			if (sliderVal != lastSliderValue || width != lastWidth || !cacheValid) {
+				if (shouldCenterAtZero) {
+					double currentValue = model.getCurrentUnit().toUnit(model.getValue());
+					int centerX = width / 2;
+					
+					if (Math.abs(currentValue) >= 1e-10) {
+						if (currentValue > 0) {
+							double pct = Math.min(1.0, currentValue / cachedActualMax);
+							barWidth = (int)(width / 2.0 * pct);
+							barX = centerX;
+						} else {
+							double pct = Math.min(1.0, Math.abs(currentValue) / Math.abs(cachedActualMin));
+							barWidth = (int)(width / 2.0 * pct);
+							barX = centerX - barWidth;
+						}
 					}
 				} else {
-					// Negative: draw from center to left
-					double pct = Math.min(1.0, Math.abs(currentValue) / Math.abs(cachedActualMin));
-					int barWidth = (int)(width / 2.0 * pct);
-					if (barWidth > 0) {
-						g2.fillRect(centerX - barWidth, y, barWidth, progressBarHeight);
-					}
+					double pct = (double)(sliderVal - sliderMin) / (sliderMax - sliderMin);
+					barWidth = (int)(width * Math.max(0.0, Math.min(1.0, pct)));
 				}
+				
+				lastSliderValue = sliderVal;
+				lastBarWidth = barWidth;
+				lastBarX = barX;
+				lastWidth = width;
 			} else {
-				// Normal behavior: draw from left to right
-				double pct = Math.max(0.0, Math.min(1.0, (double)(sliderVal - sliderMin) / (sliderMax - sliderMin)));
-				int barWidth = (int)(getWidth() * pct);
-				if (barWidth > 0) {
-					g2.fillRect(0, getHeight() - progressBarHeight, barWidth, progressBarHeight);
-				}
+				barWidth = lastBarWidth;
+				barX = lastBarX;
 			}
-			g2.dispose();
+
+			if (barWidth > 0) {
+				Color drawColor = isEnabled() ? progressColor : SpinnerWithSlider.disabledProgressColor;
+				g.setColor(drawColor);
+				g.fillRect(barX, getHeight() - progressBarHeight, barWidth, progressBarHeight);
+			}
 		}
 
 		/**
@@ -525,41 +508,59 @@ public class SpinnerWithSlider extends JPanel {
 			 * @param useFineSteps Whether to use fine stepping (1/10th of normal step)
 			 */
 			private void applySteps(int steps, boolean useFineSteps) {
+				if (steps == 0) {
+					return;
+				}
+				
 				SpinnerModel spinnerModel = DraggableSpinner.this.getModel();
-				// Slider position range: 0 = min, 1000 = max
 				final int SLIDER_MIN = sliderModel.getMinimum();
 				final int SLIDER_MAX = sliderModel.getMaximum();
+				
+				// Check if we're already at the boundary
+				int currentSliderPos = sliderModel.getValue();
+				if ((steps > 0 && currentSliderPos >= SLIDER_MAX) || 
+					(steps < 0 && currentSliderPos <= SLIDER_MIN)) {
+					return;
+				}
 
-				for (int i = 0; i < Math.abs(steps); i++) {
-					// Check if we're at the slider's boundary before trying to step
-					int currentSliderPos = sliderModel.getValue();
-					if (steps > 0 && currentSliderPos >= SLIDER_MAX) {
-						// Already at slider's maximum, stop
-						break;
-					}
-					if (steps < 0 && currentSliderPos <= SLIDER_MIN) {
-						// Already at slider's minimum, stop
-						break;
-					}
-
-					Object newValue;
-					if (steps > 0) {
-						newValue = useFineSteps ? getFineNextValue(spinnerModel) : spinnerModel.getNextValue();
-					} else {
-						newValue = useFineSteps ? getFinePreviousValue(spinnerModel) : spinnerModel.getPreviousValue();
-					}
-					if (newValue != null) {
+				// Suppress repaints during batch operation
+				DraggableSpinner.this.setSuppressRepaint(true);
+				
+				try {
+					int absSteps = Math.abs(steps);
+					Object finalValue = null;
+					
+					for (int i = 0; i < absSteps; i++) {
+						Object newValue;
+						if (steps > 0) {
+							newValue = useFineSteps ? getFineNextValue(spinnerModel) : spinnerModel.getNextValue();
+						} else {
+							newValue = useFineSteps ? getFinePreviousValue(spinnerModel) : spinnerModel.getPreviousValue();
+						}
+						
+						if (newValue == null) {
+							break; // Reached model boundary
+						}
+						
+						// Set value to update model state for next iteration
 						DraggableSpinner.this.setValue(newValue);
-						// Check again after setting value to see if we hit the boundary
+						finalValue = newValue;
+						
+						// Check slider boundary
 						int newSliderPos = sliderModel.getValue();
-						if ((steps > 0 && newSliderPos >= SLIDER_MAX) || (steps < 0 && newSliderPos <= SLIDER_MIN)) {
-							// Reached slider boundary, stop
+						if ((steps > 0 && newSliderPos >= SLIDER_MAX) || 
+							(steps < 0 && newSliderPos <= SLIDER_MIN)) {
 							break;
 						}
-					} else {
-						// Reached min/max boundary (from spinner model), stop applying steps
-						break;
 					}
+					
+					// Final value is already set, just need to repaint once
+					if (finalValue != null) {
+						DraggableSpinner.this.setSuppressRepaint(false);
+						DraggableSpinner.this.repaint();
+					}
+				} finally {
+					DraggableSpinner.this.setSuppressRepaint(false);
 				}
 			}
 
