@@ -180,13 +180,20 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	// SVG export options
 	public static final String SVG_STROKE_COLOR = "SVGStrokeColor";
 	public static final String SVG_STROKE_WIDTH = "SVGStrokeWidth";
-	public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
+  public static final String SVG_DRAW_CROSSHAIR = "SVGDrawCrosshair";
 	public static final String SVG_CROSSHAIR_COLOR = "SVGCrosshairColor";
 	public static final String SVG_CROSSHAIR_SIZE = "SVGCrosshairSize";
 	public static final String SVG_SHOW_LABELS = "SVGShowLabels";
 	public static final String SVG_LABEL_COLOR = "SVGLabelColor";
 	public static final String SVG_PART_SPACING = "SVGPartSpacing";
-	
+
+	// Texture generation options
+	public static final String TEXTURE_GENERATION_DPI = "TextureGenerationDPI";
+	public static final String TEXTURE_GENERATION_DRAW_OUTLINE = "TextureGenerationDrawOutline";
+	public static final String TEXTURE_GENERATION_OUTLINE_PX = "TextureGenerationOutlinePx";
+	public static final String TEXTURE_GENERATION_RESET_TRANSFORMS = "TextureGenerationResetTransforms";
+	public static final String TEXTURE_GENERATION_OUTLINE_COLOR = "TextureGenerationOutlineColor";
+
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
 
 	private PinkNoiseWindModel averageWindModel = null;
@@ -1394,7 +1401,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	}
 
 	/**
-	 * Returns whether SVG exports should include crosshairs (used for centering rings/bulkheads).
+  * Returns whether SVG exports should include crosshairs (used for centering rings/bulkheads).
 	 *
 	 * @return true if crosshairs should be drawn
 	 */
@@ -1501,6 +1508,74 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 */
 	public void setSVGPartSpacing(double spacing) {
 		putDouble(SVG_PART_SPACING, spacing);
+  }
+
+  /**
+	 * Returns the texture generation DPI resolution setting.
+	 * @return the texture generation DPI
+	 */
+	public double getTextureGenerationDPI() {
+		return getDouble(TEXTURE_GENERATION_DPI, 300);
+	}
+
+	/**
+	 * Sets the texture generation DPI resolution setting.
+	 * @param dpi the texture generation DPI (dots per inch)
+	 */
+	public void setTextureGenerationDPI(double dpi) {
+		putDouble(TEXTURE_GENERATION_DPI, dpi);
+	}
+
+	/**
+	 * Returns whether to draw component outlines in texture generation.
+	 * @return true to draw outlines, false otherwise
+	 */
+	public boolean isTextureGenerationDrawOutline() {
+		return getBoolean(TEXTURE_GENERATION_DRAW_OUTLINE, true);
+	}
+
+	/**
+	 * Sets whether to draw component outlines in texture generation.
+	 * @param drawOutline true to draw outlines, false otherwise
+	 */
+	public void setTextureGenerationDrawOutline(boolean drawOutline) {
+		putBoolean(TEXTURE_GENERATION_DRAW_OUTLINE, drawOutline);
+	}
+
+	/**
+	 * Returns the preferred outline thickness for fin textures (in pixels).
+	 */
+	public int getTextureGenerationOutlinePx() {
+		return getInt(TEXTURE_GENERATION_OUTLINE_PX, 1);
+	}
+
+	/**
+	 * Sets the preferred outline thickness for fin textures (in pixels).
+	 */
+	public void setTextureGenerationOutlinePx(int outlinePx) {
+		putInt(TEXTURE_GENERATION_OUTLINE_PX, Math.max(0, outlinePx));
+	}
+
+	/**
+	 * Returns whether texture transforms should be reset when creating a new texture.
+	 */
+	public boolean isTextureGenerationResetTransforms() {
+		return getBoolean(TEXTURE_GENERATION_RESET_TRANSFORMS, true);
+	}
+
+	/**
+	 * Sets whether texture transforms should be reset when creating a new texture.
+	 */
+	public void setTextureGenerationResetTransforms(boolean reset) {
+		putBoolean(TEXTURE_GENERATION_RESET_TRANSFORMS, reset);
+	}
+
+	public Color getTextureGenerationOutlineColor() {
+		return getColor(TEXTURE_GENERATION_OUTLINE_COLOR, new ORColor(0, 0, 0)).toAWTColor();
+	}
+
+	public void setTextureGenerationOutlineColor(Color color) {
+		putColor(TEXTURE_GENERATION_OUTLINE_COLOR, ORColor.fromAWTColor(color));
 	}
 
 	/**
