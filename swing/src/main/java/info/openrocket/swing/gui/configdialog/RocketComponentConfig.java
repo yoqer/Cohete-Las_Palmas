@@ -46,9 +46,9 @@ import info.openrocket.swing.gui.adaptors.PresetModel;
 import info.openrocket.swing.gui.adaptors.TextComponentSelectionKeyListener;
 import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.StyledLabel.Style;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.dialogs.preset.ComponentPresetChooserDialog;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.Icons;
@@ -516,8 +516,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		JCheckBox check;
 		JCheckBox checkSub;
 		BooleanModel bm;
-		UnitSelector us;
-		BasicSlider bs;
+		SpinnerWithSlider spinnerWithSlider;
+		JSpinner spin;  // For CD override which doesn't have unit selector
+		BasicSlider bs;  // For CD override which doesn't have unit selector
 		
 		// OVERRIDE MASS ----------------------------------
 		JPanel checkboxes = new JPanel(new MigLayout("inset 0"));
@@ -559,30 +560,17 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		DoubleModel m = new DoubleModel(component, "OverrideMass", UnitGroup.UNITS_MASS, 0);
 		register(m);
 
-		JSpinner spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		bm.addEnableComponent(spin, true);
-		panel.add(spin, "growx 2");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		us = new UnitSelector(m);
-		bm.addEnableComponent(us, true);
-		panel.add(us, "growx 1");
-		
-		bs = new BasicSlider(m.getSliderModel(0, 0.03, 1.0));
-		bm.addEnableComponent(bs);
-		panel.add(bs, "wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1);
+		bm.addEnableComponent(spinnerWithSlider, true);
+		panel.add(spinnerWithSlider, "growx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		if (component.getMassOverriddenBy() != null) {
 			check.setEnabled(false);
 			bm.removeEnableComponent(checkSub);
-			bm.removeEnableComponent(spin);
-			bm.removeEnableComponent(us);
-			bm.removeEnableComponent(bs);
+			bm.removeEnableComponent(spinnerWithSlider);
 			checkSub.setEnabled(false);
-			spin.setEnabled(false);
-			us.setEnabled(false);
-			bs.setEnabled(false);
+			spinnerWithSlider.setEnabled(false);
 		}
 
 		// END OVERRIDE MASS ----------------------------------
@@ -655,30 +643,17 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			length = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
 		}
 		
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		bm.addEnableComponent(spin, true);
-		panel.add(spin, "growx 2");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-		
-		us = new UnitSelector(m);
-		bm.addEnableComponent(us, true);
-		panel.add(us, "growx 1");
-		
-		bs = new BasicSlider(m.getSliderModel(new DoubleModel(0), length));
-		bm.addEnableComponent(bs);
-		panel.add(bs, "wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, new DoubleModel(0), length);
+		bm.addEnableComponent(spinnerWithSlider, true);
+		panel.add(spinnerWithSlider, "growx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 		if (component.getCGOverriddenBy() != null) {
 			check.setEnabled(false);
 			bm.removeEnableComponent(checkSub);
-			bm.removeEnableComponent(spin);
-			bm.removeEnableComponent(us);
-			bm.removeEnableComponent(bs);
+			bm.removeEnableComponent(spinnerWithSlider);
 			checkSub.setEnabled(false);
-			spin.setEnabled(false);
-			us.setEnabled(false);
-			bs.setEnabled(false);
+			spinnerWithSlider.setEnabled(false);
 		}
 
 		// END OVERRIDE CG ---------------------------------------------------
@@ -803,7 +778,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		JCheckBox check;
 		JPanel sub;
 		DoubleModel m2;
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		BooleanModel bm;
 		sub = new JPanel(new MigLayout("gap rel unrel", "[][65lp::][30lp::]", ""));
 
@@ -820,13 +795,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m2 = new DoubleModel(component, "ForeRadius", 2, UnitGroup.UNITS_LENGTH);
 		register(m2);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(m0, m2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, m0, m2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Length:
@@ -835,13 +806,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m = new DoubleModel(component, "ForeShoulderLength", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(0, 0.02, 0.2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.02, 0.2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Thickness:
@@ -852,13 +819,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m2 = new DoubleModel(component, "ForeShoulderRadius", UnitGroup.UNITS_LENGTH);
 		register(m2);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(m0, m2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, m0, m2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Capped
@@ -875,7 +838,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 	}
 
 	private void addAftShoulderSection(JPanel panel, DoubleModel m0) {
-		JSpinner spin;
+		SpinnerWithSlider spinnerWithSlider;
 		JCheckBox check;
 		DoubleModel m;
 		DoubleModel m2;
@@ -907,13 +870,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m2 = new DoubleModel(component, valueNameRadius, 2, UnitGroup.UNITS_LENGTH);
 		register(m2);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(m0, m2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, m0, m2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Length:
@@ -922,13 +881,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m = new DoubleModel(component, valueNameShoulder+"Length", UnitGroup.UNITS_LENGTH, 0);
 		register(m);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(0, 0.02, 0.2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.02, 0.2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Thickness:
@@ -939,13 +894,9 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		m2 = new DoubleModel(component, valueNameShoulder+"Radius", UnitGroup.UNITS_LENGTH);
 		register(m2);
 
-		spin = new JSpinner(m.getSpinnerModel());
-		spin.setEditor(new SpinnerEditor(spin));
-		sub.add(spin, "growx");
-		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
-
-		sub.add(new UnitSelector(m), "growx");
-		sub.add(new BasicSlider(m.getSliderModel(m0, m2)), "w 100lp, wrap");
+		spinnerWithSlider = new SpinnerWithSlider(m, m0, m2);
+		sub.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		order.add(spinnerWithSlider.getTextField());
 
 
 		////  Capped

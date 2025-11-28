@@ -2,6 +2,9 @@ package info.openrocket.swing.gui.dialogs.preferences;
 
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
+import info.openrocket.core.unit.UnitGroup;
+import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.components.SpinnerWithSlider;
 import info.openrocket.swing.gui.theme.UITheme;
 
 import javax.swing.BorderFactory;
@@ -10,9 +13,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.border.TitledBorder;
 import java.awt.Font;
 import java.awt.font.TextAttribute;
@@ -33,7 +34,7 @@ public class UIPreviewPanel extends JPanel {
 	private final JButton button;
 	private final JTextField textField;
 	private final JComboBox<String> comboBox;
-	private final JSpinner spinner;
+	private final SpinnerWithSlider spinnerWithSlider;
 	private final JCheckBox checkBox;
 	private final JLabel warning;
 	private final JLabel error;
@@ -56,7 +57,10 @@ public class UIPreviewPanel extends JPanel {
 				trans.get("UIPreviewPanel.combo.item1"),
 				trans.get("UIPreviewPanel.combo.item2")
 		});
-		spinner = new JSpinner(new SpinnerNumberModel(42, 0, 100, 1));
+
+		// Create a SpinnerWithSlider for preview
+		DoubleModel spinnerModel = new DoubleModel(42, UnitGroup.UNITS_NONE, 0, 100);
+		spinnerWithSlider = new SpinnerWithSlider(spinnerModel, 0, 100);
 		checkBox = new JCheckBox(trans.get("UIPreviewPanel.check"), true);
 
 		warning = new JLabel(trans.get("UIPreviewPanel.Warning"));
@@ -70,7 +74,7 @@ public class UIPreviewPanel extends JPanel {
 		add(textField, "growx, wrap");
 
 		add(comboBox, "growx");
-		add(spinner, "growx, wrap");
+		add(spinnerWithSlider, "growx, wrap");
 
 		add(checkBox, "span 2, wrap 15");
 
@@ -78,8 +82,8 @@ public class UIPreviewPanel extends JPanel {
 		//  add(warning, "span 2, wrap");
 		//  add(error, "span 2");
 	}
-
-	public void updatePreview(String fontStyle, int fontSize, float letterSpacing) {
+	
+	public void updatePreview(String fontStyle, int fontSize, float letterSpacing, double spinnerSensitivity) {
 		// Create font attributes
 		Map<TextAttribute, Object> attributes = new HashMap<>();
 		attributes.put(TextAttribute.FAMILY, fontStyle);
@@ -95,10 +99,9 @@ public class UIPreviewPanel extends JPanel {
 		button.setFont(newFont);
 		textField.setFont(newFont);
 		comboBox.setFont(newFont);
+
 		// Update spinner and its editor
-		spinner.setFont(newFont);
-		JSpinner.DefaultEditor spinnerEditor = (JSpinner.DefaultEditor) spinner.getEditor();
-		spinnerEditor.getTextField().setFont(newFont);
+		spinnerWithSlider.getSpinner().setFont(newFont);
 		checkBox.setFont(newFont);
 		warning.setFont(newFont);
 		error.setFont(newFont);

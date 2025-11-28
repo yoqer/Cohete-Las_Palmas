@@ -145,6 +145,52 @@ public class DoubleModel implements StateChangeListener, ChangeSource, Invalidat
 			return d;
 		}
 		
+		/**
+		 * Returns the next value with a fine step (1/10th of the normal step size).
+		 * Used for fine-grained control when dragging with Shift modifier.
+		 * 
+		 * @return The next value with fine step, or null if at maximum.
+		 */
+		public Object getFineNextValue() {
+			double d = currentUnit.toUnit(DoubleModel.this.getValue());
+			boolean inverted = DoubleModel.this.currentUnit.getMultiplier() < 0;
+			double max = inverted ? currentUnit.toUnit(minValue) : currentUnit.toUnit(maxValue);
+			if (MathUtil.equals(d, max))
+				return null;
+			
+			// Calculate the normal step size and apply 1/10th of it
+			double nextNormal = currentUnit.getNextValue(d);
+			double fineStep = (nextNormal - d) / 10.0;
+			d = d + fineStep;
+			
+			if (d > max)
+				d = max;
+			return d;
+		}
+		
+		/**
+		 * Returns the previous value with a fine step (1/10th of the normal step size).
+		 * Used for fine-grained control when dragging with Shift modifier.
+		 * 
+		 * @return The previous value with fine step, or null if at minimum.
+		 */
+		public Object getFinePreviousValue() {
+			double d = currentUnit.toUnit(DoubleModel.this.getValue());
+			boolean inverted = DoubleModel.this.currentUnit.getMultiplier() < 0;
+			double min = inverted ? currentUnit.toUnit(maxValue) : currentUnit.toUnit(minValue);
+			if (MathUtil.equals(d, min))
+				return null;
+			
+			// Calculate the normal step size and apply 1/10th of it
+			double prevNormal = currentUnit.getPreviousValue(d);
+			double fineStep = (d - prevNormal) / 10.0;
+			d = d - fineStep;
+			
+			if (d < min)
+				d = min;
+			return d;
+		}
+		
 		@Override
 		public void addChangeListener(ChangeListener l) {
 			DoubleModel.this.addChangeListener(l);

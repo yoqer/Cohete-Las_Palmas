@@ -143,6 +143,19 @@ public class UIPreferencesPanel extends PreferencesPanel {
 		characterSpacingSpinner.setEditor(new SpinnerEditor(characterSpacingSpinner));
 		this.add(characterSpacingSpinner, "sizegroup uiSettings, wrap");
 
+		// Spinner drag sensitivity selector
+		JLabel lblSpinnerSensitivity = new JLabel(trans.get("generalprefs.lbl.SpinnerDragSensitivity"));
+		lblSpinnerSensitivity.setToolTipText(trans.get("generalprefs.lbl.SpinnerDragSensitivity.ttip"));
+		this.add(lblSpinnerSensitivity, "gapright para");
+		
+		UnitGroup sensitivityUnit = new UnitGroup();
+		sensitivityUnit.addUnit(new FixedPrecisionUnit("" + ZWSP, 0.1));
+		final DoubleModel spinnerSensitivityModel = new DoubleModel(preferences, "SpinnerDragSensitivity", sensitivityUnit, 0.1, 5.0);
+		final JSpinner spinnerSensitivitySpinner = new JSpinner(spinnerSensitivityModel.getSpinnerModel());
+		spinnerSensitivitySpinner.setEditor(new SpinnerEditor(spinnerSensitivitySpinner));
+		spinnerSensitivitySpinner.setToolTipText(trans.get("generalprefs.lbl.SpinnerDragSensitivity.ttip"));
+		this.add(spinnerSensitivitySpinner, "sizegroup uiSettings, wrap");
+
 		// Restart warning label
 		this.lblRestartOR = new JLabel();
 		this.lblRestartOR.setForeground(GUIUtil.getUITheme().getDarkErrorColor());
@@ -177,6 +190,7 @@ public class UIPreferencesPanel extends PreferencesPanel {
 		uiScaleSpinner.addChangeListener(new UIPreferenceChangeListener());
 		fontSizeSpinner.addChangeListener(new UIPreferenceChangeListener());
 		characterSpacingSpinner.addChangeListener(new UIPreferenceChangeListener());
+		spinnerSensitivitySpinner.addChangeListener(new UIPreferenceChangeListener());
 
 		fontStyleCombo.addActionListener(new ActionListener() {
 			@Override
@@ -212,7 +226,8 @@ public class UIPreferencesPanel extends PreferencesPanel {
 		previewPanel.updatePreview(
 				preferences.getUIFontStyle(),
 				preferences.getUIFontSize(),
-				(float) preferences.getUIFontTracking()
+				(float) preferences.getUIFontTracking(),
+				preferences.getSpinnerDragSensitivity()
 		);
 	}
 

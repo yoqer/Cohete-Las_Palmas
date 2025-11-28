@@ -69,6 +69,7 @@ public class SwingPreferences extends ApplicationPreferences {
 	private static final String UI_FONT_SIZE = "UIFontSize";
 	public static final String UI_FONT_STYLE = "UIFontStyle";
 	public static final String UI_FONT_TRACKING = "UIFontTracking";
+	public static final String SPINNER_DRAG_SENSITIVITY = "SpinnerDragSensitivity";
 	public static final String UPDATE_PLATFORM = "UpdatePlatform";
 	public static final String LOCK_CLICK_DRAG_ROTATION = "LockClickDragRotation";
 	
@@ -476,6 +477,22 @@ public class SwingPreferences extends ApplicationPreferences {
 	 */
 	public void setUIFontTracking(double tracking) {
 		putDouble(UI_FONT_TRACKING, tracking);
+	}
+
+	/**
+	 * Get the spinner drag sensitivity multiplier.
+	 * @return the sensitivity multiplier (1.0 = default, < 1.0 = more sensitive, > 1.0 = less sensitive)
+	 */
+	public double getSpinnerDragSensitivity() {
+		return getDouble(SPINNER_DRAG_SENSITIVITY, 1.0);
+	}
+
+	/**
+	 * Set the spinner drag sensitivity multiplier.
+	 * @param sensitivity the sensitivity multiplier (1.0 = default, < 1.0 = more sensitive, > 1.0 = less sensitive)
+	 */
+	public void setSpinnerDragSensitivity(double sensitivity) {
+		putDouble(SPINNER_DRAG_SENSITIVITY, sensitivity);
 	}
 
 	/**
