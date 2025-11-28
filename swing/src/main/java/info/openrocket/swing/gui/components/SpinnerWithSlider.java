@@ -54,7 +54,7 @@ public class SpinnerWithSlider extends JPanel {
 
 	private static final double REFERENCE_DPI = 96.0;
 	private static final double BASE_PROGRESS_BAR_HEIGHT = 4.0;
-	private static final double BASE_SENSITIVITY = 2.0;
+	private static final double BASE_SENSITIVITY = 6.0;		// Lower = more sensitive
 	private static final double BASE_PROGRESS_BAR_PADDING = 1.0; // Extra padding above progress bar
 	private static final double BASE_MIN_BAR_WIDTH = 2.0; // Minimum bar width when value is at zero
 
