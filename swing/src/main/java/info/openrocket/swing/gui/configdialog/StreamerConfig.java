@@ -77,7 +77,7 @@ public class StreamerConfig extends RecoveryDeviceConfig {
 		register(m);
 		
 		spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.2);
-		panel.add(spinnerWithSlider, "growx, spanx 2, wrap 10lp");
+		panel.add(spinnerWithSlider, "growx, wrap 10lp");
 		order.add(spinnerWithSlider.getTextField());
 
 		//// Strip area:

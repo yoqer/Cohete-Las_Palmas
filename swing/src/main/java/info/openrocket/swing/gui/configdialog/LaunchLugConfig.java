@@ -103,7 +103,7 @@ public class LaunchLugConfig extends RocketComponentConfig {
 			register(m);
 
 			spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
-			placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+			placementPanel.add(spinnerWithSlider, "growx");
 			order.add(spinnerWithSlider.getTextField());
 		}
 

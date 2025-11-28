@@ -53,7 +53,7 @@ public class PlacementPanel extends JPanel implements Invalidatable, Invalidatin
         register(maxOffsetModel);
         
         final SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(axialOffsetModel, minOffsetModel, maxOffsetModel);
-        this.add(spinnerWithSlider, "growx, wrap");
+        this.add(spinnerWithSlider, "growx");
         order.add(spinnerWithSlider.getTextField());
 
         axialMethodCombo.addActionListener(new ActionListener() {

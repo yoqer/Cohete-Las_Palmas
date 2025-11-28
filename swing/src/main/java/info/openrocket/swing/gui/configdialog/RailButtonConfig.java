@@ -130,7 +130,7 @@ public class RailButtonConfig extends RocketComponentConfig {
 				DoubleModel angleModel = new DoubleModel(component, "AngleOffset", UnitGroup.UNITS_ANGLE, -180, +180);
 				register(angleModel);
 				SpinnerWithSlider angleSpinner = new SpinnerWithSlider(angleModel, -Math.PI, Math.PI);
-				placementPanel.add(angleSpinner, "growx, spanx 2");
+				placementPanel.add(angleSpinner, "growx");
 				order.add(angleSpinner.getTextField());
 			}
 		}

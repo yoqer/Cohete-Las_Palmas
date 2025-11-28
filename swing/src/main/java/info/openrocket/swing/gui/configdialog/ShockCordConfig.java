@@ -51,7 +51,7 @@ public class ShockCordConfig extends RocketComponentConfig {
 		register(m);
 		
 		spinnerWithSlider = new SpinnerWithSlider(m, 0, 1, 10);
-		panel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+		panel.add(spinnerWithSlider, "growx, wrap");
 		order.add(spinnerWithSlider.getTextField());
 
 		// Material
@@ -78,7 +78,7 @@ public class ShockCordConfig extends RocketComponentConfig {
 				register(m);
 
 				spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1, 0.5);
-				placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+				placementPanel.add(spinnerWithSlider, "growx, wrap");
 				order.add(spinnerWithSlider.getTextField());
 			}
 
@@ -89,7 +89,7 @@ public class ShockCordConfig extends RocketComponentConfig {
 				DoubleModel od = new DoubleModel(component, "Radius", 2, UnitGroup.UNITS_LENGTH, 0);
 				register(od);
 				spinnerWithSlider = new SpinnerWithSlider(od, 0, 0.04, 0.2);
-				placementPanel.add(spinnerWithSlider, "growx, spanx 2, wrap");
+				placementPanel.add(spinnerWithSlider, "growx, wrap");
 				order.add(spinnerWithSlider.getTextField());
 
 				////// Automatic
@@ -97,7 +97,7 @@ public class ShockCordConfig extends RocketComponentConfig {
 				checkAutoPackedRadius.setText(trans.get("ParachuteCfg.checkbox.AutomaticPacked"));
 				checkAutoPackedRadius.setToolTipText(trans.get("ParachuteCfg.checkbox.AutomaticPacked.ttip"));
 				checkAutoPackedRadius.setEnabled(((MassObject) component).getMaxParentRadius() > 0);
-				placementPanel.add(checkAutoPackedRadius, "skip, spanx 2, wrap");
+				placementPanel.add(checkAutoPackedRadius, "skip");
 				component.getParent().addComponentChangeListener(new ComponentChangeListener() {
 					@Override
 					public void componentChanged(ComponentChangeEvent e) {

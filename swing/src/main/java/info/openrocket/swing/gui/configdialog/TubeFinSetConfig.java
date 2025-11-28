@@ -96,7 +96,7 @@ public class TubeFinSetConfig extends RocketComponentConfig {
 		primary.add(panel, "grow, gapright 40lp");
 
 		// Right side panel
-		panel = new JPanel(new MigLayout("gap rel unrel, ins 0", "[][65lp::][30lp::][]", ""));
+		panel = new JPanel(new MigLayout("gap rel unrel, ins 0"));
 
 		{ //// Placement
 			//// Position relative to:
@@ -114,7 +114,7 @@ public class TubeFinSetConfig extends RocketComponentConfig {
 			register(m);
 
 			spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
-			placementPanel.add(spinnerWithSlider, "growx, wrap");
+			placementPanel.add(spinnerWithSlider, "growx");
 			order.add(spinnerWithSlider.getTextField());
 		}
 

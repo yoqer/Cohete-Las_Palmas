@@ -110,7 +110,7 @@ public class ParachuteConfig extends RecoveryDeviceConfig {
 		
 		spinnerWithSlider = new SpinnerWithSlider(m, 0, 2, false);
 		spinnerWithSlider.setToolTipText(tip);
-		canopyPanel.add(spinnerWithSlider, "growx, spanx");
+		canopyPanel.add(spinnerWithSlider, "growx");
 		order.add(spinnerWithSlider.getTextField());
 
 		//// Reset button

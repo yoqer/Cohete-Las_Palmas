@@ -128,7 +128,7 @@ public class EllipticalFinSetConfig extends FinSetConfig {
 				register(m);
 
 				spinnerWithSlider = new SpinnerWithSlider(m, -Math.PI, Math.PI);
-				placementPanel.add(spinnerWithSlider, "growx, wrap");
+				placementPanel.add(spinnerWithSlider, "growx");
 				order.add(spinnerWithSlider.getTextField());
 			}
 		}

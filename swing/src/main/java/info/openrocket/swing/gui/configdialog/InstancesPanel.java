@@ -27,7 +27,7 @@ public class InstancesPanel extends JPanel implements Invalidatable, Invalidatin
     private final List<Invalidatable> invalidatables = new ArrayList<>();
 
     public InstancesPanel(RocketComponent component, List<Component> order) {
-        super(new MigLayout("gap rel unrel", "[][65lp::][30lp::]"));
+        super(new MigLayout("gap rel unrel"));
         this.setBorder(BorderFactory.createTitledBorder(trans.get("InstancesPanel.title.Instances")));
 
         {//// Instance Count
@@ -36,7 +36,7 @@ public class InstancesPanel extends JPanel implements Invalidatable, Invalidatin
             register(countModel);
             JSpinner countSpinner = new JSpinner( countModel.getSpinnerModel());
             countSpinner.setEditor(new SpinnerEditor(countSpinner));
-            add(countSpinner, "growx, wrap rel");
+            add(countSpinner, "growx, wrap");
             order.add(((SpinnerEditor) countSpinner.getEditor()).getTextField());
         }
 
@@ -49,7 +49,7 @@ public class InstancesPanel extends JPanel implements Invalidatable, Invalidatin
                 maxSeparationDistance = component.getParent().getLength();
             }
             SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(separationModel, -maxSeparationDistance, maxSeparationDistance);
-            add(spinnerWithSlider, "growx, spanx 2, wrap para");
+            add(spinnerWithSlider, "growx");
             order.add(spinnerWithSlider.getTextField());
         }
     }

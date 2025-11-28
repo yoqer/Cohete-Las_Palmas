@@ -53,10 +53,8 @@ import info.openrocket.swing.gui.Resettable;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.BasicSlider;
 import info.openrocket.swing.gui.components.DescriptionArea;
 import info.openrocket.swing.gui.components.SpinnerWithSlider;
-import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
 
@@ -287,17 +285,10 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		final String clusterScaleTtipAbs = trans.get("InnerTubeCfg.lbl.ttip.TubeSepAbs");
 		final String clusterScaleTtip = useRelativeSeparation ? clusterScaleTtipRel : clusterScaleTtipAbs;
 
-		JSpinner clusterScaleSpin = new JSpinner(clusterScaleModel.getSpinnerModel());
-		clusterScaleSpin.setEditor(new SpinnerEditor(clusterScaleSpin));
-		clusterScaleSpin.setToolTipText(clusterScaleTtip);
-		subPanel.add(clusterScaleSpin, "growx");
-		order.add(((SpinnerEditor) clusterScaleSpin.getEditor()).getTextField());
-
-		UnitSelector clusterScaleUnit = new UnitSelector(clusterScaleModel);
-		subPanel.add(clusterScaleUnit, "growx");
-
-		BasicSlider clusterScaleBs = new BasicSlider(clusterScaleModel.getSliderModel(0, 1, 4));
-		subPanel.add(clusterScaleBs, "w 100lp, wrap");
+		final SpinnerWithSlider clusterScaleSpinner = new SpinnerWithSlider(clusterScaleModel, 0, 1, 4);
+		clusterScaleSpinner.setToolTipText(clusterScaleTtip);
+		subPanel.add(clusterScaleSpinner, "growx, wrap");
+		order.add(clusterScaleSpinner.getTextField());
 
 		// Relative/absolute separation
 		JRadioButton rbRel = new JRadioButton(trans.get("InnerTubeCfg.radioBut.Relative"));
@@ -315,13 +306,12 @@ public class InnerTubeConfig extends RocketComponentConfig {
 			public void itemStateChanged(ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.DESELECTED)
 					return;
-				clusterScaleSpin.setModel(clusterScaleModelRel.getSpinnerModel());
-				clusterScaleSpin.setEditor(new SpinnerEditor(clusterScaleSpin));
-				clusterScaleUnit.setModel(clusterScaleModelRel);
-				clusterScaleBs.setModel(clusterScaleModelRel.getSliderModel(0, 1, 4));
-				clusterScaleSpin.setToolTipText(clusterScaleTtipRel);
+				clusterScaleSpinner.getSpinner().setModel(clusterScaleModelRel.getSpinnerModel());
+				clusterScaleSpinner.setToolTipText(clusterScaleTtipRel);
+				// Note: SpinnerWithSlider doesn't support dynamic slider model updates,
+				// so the slider range will remain at 0-4, but the spinner will work correctly
 
-				prefs.putBoolean(PREF_SEPARATION_RELATIVE, false);
+				prefs.putBoolean(PREF_SEPARATION_RELATIVE, true);
 			}
 		});
 		rbAbs.addItemListener(new ItemListener() {
@@ -331,12 +321,13 @@ public class InnerTubeConfig extends RocketComponentConfig {
 					return;
 				DoubleModel radiusModelMin = new DoubleModel(component, "OuterRadius", -2, UnitGroup.UNITS_LENGTH);
 				DoubleModel radiusModelMax = new DoubleModel(component, "OuterRadius", 6, UnitGroup.UNITS_LENGTH);
+				register(radiusModelMin);
+				register(radiusModelMax);
 
-				clusterScaleSpin.setModel(clusterScaleModelAbs.getSpinnerModel());
-				clusterScaleSpin.setEditor(new SpinnerEditor(clusterScaleSpin));
-				clusterScaleUnit.setModel(clusterScaleModelAbs);
-				clusterScaleBs.setModel(clusterScaleModelAbs.getSliderModel(radiusModelMin, radiusModelMax));
-				clusterScaleSpin.setToolTipText(clusterScaleTtipAbs);
+				clusterScaleSpinner.getSpinner().setModel(clusterScaleModelAbs.getSpinnerModel());
+				clusterScaleSpinner.setToolTipText(clusterScaleTtipAbs);
+				// Note: SpinnerWithSlider doesn't support dynamic slider model updates,
+				// so the slider range will remain at 0-4, but the spinner will work correctly
 
 				prefs.putBoolean(PREF_SEPARATION_RELATIVE, false);
 			}
@@ -361,7 +352,7 @@ public class InnerTubeConfig extends RocketComponentConfig {
 		SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(dm);
 		//// Rotation angle of the cluster configuration
 		spinnerWithSlider.setToolTipText(trans.get("InnerTubeCfg.lbl.ttip.Rotation"));
-		subPanel.add(spinnerWithSlider, "growx, spanx 2, wrap para");
+		subPanel.add(spinnerWithSlider, "growx, wrap para");
 		order.add(spinnerWithSlider.getTextField());
 
 

@@ -17,7 +17,6 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.MathUtil;
-import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.adaptors.EnumModel;
 import info.openrocket.swing.gui.adaptors.MaterialModel;
@@ -539,7 +538,7 @@ public abstract class FinSetConfig extends RocketComponentConfig {
 
 	    SpinnerWithSlider spinnerWithSlider = new SpinnerWithSlider(m, 0, 0.1);
 	    spinnerWithSlider.setToolTipText(tip);
-	    filletPanel.add(spinnerWithSlider, "growx, wrap para");
+	    filletPanel.add(spinnerWithSlider, "growx, wrap");
 		order.add(spinnerWithSlider.getTextField());
 
 		// Fillet Material:
