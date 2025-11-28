@@ -192,14 +192,12 @@ public class GeneralUnit extends Unit {
 	
 	@Override
 	public double getNextValue(double value) {
-		// TODO: HIGH: Auto-generated method stub
-		return value+1;
+		return value + stepValue;
 	}
 
 	@Override
 	public double getPreviousValue(double value) {
-		// TODO: HIGH: Auto-generated method stub
-		return value-1;
+		return value - stepValue;
 	}
 	
 	
