@@ -6,6 +6,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.components.FieldSeparatorComboBox;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.util.GUIUtil;
@@ -80,7 +81,7 @@ public class CSVImportSettingsDialog extends JDialog {
 	private final UnitSelector directionUnitSelector;
 	private final UnitSelector stdDeviationUnitSelector;
 
-	private final JComboBox<String> separatorComboBox;
+	private final FieldSeparatorComboBox separatorComboBox;
 	private final JCheckBox hasHeaderCheckBox;
 	private final JTextPane previewTextPane;
 	private final JScrollPane scrollPane;
@@ -235,9 +236,8 @@ public class CSVImportSettingsDialog extends JDialog {
 
 		//// Field separator
 		csvSettings.add(new JLabel(trans.get("CSVImportSettingsDialog.separator")));
-		separatorComboBox = new JComboBox<>(new String[]{",", ";", SPACE, TAB});
-		separatorComboBox.setEditable(true);
-		separatorComboBox.setSelectedItem(prefs.getString(ApplicationPreferences.EXPORT_FIELD_SEPARATOR, ","));
+		separatorComboBox = new FieldSeparatorComboBox();
+		separatorComboBox.loadFromExportPreferences();
 		csvSettings.add(separatorComboBox, "wrap");
 
 		// CSV file preview panel

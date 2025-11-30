@@ -1,9 +1,11 @@
 package info.openrocket.core.simulation;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.EventObject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import info.openrocket.core.models.wind.MultiLevelPinkNoiseWindModel;
@@ -20,6 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import info.openrocket.core.aerodynamics.BarrowmanCalculator;
+import info.openrocket.core.aerodynamics.BarrowmanDragCalculator;
+import info.openrocket.core.aerodynamics.BarrowmanStabilityCalculator;
+import info.openrocket.core.aerodynamics.LookupTableDragCalculator;
+import info.openrocket.core.aerodynamics.LookupTableStabilityCalculator;
+import info.openrocket.core.aerodynamics.lookup.CsvMachAoALookup;
+import info.openrocket.core.aerodynamics.lookup.MachAoALookup;
 import info.openrocket.core.masscalc.MassCalculator;
 import info.openrocket.core.models.atmosphere.AtmosphericModel;
 import info.openrocket.core.models.atmosphere.ExtendedISAModel;
@@ -48,6 +56,9 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	 * The ISA standard atmosphere.
 	 */
 	private static final AtmosphericModel ISA_ATMOSPHERIC_MODEL = new ExtendedISAModel();
+
+	private static final List<String> DRAG_VALUE_COLUMNS = List.of("cd");
+	private static final List<String> STABILITY_VALUE_COLUMNS = List.of("cn", "cm", "cp");
 
 	protected final ApplicationPreferences preferences = Application.getPreferences();
 
@@ -91,6 +102,13 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	private double constantGravity = preferences.getConstantGravityValue();
 
 	private SimulationStepperMethod stepperMethodChoice = SimulationStepperMethod.RK4;
+
+	private Path dragLookupCsvPath;
+	private Path stabilityLookupCsvPath;
+	private MachAoALookup dragLookupTable;
+	private MachAoALookup stabilityLookupTable;
+	private List<String> dragLookupCsvRows;
+	private List<String> stabilityLookupCsvRows;
 
 	public SimulationOptions() {
 		averageWindModel = new PinkNoiseWindModel(randomSeed);
@@ -411,6 +429,108 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		fireChangeEvent();
 	}
 
+	public Path getDragLookupCsvPath() {
+		return dragLookupCsvPath;
+	}
+
+	public MachAoALookup getDragLookupTable() {
+		return dragLookupTable;
+	}
+
+	public void setDragLookupCsvPath(Path csvPath) {
+		Path normalized = normalizePath(csvPath);
+		MachAoALookup table = normalized != null ? CsvMachAoALookup.fromCsv(normalized, DRAG_VALUE_COLUMNS) : null;
+		updateDragLookup(normalized, table);
+	}
+
+	public void setDragLookup(Path csvPath, MachAoALookup table) {
+		setDragLookup(csvPath, table, null);
+	}
+
+	public void setDragLookup(Path csvPath, MachAoALookup table, List<String> csvRows) {
+		Path normalized = normalizePath(csvPath);
+		if (normalized != null && table == null) {
+			throw new IllegalArgumentException("table must not be null when csvPath is provided");
+		}
+		this.dragLookupCsvRows = csvRows != null ? new ArrayList<>(csvRows) : null;
+		updateDragLookup(normalized, table);
+	}
+
+	public void clearDragLookup() {
+		this.dragLookupCsvRows = null;
+		updateDragLookup(null, null);
+	}
+
+	public boolean hasDragLookup() {
+		return dragLookupTable != null;
+	}
+
+	public List<String> getDragLookupCsvRows() {
+		return dragLookupCsvRows != null ? new ArrayList<>(dragLookupCsvRows) : null;
+	}
+
+	public Path getStabilityLookupCsvPath() {
+		return stabilityLookupCsvPath;
+	}
+
+	public MachAoALookup getStabilityLookupTable() {
+		return stabilityLookupTable;
+	}
+
+	public void setStabilityLookupCsvPath(Path csvPath) {
+		Path normalized = normalizePath(csvPath);
+		MachAoALookup table = normalized != null ? CsvMachAoALookup.fromCsv(normalized, STABILITY_VALUE_COLUMNS) : null;
+		updateStabilityLookup(normalized, table);
+	}
+
+	public void setStabilityLookup(Path csvPath, MachAoALookup table) {
+		setStabilityLookup(csvPath, table, null);
+	}
+
+	public void setStabilityLookup(Path csvPath, MachAoALookup table, List<String> csvRows) {
+		Path normalized = normalizePath(csvPath);
+		if (normalized != null && table == null) {
+			throw new IllegalArgumentException("table must not be null when csvPath is provided");
+		}
+		this.stabilityLookupCsvRows = csvRows != null ? new ArrayList<>(csvRows) : null;
+		updateStabilityLookup(normalized, table);
+	}
+
+	public void clearStabilityLookup() {
+		this.stabilityLookupCsvRows = null;
+		updateStabilityLookup(null, null);
+	}
+
+	public boolean hasStabilityLookup() {
+		return stabilityLookupTable != null;
+	}
+
+	public List<String> getStabilityLookupCsvRows() {
+		return stabilityLookupCsvRows != null ? new ArrayList<>(stabilityLookupCsvRows) : null;
+	}
+
+	private void updateDragLookup(Path path, MachAoALookup table) {
+		boolean changed = !Objects.equals(this.dragLookupCsvPath, path) || this.dragLookupTable != table;
+		this.dragLookupCsvPath = path;
+		this.dragLookupTable = table;
+		if (changed) {
+			fireChangeEvent();
+		}
+	}
+
+	private void updateStabilityLookup(Path path, MachAoALookup table) {
+		boolean changed = !Objects.equals(this.stabilityLookupCsvPath, path) || this.stabilityLookupTable != table;
+		this.stabilityLookupCsvPath = path;
+		this.stabilityLookupTable = table;
+		if (changed) {
+			fireChangeEvent();
+		}
+	}
+
+	private static Path normalizePath(Path path) {
+		return path == null ? null : path.toAbsolutePath().normalize();
+	}
+
 	public int getRandomSeed() {
 		return randomSeed;
 	}
@@ -448,6 +568,12 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 			copy.multiLevelPinkNoiseWindModel = this.multiLevelPinkNoiseWindModel.clone();
 
 			copy.windModelType = this.windModelType;
+			copy.dragLookupCsvPath = this.dragLookupCsvPath;
+			copy.dragLookupTable = this.dragLookupTable;
+			copy.dragLookupCsvRows = this.dragLookupCsvRows != null ? new ArrayList<>(this.dragLookupCsvRows) : null;
+			copy.stabilityLookupCsvPath = this.stabilityLookupCsvPath;
+			copy.stabilityLookupTable = this.stabilityLookupTable;
+			copy.stabilityLookupCsvRows = this.stabilityLookupCsvRows != null ? new ArrayList<>(this.stabilityLookupCsvRows) : null;
 
 			// Create a new list for listeners
 			copy.listeners = new ArrayList<>();
@@ -544,6 +670,18 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 			this.geodeticComputation = src.geodeticComputation;
 		}
 
+		if (!Objects.equals(this.dragLookupCsvPath, src.dragLookupCsvPath) || this.dragLookupTable != src.dragLookupTable) {
+			isChanged = true;
+			this.dragLookupCsvPath = src.dragLookupCsvPath;
+			this.dragLookupTable = src.dragLookupTable;
+		}
+		if (!Objects.equals(this.stabilityLookupCsvPath, src.stabilityLookupCsvPath) ||
+				this.stabilityLookupTable != src.stabilityLookupTable) {
+			isChanged = true;
+			this.stabilityLookupCsvPath = src.stabilityLookupCsvPath;
+			this.stabilityLookupTable = src.stabilityLookupTable;
+		}
+
 		if (isChanged) {
 			// Only copy the randomSeed if something else has changed.
 			// Honestly, I don't really see a need for that.
@@ -629,7 +767,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		WindModel windModel = getWindModel().clone();
 		conditions.setWindModel(windModel);
 		conditions.setAtmosphericModel(getAtmosphericModel());
-		
+
 		GravityModel gravityModel;
 		if (gravityModelType == GravityModelType.WGS) {
 			gravityModel = new WGSGravityModel();
@@ -640,7 +778,11 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		}
 		conditions.setGravityModel(gravityModel);
 
-		conditions.setAerodynamicCalculator(new BarrowmanCalculator());
+		conditions.setAerodynamicCalculator(new BarrowmanCalculator(
+				stabilityLookupTable != null ? new LookupTableStabilityCalculator(stabilityLookupTable)
+						: new BarrowmanStabilityCalculator(),
+				dragLookupTable != null ? new LookupTableDragCalculator(dragLookupTable)
+						: new BarrowmanDragCalculator()));
 		conditions.setMassCalculator(new MassCalculator());
 
 		conditions.setTimeStep(getTimeStep());
