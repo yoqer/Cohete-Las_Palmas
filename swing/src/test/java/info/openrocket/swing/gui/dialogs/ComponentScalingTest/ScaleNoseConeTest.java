@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the NoseCone component.
+ * Verifies the linear scaling of its primary dimensions: Length, BaseRadius,
+ * ShoulderLength, and ShoulderRadius.
+ */
 public class ScaleNoseConeTest extends ScaleDialogBaseTest {
 
     @Test

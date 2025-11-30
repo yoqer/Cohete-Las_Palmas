@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the InnerTube component.
+ * Verifies the linear scaling of its dimensional (MotorOverhang) and
+ * positional (AxialOffset) properties.
+ */
 public class ScaleInnerTubeTest extends ScaleDialogBaseTest {
 
     @Test

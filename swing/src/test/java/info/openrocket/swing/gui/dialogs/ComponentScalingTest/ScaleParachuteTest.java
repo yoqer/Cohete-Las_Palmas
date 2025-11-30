@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the Parachute component.
+ * Verifies the linear scaling of its primary dimensions: Diameter and LineLength.
+ */
 public class ScaleParachuteTest extends ScaleDialogBaseTest {
 
     @Test

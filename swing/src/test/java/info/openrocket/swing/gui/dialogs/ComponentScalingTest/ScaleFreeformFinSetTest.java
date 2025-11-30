@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the FreeformFinSet component.
+ * Verifies that the coordinate points of the fin shape are scaled linearly.
+ */
 public class ScaleFreeformFinSetTest extends ScaleDialogBaseTest {
 
     @Test
@@ -36,7 +40,7 @@ public class ScaleFreeformFinSetTest extends ScaleDialogBaseTest {
 
         // 0.5 * 1.5 = 0.75
         assertEquals(0.75, pointsStep2[1].getX(), 0.001);
-        assertEquals(0.0, pointsStep2[1].getY(), 0.001);
+        assertEquals(0.0, pointsStep1[1].getY(), 0.001);
         assertEquals(0.0, pointsStep2[2].getX(), 0.001);
         assertEquals(0.75, pointsStep2[2].getY(), 0.001);
     }

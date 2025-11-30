@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the TrapezoidFinSet component.
+ * Verifies the linear scaling of its primary dimensions: RootChord, TipChord,
+ * Height, Sweep, and Thickness.
+ */
 public class ScaleTrapezoidFinSetTest extends ScaleDialogBaseTest {
 
     @Test

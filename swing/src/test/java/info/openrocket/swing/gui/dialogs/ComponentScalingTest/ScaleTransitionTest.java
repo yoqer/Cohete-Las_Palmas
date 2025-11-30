@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the Transition component.
+ * Verifies the linear scaling of its primary dimensions: Length, Radii, and
+ * Shoulder lengths.
+ */
 public class ScaleTransitionTest extends ScaleDialogBaseTest {
 
     @Test

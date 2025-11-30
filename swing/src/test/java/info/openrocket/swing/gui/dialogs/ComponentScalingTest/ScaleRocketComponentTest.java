@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the RocketComponent abstract class.
+ * This test uses a concrete implementation (BodyTube) to verify that the
+ * inherited override properties (CG and Mass) are scaled correctly.
+ */
 public class ScaleRocketComponentTest extends ScaleDialogBaseTest {
 
     @Test

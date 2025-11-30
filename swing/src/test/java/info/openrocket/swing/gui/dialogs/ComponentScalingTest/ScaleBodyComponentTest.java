@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the BodyComponent abstract class.
+ * This test uses a concrete implementation (BodyTube) to verify that the
+ * inherited 'Length' property is scaled correctly.
+ */
 public class ScaleBodyComponentTest extends ScaleDialogBaseTest {
 
     @Test

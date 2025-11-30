@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the ShockCord component.
+ * Verifies the linear scaling of its primary dimension: CordLength.
+ */
 public class ScaleShockCordTest extends ScaleDialogBaseTest {
 
     @Test

@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the MassComponent.
+ * Verifies the linear scaling of its dimensional (Length, Radius) and
+ * positional (RadialPosition) properties.
+ */
 public class ScaleMassObjectTest extends ScaleDialogBaseTest {
 
     @Test

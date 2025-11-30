@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Unit tests for the scaling logic of the LaunchLug component.
+ * Verifies the linear scaling of its primary dimensions: Length, OuterRadius,
+ * and Thickness.
+ */
 public class ScaleLaunchLugTest extends ScaleDialogBaseTest {
 
     @Test
