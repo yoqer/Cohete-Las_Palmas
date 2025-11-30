@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Unit tests for the scaling logic of the EllipticalFinSet component.
  * Verifies linear scaling of Length and Height using the GeneralScaler.
  */
-public class EllipticalFinSetScaleTest extends ScaleDialogBaseTest {
+public class ScaleEllipticalFinSetTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Verifies the custom, order-dependent scaling of dimensions (RailButtonScaler)
  * and linear scaling of positional separation (InstanceSeparation).
  */
-public class RailButtonScaleTest extends ScaleDialogBaseTest {
+public class ScaleRailButtonTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

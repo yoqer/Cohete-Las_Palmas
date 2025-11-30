@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * order-dependent scaling logic of ThicknessRingComponentScaler.
  * Uses the clamping-safe state (Inner Radius = 0) for scale-down testing.
  */
-public class ThicknessRingComponentScaleTest extends ScaleDialogBaseTest {
+public class ScaleThicknessRingComponentTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

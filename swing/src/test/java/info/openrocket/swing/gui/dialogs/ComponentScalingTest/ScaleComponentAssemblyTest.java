@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Focuses on PodSet's specific RadiusOffset scaling (SCALERS_OFFSET) and
  * verifying that organizational components (AxialStage) are not scaled incorrectly.
  */
-public class ComponentAssemblyScaleTest extends ScaleDialogBaseTest {
+public class ScaleComponentAssemblyTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

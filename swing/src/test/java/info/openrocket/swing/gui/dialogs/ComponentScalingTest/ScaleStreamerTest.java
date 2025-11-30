@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Unit tests for the scaling logic of the Streamer component.
  * Verifies linear scaling (StripLength and StripWidth) using the GeneralScaler.
  */
-public class StreamerScaleTest extends ScaleDialogBaseTest {
+public class ScaleStreamerTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

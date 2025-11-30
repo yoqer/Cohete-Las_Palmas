@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * and verifies that its specific dimensions (InnerRadius, Thickness) are correctly
  * ignored by the generic dimensional scaler (SCALERS_NO_OFFSET).
  */
-public class SleeveScaleTest extends ScaleDialogBaseTest {
+public class ScaleSleeveTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

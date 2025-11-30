@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse; // Added for complet
  * Verifies linear scaling of dimensions (OuterRadius, MotorOverhang) and the
  * exclusion check for the isOuterRadiusAutomatic flag.
  */
-public class BodyTubeScaleTest extends ScaleDialogBaseTest {
+public class ScaleBodyTubeTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

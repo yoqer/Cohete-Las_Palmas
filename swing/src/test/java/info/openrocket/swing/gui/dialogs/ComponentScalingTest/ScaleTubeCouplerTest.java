@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Focuses on custom, order-dependent scaling (OuterRadius/Thickness) and the
  * exclusion check for the OuterRadiusAutomatic flag.
  */
-public class TubeCouplerScaleTest extends ScaleDialogBaseTest {
+public class ScaleTubeCouplerTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * This verifies the order-dependent scaling of OuterRadius (OR) and InnerRadius (IR),
  * and the specific exclusion logic for automatic radii.
  */
-public class RadiusRingScaleTest extends ScaleDialogBaseTest {
+public class ScaleRadiusRingTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

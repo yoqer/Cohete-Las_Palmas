@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Unit tests for the scaling logic of the MassComponent.
  * Verifies linear scaling of dimensions and cubic scaling of mass (M' = M * multiplier^3).
  */
-public class MassComponentScaleTest extends ScaleDialogBaseTest {
+public class ScaleMassComponentTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 

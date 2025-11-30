@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit tests for scaling the EngineBlock component (a ThicknessRingComponent).
  * Focuses on the custom, order-dependent scaling and the isOuterRadiusAutomatic exclusion flag.
  */
-public class EngineBlockScaleTest extends ScaleDialogBaseTest {
+public class ScaleEngineBlockTest extends ScaleDialogBaseTest {
 
     private static final double DELTA = 1e-6;
 
