@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ScaleDialogNoseConeTest extends ScaleDialogBaseTest {
+public class ScaleNoseConeTest extends ScaleDialogBaseTest {
 
     @Test
     public void testNoseCone() throws Exception {
