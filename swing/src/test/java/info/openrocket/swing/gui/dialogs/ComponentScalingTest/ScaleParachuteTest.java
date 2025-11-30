@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ScaleDialogParachuteTest extends ScaleDialogBaseTest {
+public class ScaleParachuteTest extends ScaleDialogBaseTest {
 
     @Test
     public void testParachute() throws Exception {

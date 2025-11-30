@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ScaleDialogRocketComponentTest extends ScaleDialogBaseTest {
+public class ScaleRocketComponentTest extends ScaleDialogBaseTest {
 
     @Test
     public void testRocketComponent_Overrides() throws Exception {

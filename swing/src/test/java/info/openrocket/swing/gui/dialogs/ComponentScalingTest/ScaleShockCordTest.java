@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ScaleDialogShockCordTest extends ScaleDialogBaseTest {
+public class ScaleShockCordTest extends ScaleDialogBaseTest {
 
     @Test
     public void testShockCord() throws Exception {

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ScaleDialogFreeformFinSetTest extends ScaleDialogBaseTest {
+public class ScaleFreeformFinSetTest extends ScaleDialogBaseTest {
 
     @Test
     public void testFreeformFinSet() throws Exception {
