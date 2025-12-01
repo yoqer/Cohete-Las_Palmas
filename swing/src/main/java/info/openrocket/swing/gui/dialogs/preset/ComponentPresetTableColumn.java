@@ -66,27 +66,22 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
 			this.selectedUnit = unitGroup.getDefaultUnit();
 		}
 
-		@Override
+        @Override
         public Object getValueFromPreset(Set<String> favorites, ComponentPreset preset) {
             Object rawValue = super.getValueFromPreset(favorites, preset);
-            Double value = null;
+            Double value = rawValue != null ? (Double) rawValue : null;
 
-            if (rawValue != null) {
-                value = (Double) rawValue;
-            }
-
-            // If AREA does not exist but DIAMETER exists, calculate AREA from DIAMETER
+            // Calculate AREA from DIAMETER if key == SURFACE_AREA
             if (value == null && key == ComponentPreset.SURFACE_AREA && preset.has(ComponentPreset.DIAMETER)) {
                 double diameter = preset.get(ComponentPreset.DIAMETER);
                 value = Math.PI * Math.pow(diameter / 2.0, 2.0);
             }
 
-            // Se for CD_AREA, calcula a partir de SURFACE_AREA e Cd
-            if (value == null && preset.has(ComponentPreset.CD)) {
+            // Calculate CD_AREA only if this column is CD_AREA
+            if (value == null && key == ComponentPreset.CD_AREA && preset.has(ComponentPreset.CD)) {
                 Double area = null;
                 Double cd = preset.get(ComponentPreset.CD);
 
-                // Get area
                 if (preset.has(ComponentPreset.SURFACE_AREA)) {
                     area = preset.get(ComponentPreset.SURFACE_AREA);
                 } else if (preset.has(ComponentPreset.DIAMETER)) {
@@ -94,19 +89,14 @@ public abstract class ComponentPresetTableColumn extends TableColumn {
                     area = Math.PI * Math.pow(diameter / 2.0, 2.0);
                 }
 
-                // Compute CD_AREA
                 if (area != null && cd != null) {
                     value = area * cd;
                 }
             }
 
-            // Return Value with unit
-            if (value != null) {
-                return new Value(value, selectedUnit);
-            } else {
-                return null;
-            }
+            return value != null ? new Value(value, selectedUnit) : null;
         }
+
     }
 
 }
