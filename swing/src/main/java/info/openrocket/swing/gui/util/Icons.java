@@ -35,7 +35,7 @@ public class Icons {
 	static {
 		final String SIM_UPTODATE = "pix/icons/tick.png";
 		final String SIM_CANTRUN = "pix/icons/sim_cantrun.png";
-		final String SIM_OUTDATED = "pix/icons/refresh_sim.png";
+		final String SIM_OUTDATED = "pix/icons/refresh.png";
 		final String SIM_ABORTED = "pix/eventicons/event-exception.png";
 
 		HashMap<Simulation.Status, Icon> map = new HashMap<>();
@@ -71,6 +71,7 @@ public class Icons {
 	public static final Icon FILE_EXPORT = loadImageIcon("pix/icons/model_export.png", "Export");
 	public static final Icon SIM_TABLE_EXPORT = loadImageIcon("pix/icons/sim_table_export.png", "Export simulation table");
 	public static final Icon EXPORT_3D = loadImageIcon("pix/icons/model_export3d.png", "Export 3D");
+	public static final Icon EXPORT_SVG = loadImageIcon("pix/icons/svg-logo.png", "Export SVG");
 	public static final Icon FILE_CLOSE = loadImageIcon("pix/icons/document-close.png", "Close document");
 	public static final Icon FILE_QUIT = loadImageIcon("pix/icons/application-exit.png", "Quit OpenRocket");
 	public static final Icon EDIT_UNDO = loadImageIcon("pix/icons/edit-undo.png", trans.get("Icons.Undo"));
@@ -105,6 +106,7 @@ public class Icons {
 	public static final Icon HELP = loadImageIcon("pix/icons/help-about.png", "Help");
 	public static final Icon UP = loadImageIcon("pix/icons/up.png", "Up");
 	public static final Icon DOWN = loadImageIcon("pix/icons/down.png", "Down");
+	public static final Icon REFRESH = loadImageIcon("pix/icons/refresh.png", "Refresh");
 	
 	public static final Icon NOT_FAVORITE = loadImageIcon("pix/icons/star_silver.png", "Not favorite");
 	public static final Icon FAVORITE = loadImageIcon("pix/icons/star_gold.png", "Favorite");
@@ -182,8 +184,18 @@ public class Icons {
 		}
 
 		Image image = ((ImageIcon) icon).getImage();
-		int width = (int)(image.getWidth(null) * scale);
-		int height = (int)(image.getHeight(null) * scale);
+		if (image == null) {
+			return icon;
+		}
+		int sourceWidth = image.getWidth(null);
+		int sourceHeight = image.getHeight(null);
+
+		if (sourceWidth <= 0 || sourceHeight <= 0) {
+			return icon;
+		}
+
+		int width = Math.max(1, (int) Math.round(sourceWidth * scale));
+		int height = Math.max(1, (int) Math.round(sourceHeight * scale));
 
 		// Create a new scaled image
 		Image scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);

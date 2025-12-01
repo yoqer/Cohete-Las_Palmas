@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +19,7 @@ import info.openrocket.core.logging.ErrorSet;
 import info.openrocket.core.logging.SimulationAbort;
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.material.Material;
+import info.openrocket.core.models.gravity.GravityModelType;
 import info.openrocket.core.models.wind.MultiLevelPinkNoiseWindModel;
 import info.openrocket.core.models.wind.WindModel;
 import info.openrocket.core.preferences.DocumentPreferences;
@@ -387,8 +390,25 @@ public class OpenRocketSaver extends RocketSaver {
 			writeln("</atmosphere>");
 		}
 		
+		// Gravity model
+		if (cond.getGravityModelType() == GravityModelType.WGS) {
+			writeln("<gravity model=\"wgs\"/>");
+		} else if (cond.getGravityModelType() == GravityModelType.CONSTANT) {
+			writeln("<gravity model=\"constant\">");
+			indent++;
+			writeElement("value", cond.getConstantGravity());
+			indent--;
+			writeln("</gravity>");
+		}
+		
 		writeElement("timestep", cond.getTimeStep());
 		writeElement("maxtime", cond.getMaxSimulationTime());
+		if (cond.getDragLookupCsvPath() != null || cond.getDragLookupTable() != null) {
+			writeCsvLookup("draglookup", cond.getDragLookupCsvPath(), cond.getDragLookupCsvRows());
+		}
+		if (cond.getStabilityLookupCsvPath() != null || cond.getStabilityLookupTable() != null) {
+			writeCsvLookup("stabilitylookup", cond.getStabilityLookupCsvPath(), cond.getStabilityLookupCsvRows());
+		}
 		
 		indent--;
 		writeln("</conditions>");
@@ -596,7 +616,7 @@ public class OpenRocketSaver extends RocketSaver {
 		// Retrieve the data from the branch
 		List<List<Double>> data = new ArrayList<>(types.length);
 		for (FlightDataType type : types) {
-			data.add(branch.get(type));
+			data.add(branch.getClone(type));
 		}
 		
 		// Build the <databranch> tag
@@ -688,7 +708,7 @@ public class OpenRocketSaver extends RocketSaver {
 		if (types.length == 0)
 			return 0;
 		
-		List<Double> timeData = branch.get(FlightDataType.TYPE_TIME);
+		final List<Double> timeData = branch.get(FlightDataType.TYPE_TIME);
 		if (timeData == null) {
 			// If time data not available, store all points
 			return branch.getLength();
@@ -731,7 +751,58 @@ public class OpenRocketSaver extends RocketSaver {
 		String s = INDENT.repeat(Math.max(0, indent)) + str + "\n";
 		dest.write(s);
 	}
-	
+
+	/**
+	 * Write a CSV lookup table element with embedded row data.
+	 * Format:
+	 * <element file="path/to/file.csv">
+	 *   <row>Mach,AoA,Cd</row>
+	 *   <row>0.30,0,0.35</row>
+	 * </element>
+	 */
+	private void writeCsvLookup(String element, Path csvPath) throws IOException {
+		writeCsvLookup(element, csvPath, null);
+	}
+
+	/**
+	 * Write a CSV lookup table element with embedded row data.
+	 * If csvRows is provided, use those instead of reading from file.
+	 */
+	private void writeCsvLookup(String element, Path csvPath, List<String> csvRows) throws IOException {
+		String fileAttr = "";
+		if (csvPath != null) {
+			fileAttr = " file=\"" + TextUtil.escapeXML(csvPath.toString()) + "\"";
+		}
+
+		writeln("<" + element + fileAttr + ">");
+		indent++;
+
+		// Use stored CSV rows if available, otherwise read from file
+		if (csvRows != null && !csvRows.isEmpty()) {
+			// Write stored edited rows
+			for (String line : csvRows) {
+				if (!line.trim().isEmpty()) {
+					writeElement("row", line);
+				}
+			}
+		} else if (csvPath != null && Files.exists(csvPath)) {
+			// Fall back to reading from file
+			try {
+				List<String> lines = Files.readAllLines(csvPath);
+				for (String line : lines) {
+					if (!line.trim().isEmpty()) {
+						writeElement("row", line);
+					}
+				}
+			} catch (IOException ex) {
+				// If we can't read the file, just save the path reference
+				log.warn("Could not read CSV file for embedding: " + csvPath, ex);
+			}
+		}
+
+		indent--;
+		writeln("</" + element + ">");
+	}
 	
 	
 	
