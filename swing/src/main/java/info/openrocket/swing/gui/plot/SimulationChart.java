@@ -1,8 +1,6 @@
 package info.openrocket.swing.gui.plot;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
@@ -32,12 +30,7 @@ import org.jfree.chart.entity.EntityCollection;
 import org.jfree.chart.entity.LegendItemEntity;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-
-import info.openrocket.swing.gui.plot.Plot.MetadataXYSeries;
 
 import com.jogamp.newt.event.InputEvent;
 
@@ -217,11 +210,53 @@ public class SimulationChart extends ChartPanel {
             String label = entity.getToolTipText();
             if (selectedLegendLabels.contains(label)) {
                 selectedLegendLabels.remove(label);
-                if (hoveredLegendLabel.equals(label)) hoveredLegendLabel = null;
             }
             else selectedLegendLabels.add(label);
             updateHighlightingSet();
         }
+    }
+    /**
+     * Draw a border around swatches of legend items that are currently highlighted.
+     */
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Set<String> labelsToHighlight = new HashSet<>(selectedLegendLabels);
+        EntityCollection entities = getChartRenderingInfo().getEntityCollection();
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
+            g2.setColor(Color.black);
+            g2.setStroke(new BasicStroke(4.0f));
+            for (int i = 0; i < entities.getEntityCount(); i++) {
+                ChartEntity entity = entities.getEntity(i);
+                if (entity instanceof LegendItemEntity) {
+                    String label = entity.getToolTipText();
+                    if (label != null && labelsToHighlight.contains(label)) {
+                        Rectangle2D swatchBorder = getRectangle2D(entity);
+                        g2.draw(swatchBorder);
+                    }
+                }
+            }
+        } finally {
+            g2.dispose();
+        }
+    }
+
+    private static Rectangle2D getRectangle2D(ChartEntity entity) {
+        Rectangle2D area = entity.getArea().getBounds2D();
+        double h = area.getHeight();
+
+        double swatchSize = 0.6 * h;
+        double swatch_centerX = area.getX() + 0.5 * h; //center of the swatch
+        double swatchX = swatch_centerX - 0.75 * swatchSize; // X coordinate for the top left corner of the swatch
+        double swatchY = area.getY() + 0.5 * (h - swatchSize);// Y coordinate for the top left corner of the swatch
+
+        return new Rectangle2D.Double(
+                swatchX,
+                swatchY,
+                swatchSize,
+                swatchSize
+        );
     }
 
     private void updateHighlightingSet() {
@@ -358,7 +393,5 @@ public class SimulationChart extends ChartPanel {
 			}
 			plot.setNotify(notifyState); // this generates the change event too
 		}
-		
 	}
-	
 }
