@@ -414,7 +414,7 @@ public class UITheme {
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 255, 0, 200);
+                return new Color(255, 140, 0, 220);
             }
 
             @Override
