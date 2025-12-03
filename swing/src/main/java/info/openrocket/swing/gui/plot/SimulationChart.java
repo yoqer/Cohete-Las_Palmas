@@ -249,7 +249,7 @@ public class SimulationChart extends ChartPanel {
 
                 BasicStroke stroke = base;
                 if (hasHighlight && labelsToHighlight.contains(dataset.getSeries(s).getDescription())) {
-                    stroke = new BasicStroke(base.getLineWidth() * 2.0f, base.getEndCap(), base.getLineJoin(), base.getMiterLimit(), base.getDashArray(), base.getDashPhase());
+                    stroke = new BasicStroke(base.getLineWidth() * 3.0f, base.getEndCap(), base.getLineJoin(), base.getMiterLimit(), base.getDashArray(), base.getDashPhase());
                 }
 
                 renderer.setSeriesStroke(s, stroke);
