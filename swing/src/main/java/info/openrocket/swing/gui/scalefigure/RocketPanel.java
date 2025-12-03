@@ -311,8 +311,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					int y = p0.y + p1.y;
 					
 					if (caliperManager.handleMousePressed(x, y, (p) -> screenToModel(p.x, p.y))) {
-								return;
-							}
+						return;
+					}
 				}
 			}
 
@@ -323,18 +323,22 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					return;  // Don't process rotation dragging in snap mode
 				}
 				
-				if (caliperManager != null && e.getButton() == MouseEvent.BUTTON1) {
+				// Try to handle caliper dragging
+				// Note: We don't check e.getButton() here because getButton() returns NOBUTTON
+				// during drag events on most platforms (especially Windows). The button was
+				// already verified in mousePressed, and CaliperManager tracks the drag state.
+				if (caliperManager != null) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
 					
 					if (caliperManager.handleMouseDragged(x, y, (p) -> screenToModel(p.x, p.y), e.isShiftDown())) {
-							return;
+						return;
 					}
 				}
 				
-					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
 			}
 			
 			@Override
