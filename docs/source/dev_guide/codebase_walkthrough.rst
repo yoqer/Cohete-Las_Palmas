@@ -180,6 +180,22 @@ The following is an overview of the packages in the ``info.openrocket.swing`` mo
    │   └── providers
    └── utils
 
+UI Theme Customization
+======================
+
+OpenRocket uses FlatLaf properties files for UI colors and other defaults:
+
+* Theme property files live under :file:`swing/src/main/resources/themes/` (e.g. ``FlatLafLight.properties``, ``FlatDarculaLaf.properties``, ``IntelliJTheme$ThemeLaf.properties``).
+* Custom keys are prefixed with ``OR.`` and read via ``UIManager`` in :file:`swing/src/main/java/info/openrocket/swing/gui/theme/UITheme.java`. If you add a new key, declare it in ``UITheme.Keys`` and supply a sensible fallback there.
+* Keep all theme variants in sync. Light/Darcula/One Dark should each define every ``OR.*`` key, including defaults such as component colors and line styles.
+* FlatLaf property syntax and supported keys are documented here: https://www.formdev.com/flatlaf/properties-files/
+
+Common edits:
+
+* Change a color: update the relevant ``OR.colors.*`` entry in each theme file.
+* Add a new UI default: define it in the theme files and add a corresponding lookup in ``UITheme``.
+* Test changes by switching themes in the UI preferences; the properties are loaded through ``UIManager`` when ``UITheme.applyTheme`` runs.
+
 Units used in OpenRocket
 ========================
 
