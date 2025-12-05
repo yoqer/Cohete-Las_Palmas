@@ -124,16 +124,16 @@ public class SwingPreferences extends ApplicationPreferences {
 	}
 
 	private void fillDefaultComponentColors() {
-		DEFAULT_COLORS.put(BodyComponent.class, getUIThemeAsTheme().getDefaultBodyComponentColor());
-		DEFAULT_COLORS.put(TubeFinSet.class, getUIThemeAsTheme().getDefaultTubeFinSetColor());
-		DEFAULT_COLORS.put(FinSet.class, getUIThemeAsTheme().getDefaultFinSetColor());
-		DEFAULT_COLORS.put(LaunchLug.class, getUIThemeAsTheme().getDefaultLaunchLugColor());
-		DEFAULT_COLORS.put(RailButton.class, getUIThemeAsTheme().getDefaultRailButtonColor());
-		DEFAULT_COLORS.put(InternalComponent.class, getUIThemeAsTheme().getDefaultInternalComponentColor());
-		DEFAULT_COLORS.put(MassObject.class, getUIThemeAsTheme().getDefaultMassObjectColor());
-		DEFAULT_COLORS.put(RecoveryDevice.class, getUIThemeAsTheme().getDefaultRecoveryDeviceColor());
-		DEFAULT_COLORS.put(PodSet.class, getUIThemeAsTheme().getDefaultPodSetColor());
-		DEFAULT_COLORS.put(ParallelStage.class, getUIThemeAsTheme().getDefaultParallelStageColor());
+		DEFAULT_COLORS.put(BodyComponent.class, UITheme.getString(UITheme.Keys.DEFAULT_BODY_COMPONENT_COLOR, UITheme.Themes.LIGHT.getDefaultBodyComponentColor()));
+		DEFAULT_COLORS.put(TubeFinSet.class, UITheme.getString(UITheme.Keys.DEFAULT_TUBE_FIN_SET_COLOR, UITheme.Themes.LIGHT.getDefaultTubeFinSetColor()));
+		DEFAULT_COLORS.put(FinSet.class, UITheme.getString(UITheme.Keys.DEFAULT_FIN_SET_COLOR, UITheme.Themes.LIGHT.getDefaultFinSetColor()));
+		DEFAULT_COLORS.put(LaunchLug.class, UITheme.getString(UITheme.Keys.DEFAULT_LAUNCH_LUG_COLOR, UITheme.Themes.LIGHT.getDefaultLaunchLugColor()));
+		DEFAULT_COLORS.put(RailButton.class, UITheme.getString(UITheme.Keys.DEFAULT_RAIL_BUTTON_COLOR, UITheme.Themes.LIGHT.getDefaultRailButtonColor()));
+		DEFAULT_COLORS.put(InternalComponent.class, UITheme.getString(UITheme.Keys.DEFAULT_INTERNAL_COMPONENT_COLOR, UITheme.Themes.LIGHT.getDefaultInternalComponentColor()));
+		DEFAULT_COLORS.put(MassObject.class, UITheme.getString(UITheme.Keys.DEFAULT_MASS_OBJECT_COLOR, UITheme.Themes.LIGHT.getDefaultMassObjectColor()));
+		DEFAULT_COLORS.put(RecoveryDevice.class, UITheme.getString(UITheme.Keys.DEFAULT_RECOVERY_DEVICE_COLOR, UITheme.Themes.LIGHT.getDefaultRecoveryDeviceColor()));
+		DEFAULT_COLORS.put(PodSet.class, UITheme.getString(UITheme.Keys.DEFAULT_POD_SET_COLOR, UITheme.Themes.LIGHT.getDefaultPodSetColor()));
+		DEFAULT_COLORS.put(ParallelStage.class, UITheme.getString(UITheme.Keys.DEFAULT_PARALLEL_STAGE_COLOR, UITheme.Themes.LIGHT.getDefaultParallelStageColor()));
 	}
 
 	public void updateColors() {
@@ -495,15 +495,17 @@ public class SwingPreferences extends ApplicationPreferences {
 	}
 
 	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
+		// Refresh defaults to pick up the current theme each time
+		fillDefaultComponentColors();
 		String color = get("componentColors", c, DEFAULT_COLORS);
 		if (color == null)
-			return ORColor.fromAWTColor(getUIThemeAsTheme().getTextColor());
+			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
 
 		ORColor clr = parseColor(color);
 		if (clr != null) {
 			return clr;
 		} else {
-			return ORColor.fromAWTColor(getUIThemeAsTheme().getTextColor());
+			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
 		}
 	}
 
