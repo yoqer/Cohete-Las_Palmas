@@ -222,7 +222,11 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		RocketActions.tieActionToButton(runButton, runSimulationAction, trans.get("simpanel.but.runsimulations"));
 		runButton.setToolTipText(trans.get("simpanel.but.ttip.runsimu"));
 		this.add(runButton, "gapright para");
-
+        //// Duplicate simulation button
+        JButton duplicateButton = new IconButton();
+        RocketActions.tieActionToButton(duplicateButton, duplicateSimulationAction, trans.get("simpanel.but.duplicatesimulation"));
+        duplicateButton.setToolTipText(trans.get("simpanel.but.ttip.duplicatesim"));
+        this.add(duplicateButton, "gapright para");
 		//// Delete simulations button
 		deleteButton = new IconButton();
 		RocketActions.tieActionToButton(deleteButton, deleteSimulationAction, trans.get("simpanel.but.deletesimulations"));
