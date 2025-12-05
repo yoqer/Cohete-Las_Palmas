@@ -216,7 +216,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		editButton.setToolTipText(trans.get("simpanel.but.ttip.editsim"));
 		this.add(editButton, "gapright para");
 
-		//// Run simulations
+
+        //// Run simulations
 		runButton = new IconButton();
 		RocketActions.tieActionToButton(runButton, runSimulationAction, trans.get("simpanel.but.runsimulations"));
 		runButton.setToolTipText(trans.get("simpanel.but.ttip.runsimu"));
