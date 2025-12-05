@@ -1,13 +1,8 @@
 package info.openrocket.swing.gui.main;
 
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.Window;
+import java.awt.Cursor;
+import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -29,32 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-
+import java.awt.Insets;            // Pour Insets
+import javax.swing.AbstractCellEditor;  // Pour AbstractCellEditor
+import javax.swing.table.TableCellEditor;  // Pour TableCellEditor
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.logging.Message;
 import info.openrocket.core.logging.Warning;
@@ -255,6 +233,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		simulationTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		simulationTable.setDefaultRenderer(Object.class, new JLabelRenderer());
 		simulationTable.setDefaultRenderer(WarningsBox.class, new WarningsBoxRenderer());
+        simulationTable.setDefaultRenderer(Simulation.class, new ToolsColumnRenderer());
+        simulationTable.setDefaultEditor(Simulation.class, new ToolsColumnEditor());
 		simulationTableModel.setColumnWidths(simulationTable.getColumnModel());
 		simulationTable.setupAutoSizeColumns();
 		simulationTable.setFillsViewportHeight(true);
@@ -306,7 +286,37 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 				int selectedRow = simulationTable.getSelectedRow();
 				int row = simulationTable.rowAtPoint(e.getPoint());
 				int column = simulationTable.columnAtPoint(e.getPoint());
+                    // ========== NOUVEAU CODE - GÉRER LA COLONNE TOOLS ==========
+                    if (column == simulationTable.getColumnCount() - 1 && row >= 0) {
+                        // Déterminer quel bouton a été cliqué en fonction de la position X
+                        Rectangle cellRect = simulationTable.getCellRect(row, column, true);
+                        int x = e.getX() - cellRect.x;
 
+                        // Chaque bouton fait environ 26 pixels de large avec espacement
+                        if (x >= 0 && x < 28) {
+                            // Bouton Edit (premier)
+                            editSimulationAtRow(row);
+                        } else if (x >= 28 && x < 56) {
+                            // Bouton Duplicate (deuxième)
+                            duplicateSimulationAtRow(row);
+                        } else if (x >= 56 && x < 90) {
+                            // Bouton Delete (troisième)
+                            deleteSimulationAtRow(row);
+                        }
+                        return; // Important : sortir pour ne pas exécuter le reste du code
+                    }
+                    // ========== FIN DU NOUVEAU CODE ==========
+
+                    // NOUVEAU : Ne pas interférer avec la colonne Tools
+                    if (column == simulationTable.getColumnCount() - 1) {
+                        return; // Laisser l'editor gérer les clics
+                    }
+
+                    // ... reste du code existant ...
+                // NOUVEAU : Ne pas interférer avec la colonne Tools
+                if (column == simulationTable.getColumnCount() - 1) {
+                    return; // Laisser l'editor gérer les clics
+                }
 				// Clear the table selection when clicked outside the table rows.
 				if (row == -1 || column == -1 || selectedRow == -1) {
 					simulationTable.clearSelection();
@@ -1406,12 +1416,179 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			}
 		}
 	}
+    /**
+     * Edit the simulation at the specified row (not based on selection)
+     */
+    private void editSimulationAtRow(int viewRow) {
+        if (viewRow < 0 || viewRow >= simulationTable.getRowCount()) {
+            return;
+        }
+        int modelRow = simulationTable.convertRowIndexToModel(viewRow);
+        Simulation sim = document.getSimulation(modelRow);
+        openDialog(false, false, sim);
+    }
+
+    /**
+     * Duplicate the simulation at the specified row
+     */
+    private void duplicateSimulationAtRow(int viewRow) {
+        if (viewRow < 0 || viewRow >= simulationTable.getRowCount()) {
+            return;
+        }
+        int modelRow = simulationTable.convertRowIndexToModel(viewRow);
+        Simulation original = document.getSimulation(modelRow);
+
+        Simulation copy = original.duplicateSimulation(document.getRocket());
+
+        // Ajouter " (copy)" au nom
+        String originalName = copy.getName();
+        copy.setName(originalName + " (copy)");
+
+        // Insérer après l'original
+        document.addSimulation(copy, modelRow + 1);
+        simulationTableModel.fireTableDataChanged();
+
+        // Sélectionner la nouvelle copie
+        int newViewRow = simulationTable.convertRowIndexToView(modelRow + 1);
+        simulationTable.getSelectionModel().setSelectionInterval(newViewRow, newViewRow);
+    }
+
+    /**
+     * Delete the simulation at the specified row with confirmation
+     */
+    private void deleteSimulationAtRow(int viewRow) {
+        if (viewRow < 0 || viewRow >= simulationTable.getRowCount()) {
+            return;
+        }
+        int modelRow = simulationTable.convertRowIndexToModel(viewRow);
+        Simulation sim = document.getSimulation(modelRow);
+
+        // Dialogue de confirmation
+        int result = JOptionPane.showConfirmDialog(
+                SimulationPanel.this,
+                trans.get("simpanel.dlg.deleteSingle.message", sim.getName()),
+                trans.get("simpanel.dlg.deleteSingle.title"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            document.removeSimulation(sim);
+            simulationTableModel.fireTableDataChanged();
+            updatePreviousSelection();
+        }
+    }
+    private class ToolsColumnRenderer extends DefaultTableCellRenderer {
+        private final JPanel panel;
+        private final JButton editBtn;
+        private final JButton duplicateBtn;
+        private final JButton deleteBtn;
+
+        public ToolsColumnRenderer() {
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
+            panel.setOpaque(true);
+
+            // Créer les boutons avec icônes
+            editBtn = createIconButton(Icons.EDIT_EDIT, "Edit this simulation");
+            duplicateBtn = createIconButton(Icons.EDIT_DUPLICATE, "Duplicate this simulation");
+            deleteBtn = createIconButton(Icons.EDIT_DELETE, "Delete this simulation");
+
+            panel.add(editBtn);
+            panel.add(duplicateBtn);
+            panel.add(deleteBtn);
+        }
+
+        private JButton createIconButton(Icon icon, String tooltip) {
+            JButton btn = new JButton(icon);
+            btn.setPreferredSize(new Dimension(24, 24));
+            btn.setMargin(new Insets(1, 1, 1, 1));
+            btn.setToolTipText(tooltip);
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setFocusPainted(false);
+            return btn;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+
+            if (isSelected) {
+                panel.setBackground(table.getSelectionBackground());
+            } else {
+                panel.setBackground(table.getBackground());
+            }
+
+            return panel;
+        }
+    }
+    private class ToolsColumnEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel;
+        private final JButton editBtn;
+        private final JButton duplicateBtn;
+        private final JButton deleteBtn;
+        private int currentRow;
+
+        public ToolsColumnEditor() {
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
+            panel.setOpaque(true);
+
+            editBtn = createIconButton(Icons.EDIT_EDIT, "Edit this simulation");
+            duplicateBtn = createIconButton(Icons.EDIT_DUPLICATE, "Duplicate this simulation");
+            deleteBtn = createIconButton(Icons.EDIT_DELETE, "Delete this simulation");
+
+            // Gérer les clics
+            editBtn.addActionListener(e -> {
+                stopCellEditing();
+                editSimulationAtRow(currentRow);
+            });
+
+            duplicateBtn.addActionListener(e -> {
+                stopCellEditing();
+                duplicateSimulationAtRow(currentRow);
+            });
+
+            deleteBtn.addActionListener(e -> {
+                stopCellEditing();
+                deleteSimulationAtRow(currentRow);
+            });
+
+            panel.add(editBtn);
+            panel.add(duplicateBtn);
+            panel.add(deleteBtn);
+        }
+
+        private JButton createIconButton(Icon icon, String tooltip) {
+            JButton btn = new JButton(icon);
+            btn.setPreferredSize(new Dimension(24, 24));
+            btn.setMargin(new Insets(1, 1, 1, 1));
+            btn.setToolTipText(tooltip);
+            btn.setBorderPainted(true);
+            btn.setFocusPainted(false);
+            return btn;
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected, int row, int column) {
+            this.currentRow = row;
+            panel.setBackground(table.getSelectionBackground());
+            return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return null;
+        }
+    }
+    // Après : simulationTable.setDefaultRenderer(WarningsBox.class, new WarningsBoxRenderer());
 
 	private class SimulationTableModel extends ColumnTableModel {
 		private static final long serialVersionUID = 8686456963492628476L;
 
 		public SimulationTableModel() {
 			super(
+
 					////  Status column
 					new Column("") {
 						private StatusLabel label = null;
@@ -1670,7 +1847,32 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 							return data.getGroundHitVelocity();
 						}
-					}
+					},
+                    //// Tools column - per-row actions
+                    new Column("Tools") {
+                        @Override
+                        public Object getValueAt(int row) {
+                            if (row < 0 || row >= document.getSimulationCount())
+                                return null;
+                            return document.getSimulation(row);
+                        }
+
+                        @Override
+                        public int getExactWidth() {
+                            return 90;
+                        }
+
+                        @Override
+                        public Class<?> getColumnClass() {
+                            return Simulation.class;
+                        }
+
+                        // NOUVEAU : Rendre cette colonne éditable
+                        public boolean isEditable() {
+                            return true;
+                        }
+                    }
+
 			);
 		}
 
