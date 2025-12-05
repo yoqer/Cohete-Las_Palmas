@@ -184,6 +184,7 @@ public class UIPreferencesPanel extends PreferencesPanel {
 		});
 
 		updatePreview();
+		updateRestartLabel(lblRestartOR);
 	}
 
 	private void updateRestartLabel(JLabel label) {
@@ -196,6 +197,7 @@ public class UIPreferencesPanel extends PreferencesPanel {
 
 		if (needsRestart) {
 			label.setText(trans.get("generalprefs.lbl.themeRestartOR"));
+			label.setForeground(UITheme.getColor(UITheme.Keys.DARK_ERROR));
 		} else {
 			label.setText("");
 		}
