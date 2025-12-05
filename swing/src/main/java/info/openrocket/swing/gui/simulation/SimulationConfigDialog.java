@@ -233,7 +233,7 @@ public class SimulationConfigDialog extends JDialog {
 	}
 
 	public static void updateColors() {
-		multiCompEditColor = GUIUtil.getUITheme().getMultiCompEditColor();
+		multiCompEditColor = UITheme.getColor(UITheme.Keys.MULTI_COMP_EDIT);
 	}
 
 	public void switchToSettingsTab() {
@@ -316,7 +316,7 @@ public class SimulationConfigDialog extends JDialog {
 		StringBuilder statusBuilder = new StringBuilder("<html>");
 
 		String statusText = simulationList[0].getStatusDescription();
-		Color statusColor = GUIUtil.getUITheme().getStatusColor(simulationList[0].getStatus());
+		Color statusColor = UITheme.getStatusColor(simulationList[0].getStatus());
 
 		JLabel simStatus = new JLabel("<html>" +
 				ColorConversion.formatHTMLColor(statusColor, statusText) +

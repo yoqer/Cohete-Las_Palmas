@@ -131,7 +131,7 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 	}
 
 	public static void updateColors() {
-		backgroundColor = GUIUtil.getUITheme().getBackgroundColor();
+		backgroundColor = UITheme.getColor(UITheme.Keys.BACKGROUND);
 	}
 
 	public void flushTextureCaches() {

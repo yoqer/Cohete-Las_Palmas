@@ -62,6 +62,7 @@ import info.openrocket.core.unit.GeneralUnit;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.LineStyle;
+import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.core.util.ORColor;
 import info.openrocket.core.util.StateChangeListener;
 
@@ -336,9 +337,7 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 					} else {
 						c.setColor(((SwingPreferences) Application
 								.getPreferences()).getDefaultColor(c.getClass()));
-						c.setLineStyle(((SwingPreferences) Application
-								.getPreferences()).getDefaultLineStyle(c
-								.getClass()));
+						c.setLineStyle(UITheme.getDefaultLineStyle(c.getClass()));
 					}
 				}
 			});

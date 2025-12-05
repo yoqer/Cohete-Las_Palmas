@@ -87,7 +87,7 @@ public abstract class AbstractScaleFigure extends JPanel {
 	}
 
 	public static void updateColors() {
-		backgroundColor = GUIUtil.getUITheme().getBackgroundColor();
+		backgroundColor = UITheme.getColor(UITheme.Keys.BACKGROUND);
 	}
 
 	public int getBorderHeight(){ return borderThickness_px.height; }

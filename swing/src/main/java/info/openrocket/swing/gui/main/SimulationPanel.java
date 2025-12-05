@@ -400,10 +400,10 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 	}
 
 	public static void updateColors() {
-		dimTextColor = GUIUtil.getUITheme().getDimTextColor();
-		warningColor = GUIUtil.getUITheme().getWarningColor();
-		errorColor = GUIUtil.getUITheme().getErrorColor();
-		informationColor = GUIUtil.getUITheme().getInformationColor();
+		dimTextColor = UITheme.getColor(UITheme.Keys.TEXT_DIM);
+		warningColor = UITheme.getColor(UITheme.Keys.WARNING);
+		errorColor = UITheme.getColor(UITheme.Keys.ERROR);
+		informationColor = UITheme.getColor(UITheme.Keys.INFO);
 	}
 
 	/**
@@ -878,7 +878,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		}
 
 		String statusText = sim.getStatusDescription();
-		Color statusColor = GUIUtil.getUITheme().getStatusColor(sim.getStatus());
+		Color statusColor = UITheme.getStatusColor(sim.getStatus());
 
 		tip.append(ColorConversion.formatHTMLColor(statusColor, statusText)).append("<br>");
 

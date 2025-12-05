@@ -90,13 +90,13 @@ public class FinPointFigure extends AbstractScaleFigure {
 	}
 
 	public static void updateColors() {
-		backgroundColor = GUIUtil.getUITheme().getBackgroundColor();
-		finPointBodyLineColor = GUIUtil.getUITheme().getFinPointBodyLineColor();
-		finPointGridMajorLineColor = GUIUtil.getUITheme().getFinPointGridMajorLineColor();
-		finPointGridMinorLineColor = GUIUtil.getUITheme().getFinPointGridMinorLineColor();
-		finPointPointColor = GUIUtil.getUITheme().getFinPointPointColor();
-		finPointSelectedPointColor = GUIUtil.getUITheme().getFinPointSelectedPointColor();
-		finPointSnapHighlightColor = GUIUtil.getUITheme().getFinPointSnapHighlightColor();
+		backgroundColor = UITheme.getColor(UITheme.Keys.BACKGROUND);
+		finPointBodyLineColor = UITheme.getColor(UITheme.Keys.FIN_BODY_LINE);
+		finPointGridMajorLineColor = UITheme.getColor(UITheme.Keys.FIN_GRID_MAJOR);
+		finPointGridMinorLineColor = UITheme.getColor(UITheme.Keys.FIN_GRID_MINOR);
+		finPointPointColor = UITheme.getColor(UITheme.Keys.FIN_POINT);
+		finPointSelectedPointColor = UITheme.getColor(UITheme.Keys.FIN_SELECTED_POINT);
+		finPointSnapHighlightColor = UITheme.getColor(UITheme.Keys.FIN_SNAP_HIGHLIGHT);
 	}
 
 	@Override
