@@ -1,4 +1,4 @@
-package info.openrocket.swing.gui.dialogs.ComponentScalingTest;
+package info.openrocket.swing.gui.dialogs.scaledialog;
 
 import info.openrocket.core.rocketcomponent.TubeCoupler;
 import org.junit.jupiter.api.Test;
