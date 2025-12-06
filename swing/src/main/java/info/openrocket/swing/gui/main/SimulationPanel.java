@@ -1,16 +1,22 @@
 package info.openrocket.swing.gui.main;
-
-import java.awt.Cursor;
 import java.awt.Rectangle;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -24,15 +30,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.AbstractCellEditor;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-import java.awt.Insets;            // Pour Insets
-import javax.swing.AbstractCellEditor;  // Pour AbstractCellEditor
-import javax.swing.table.TableCellEditor;  // Pour TableCellEditor
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.logging.Message;
 import info.openrocket.core.logging.Warning;
@@ -63,7 +88,6 @@ import info.openrocket.swing.gui.simulation.SimulationConfigDialog;
 import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.widgets.SaveFileChooser;
 import org.slf4j.Logger;
@@ -286,36 +310,31 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 				int selectedRow = simulationTable.getSelectedRow();
 				int row = simulationTable.rowAtPoint(e.getPoint());
 				int column = simulationTable.columnAtPoint(e.getPoint());
-                    // ========== NOUVEAU CODE - GÉRER LA COLONNE TOOLS ==========
-                    if (column == simulationTable.getColumnCount() - 1 && row >= 0) {
-                        // Déterminer quel bouton a été cliqué en fonction de la position X
-                        Rectangle cellRect = simulationTable.getCellRect(row, column, true);
+                // ========== NEW CODE - HANDLE THE TOOLS COLUMN ==========
+                if (column == simulationTable.getColumnCount() - 1 && row >= 0) {
+                    // Determine which button was clicked based on the X position
+                    Rectangle cellRect = simulationTable.getCellRect(row, column, true);
                         int x = e.getX() - cellRect.x;
 
-                        // Chaque bouton fait environ 26 pixels de large avec espacement
-                        if (x >= 0 && x < 28) {
-                            // Bouton Edit (premier)
-                            editSimulationAtRow(row);
+                    // Each button is about 26 pixels wide including spacing
+                    if (x >= 0 && x < 28) {
+                        // Edit button (first)
+
+                        editSimulationAtRow(row);
                         } else if (x >= 28 && x < 56) {
-                            // Bouton Duplicate (deuxième)
+                        // Duplicate button (second)
                             duplicateSimulationAtRow(row);
                         } else if (x >= 56 && x < 90) {
-                            // Bouton Delete (troisième)
-                            deleteSimulationAtRow(row);
+                        // Delete button (third)
+                        deleteSimulationAtRow(row);
                         }
-                        return; // Important : sortir pour ne pas exécuter le reste du code
-                    }
-                    // ========== FIN DU NOUVEAU CODE ==========
+                        return; // Important: exit to avoid executing the rest of the code
+                }
+                // ========== END OF NEW CODE ==========
 
-                    // NOUVEAU : Ne pas interférer avec la colonne Tools
-                    if (column == simulationTable.getColumnCount() - 1) {
-                        return; // Laisser l'editor gérer les clics
-                    }
-
-                    // ... reste du code existant ...
-                // NOUVEAU : Ne pas interférer avec la colonne Tools
+                // Let the editor handle clicks
                 if (column == simulationTable.getColumnCount() - 1) {
-                    return; // Laisser l'editor gérer les clics
+                    return;
                 }
 				// Clear the table selection when clicked outside the table rows.
 				if (row == -1 || column == -1 || selectedRow == -1) {
@@ -1440,15 +1459,15 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
         Simulation copy = original.duplicateSimulation(document.getRocket());
 
-        // Ajouter " (copy)" au nom
+        // Add " (copy)" to the name
         String originalName = copy.getName();
         copy.setName(originalName + " (copy)");
 
-        // Insérer après l'original
+        // Insert after the original
         document.addSimulation(copy, modelRow + 1);
         simulationTableModel.fireTableDataChanged();
 
-        // Sélectionner la nouvelle copie
+        //Select the new copy
         int newViewRow = simulationTable.convertRowIndexToView(modelRow + 1);
         simulationTable.getSelectionModel().setSelectionInterval(newViewRow, newViewRow);
     }
@@ -1463,7 +1482,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
         int modelRow = simulationTable.convertRowIndexToModel(viewRow);
         Simulation sim = document.getSimulation(modelRow);
 
-        // Dialogue de confirmation
+        // Confirmation dialog
         int result = JOptionPane.showConfirmDialog(
                 SimulationPanel.this,
                 trans.get("simpanel.dlg.deleteSingle.message", sim.getName()),
@@ -1488,7 +1507,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
             panel.setOpaque(true);
 
-            // Créer les boutons avec icônes
+            // Create buttons with icons
             editBtn = createIconButton(Icons.EDIT_EDIT, "Edit this simulation");
             duplicateBtn = createIconButton(Icons.EDIT_DUPLICATE, "Duplicate this simulation");
             deleteBtn = createIconButton(Icons.EDIT_DELETE, "Delete this simulation");
@@ -1537,7 +1556,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
             duplicateBtn = createIconButton(Icons.EDIT_DUPLICATE, "Duplicate this simulation");
             deleteBtn = createIconButton(Icons.EDIT_DELETE, "Delete this simulation");
 
-            // Gérer les clics
+            // Handle clicks
             editBtn.addActionListener(e -> {
                 stopCellEditing();
                 editSimulationAtRow(currentRow);
@@ -1581,7 +1600,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
             return null;
         }
     }
-    // Après : simulationTable.setDefaultRenderer(WarningsBox.class, new WarningsBoxRenderer());
+
 
 	private class SimulationTableModel extends ColumnTableModel {
 		private static final long serialVersionUID = 8686456963492628476L;
@@ -1865,11 +1884,6 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
                         @Override
                         public Class<?> getColumnClass() {
                             return Simulation.class;
-                        }
-
-                        // NOUVEAU : Rendre cette colonne éditable
-                        public boolean isEditable() {
-                            return true;
                         }
                     }
 
