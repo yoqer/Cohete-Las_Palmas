@@ -452,6 +452,10 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		return foreShoulderLength;
 	}
 
+    /*
+     * Updates the ForeShoulderLength variable and those of the Transition objects linked accordingly
+     * The foreShoulderRadius and foreShoulderThickness values are set by default when changing the length
+     */
 	public void setForeShoulderLength(double foreShoulderLength) {
 		for (RocketComponent listener : configListeners) {
 			if (listener instanceof Transition) {
@@ -461,7 +465,32 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 
 		if (MathUtil.equals(this.foreShoulderLength, foreShoulderLength))
 			return;
-		this.foreShoulderLength = foreShoulderLength;
+
+        if (MathUtil.equals(foreShoulderLength,0)){
+            this.foreShoulderLength = 0;
+            this.setForeShoulderRadius(0);
+            this.setForeShoulderThickness(0);
+            this.setForeShoulderCapped(false);
+
+        } else if (MathUtil.equals(this.getForeShoulderLength(),0)) {
+            double wallThickness = this.getThickness();
+            double radius = this.getForeRadius();
+            this.foreShoulderLength = foreShoulderLength;
+
+            //Only update radius and thickness if those variables were zero beforehand
+            if (MathUtil.equals(this.getForeShoulderRadius(),0)) {
+                this.setForeShoulderRadius(radius - wallThickness);
+            }
+            if (MathUtil.equals(this.getForeShoulderThickness(),0)) {
+                this.setForeShoulderThickness(wallThickness);
+            }
+
+            this.setForeShoulderCapped(true);
+
+        }
+        else {
+            this.foreShoulderLength = foreShoulderLength;
+        }
 		fireComponentChangeEvent(ComponentChangeEvent.MASS_CHANGE);
 	}
 
@@ -535,6 +564,10 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		return aftShoulderLength;
 	}
 
+    /*
+     * Updates the aftShoulderLength variable and those of the Transition objects linked accordingly
+     * The aftShoulderRadius and aftShoulderThickness values are set by default when changing the length
+     */
 	public void setAftShoulderLength(double aftShoulderLength) {
 		for (RocketComponent listener : configListeners) {
 			if (listener instanceof Transition) {
@@ -544,7 +577,32 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 
 		if (MathUtil.equals(this.aftShoulderLength, aftShoulderLength))
 			return;
-		this.aftShoulderLength = aftShoulderLength;
+
+        if (MathUtil.equals(aftShoulderLength,0)){
+            this.aftShoulderLength = 0;
+            this.setAftShoulderRadius(0);
+            this.setAftShoulderThickness(0);
+            this.setAftShoulderCapped(false);
+
+        } else if (MathUtil.equals(this.getAftShoulderLength(),0)) {
+            double wallThickness = this.getThickness();
+            double radius = this.getAftRadius();
+            this.aftShoulderLength = aftShoulderLength;
+
+            //Only update radius and thickness if those variables were zero beforehand
+            if (MathUtil.equals(this.getAftShoulderRadius(),0)) {
+                this.setAftShoulderRadius(radius - wallThickness);
+            }
+            if (MathUtil.equals(this.getAftShoulderThickness(),0)) {
+                this.setAftShoulderThickness(wallThickness);
+            }
+
+            this.setAftShoulderCapped(true);
+
+        }
+        else {
+            this.aftShoulderLength = aftShoulderLength;
+        }
 		fireComponentChangeEvent(ComponentChangeEvent.MASS_CHANGE);
 	}
 
