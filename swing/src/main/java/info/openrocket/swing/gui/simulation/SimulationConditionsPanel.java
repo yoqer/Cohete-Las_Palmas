@@ -84,11 +84,22 @@ public class SimulationConditionsPanel extends JPanel {
 		sub.setBorder(BorderFactory.createTitledBorder(trans.get("simedtdlg.lbl.Wind")));
 		parent.add(sub, "growx, split 2, aligny 0, flowy, gapright para");
 
+		// Already create the models here for use in the wind direction widget
+		DoubleModel launchRodDirectionModel = new DoubleModel(target, "LaunchRodDirection", 1.0, UnitGroup.UNITS_ANGLE,
+				0, 2*Math.PI);
+		BooleanModel intoWind = new BooleanModel(target, "LaunchIntoWind");
+		intoWind.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				launchRodDirectionModel.stateChanged(e);
+			}
+		});
+
 		// Add wind model selection and configuration panel
 		if (addAllWindModels) {
-			addWindModelPanel(sub, target);
+			addWindModelPanel(sub, target, intoWind, launchRodDirectionModel);
 		} else {
-			addAverageWindSettings(sub, target);
+			addAverageWindSettings(sub, target, intoWind, launchRodDirectionModel);
 		}
 
 		//// Temperature and pressure
@@ -280,8 +291,6 @@ public class SimulationConditionsPanel extends JPanel {
 		sub.add(slider, "w 75lp, wrap");
 
 		// Keep launch rod parallel to the wind.
-
-		BooleanModel intoWind = new BooleanModel(target, "LaunchIntoWind");
 		JCheckBox checkWind = new JCheckBox(intoWind);
 		//// Use International Standard Atmosphere
 		checkWind.setText(trans.get("simedtdlg.checkbox.Intowind"));
@@ -330,18 +339,15 @@ public class SimulationConditionsPanel extends JPanel {
 		directionLabel.setToolTipText(tip);
 		sub.add(directionLabel);
 
-		m = new DoubleModel(target, "LaunchRodDirection", 1.0, UnitGroup.UNITS_ANGLE,
-				0, 2*Math.PI);
-
-		JSpinner directionSpin = new JSpinner(m.getSpinnerModel());
+		JSpinner directionSpin = new JSpinner(launchRodDirectionModel.getSpinnerModel());
 		directionSpin.setEditor(new SpinnerEditor(directionSpin));
 		directionSpin.setToolTipText(tip);
 		sub.add(directionSpin, "growx");
 
-		unit = new UnitSelector(m);
+		unit = new UnitSelector(launchRodDirectionModel);
 		unit.setToolTipText(tip);
 		sub.add(unit, "growx");
-		BasicSlider directionSlider = new BasicSlider(m.getSliderModel(0, 2*Math.PI));
+		BasicSlider directionSlider = new BasicSlider(launchRodDirectionModel.getSliderModel(0, 2*Math.PI));
 		directionSlider.setToolTipText(tip);
 		sub.add(directionSlider, "w 75lp, wrap");
 		intoWind.addEnableComponent(directionLabel, false);
@@ -354,7 +360,8 @@ public class SimulationConditionsPanel extends JPanel {
 		addSimulationConditionsPanel(parent, target, true);
 	}
 
-	private static void addWindModelPanel(JPanel panel, SimulationOptionsInterface target) {
+	private static void addWindModelPanel(JPanel panel, SimulationOptionsInterface target,
+										  BooleanModel intoWind, DoubleModel launchRodDirectionModel) {
 		ButtonGroup windModelGroup = new ButtonGroup();
 
 		// Wind model to use
@@ -382,7 +389,7 @@ public class SimulationConditionsPanel extends JPanel {
 		JPanel averagePanel = new JPanel(new MigLayout("fill, ins 0", "[grow][75lp!][30lp!][75lp!]", ""));
 		JPanel multiLevelPanel = new JPanel(new MigLayout("fill, ins 0"));
 
-		addAverageWindSettings(averagePanel, target);
+		addAverageWindSettings(averagePanel, target, intoWind, launchRodDirectionModel);
 		addMultiLevelSettings(multiLevelPanel, target);
 
 		windSettingsPanel.add(averagePanel, "Average");
@@ -417,7 +424,8 @@ public class SimulationConditionsPanel extends JPanel {
 		}
 	}
 
-	private static void addAverageWindSettings(JPanel panel, SimulationOptionsInterface target) {
+	private static void addAverageWindSettings(JPanel panel, SimulationOptionsInterface target,
+											   BooleanModel intoWind, DoubleModel launchRodDirectionModel) {
 		PinkNoiseWindModel model = target.getAverageWindModel();
 
 		// Wind average
@@ -462,8 +470,16 @@ public class SimulationConditionsPanel extends JPanel {
 		});
 
 		// Wind direction
-		addDoubleModel(panel, "Winddirection", trans.get("simedtdlg.lbl.ttip.Winddirection"), model, "Direction",
-					   UnitGroup.UNITS_ANGLE, 0, 2 * Math.PI, 2 * Math.PI);
+		DoubleModel windDirectionModel = addDoubleModel(panel, "Winddirection", trans.get("simedtdlg.lbl.ttip.Winddirection"),
+				model, "Direction", UnitGroup.UNITS_ANGLE, 0, 2 * Math.PI, 2 * Math.PI);
+		windDirectionModel.addChangeListener(new StateChangeListener() {
+			@Override
+			public void stateChanged(EventObject e) {
+				if (intoWind.getValue()) {
+					launchRodDirectionModel.stateChanged(e);
+				}
+			}
+		});
 	}
 
 	private static void addMultiLevelSettings(JPanel panel, SimulationOptionsInterface target) {
