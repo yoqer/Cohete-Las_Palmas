@@ -74,7 +74,7 @@ class MaterialSetter implements Setter {
 		MaterialGroup group = null;
 		if (str != null) {
 			try {
-				group = MaterialGroup.loadFromDatabaseString(str);
+				group = MaterialGroup.loadFromDatabaseStringWithBackwardCompatibility(str, type, name, density);
 			} catch (IllegalArgumentException e) {
 				warnings.add(Warning.fromString("Illegal material group specified, ignoring."));
 			}
