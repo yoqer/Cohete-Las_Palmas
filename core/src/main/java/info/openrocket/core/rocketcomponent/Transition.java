@@ -163,6 +163,22 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		setForeRadiusAutomatic(auto, false);
 	}
 
+    //////// Fore thickness /////////
+
+    /**
+     * Returns the automatic thickness from the front, taken from the previous
+     * component. Returns the thickness of this if there
+     * is no previous component.
+     */
+    protected double getAutoForeThickness() {
+        SymmetricComponent c = this.getPreviousSymmetricComponent();
+        if (c != null) {
+            return c.getThickness();
+        } else {
+            return this.getThickness();
+        }
+    }
+
 	//////// Aft radius /////////
 
 	@Override
@@ -258,7 +274,24 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		setAftRadiusAutomatic(auto, false);
 	}
 
-	//// Radius automatics
+    //////// Aft thickness /////////
+
+    /**
+     * Returns the automatic thickness from the rear, taken from the next
+     * component. Returns the thickness of this if there
+     * is no previous component.
+     */
+    protected double getAutoAftThickness() {
+        SymmetricComponent c = this.getNextSymmetricComponent();
+        if (c != null) {
+            return c.getThickness();
+        } else {
+            return this.getThickness();
+        }
+    }
+
+
+    //// Radius automatics
 
 	@Override
 	protected double getFrontAutoRadius() {
@@ -473,8 +506,8 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
             this.setForeShoulderCapped(false);
 
         } else if (MathUtil.equals(this.getForeShoulderLength(),0)) {
-            double wallThickness = this.getThickness();
-            double radius = this.getForeRadius();
+            double wallThickness = this.getAutoForeThickness();
+            double radius = this.getAutoForeRadius();
             this.foreShoulderLength = foreShoulderLength;
 
             //Only update radius and thickness if those variables were zero beforehand
@@ -585,8 +618,8 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
             this.setAftShoulderCapped(false);
 
         } else if (MathUtil.equals(this.getAftShoulderLength(),0)) {
-            double wallThickness = this.getThickness();
-            double radius = this.getAftRadius();
+            double wallThickness = this.getAutoAftThickness();
+            double radius = this.getAutoAftRadius();
             this.aftShoulderLength = aftShoulderLength;
 
             //Only update radius and thickness if those variables were zero beforehand
