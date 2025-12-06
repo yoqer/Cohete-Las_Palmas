@@ -35,7 +35,7 @@ public class Icons {
 	static {
 		final String SIM_UPTODATE = "pix/icons/tick.png";
 		final String SIM_CANTRUN = "pix/icons/sim_cantrun.png";
-		final String SIM_OUTDATED = "pix/icons/refresh_sim.png";
+		final String SIM_OUTDATED = "pix/icons/refresh.png";
 		final String SIM_ABORTED = "pix/eventicons/event-exception.png";
 
 		HashMap<Simulation.Status, Icon> map = new HashMap<>();
@@ -106,6 +106,7 @@ public class Icons {
 	public static final Icon HELP = loadImageIcon("pix/icons/help-about.png", "Help");
 	public static final Icon UP = loadImageIcon("pix/icons/up.png", "Up");
 	public static final Icon DOWN = loadImageIcon("pix/icons/down.png", "Down");
+	public static final Icon REFRESH = loadImageIcon("pix/icons/refresh.png", "Refresh");
 	
 	public static final Icon NOT_FAVORITE = loadImageIcon("pix/icons/star_silver.png", "Not favorite");
 	public static final Icon FAVORITE = loadImageIcon("pix/icons/star_gold.png", "Favorite");
