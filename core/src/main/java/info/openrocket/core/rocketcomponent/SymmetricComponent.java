@@ -481,7 +481,7 @@ public abstract class SymmetricComponent extends BodyComponent implements BoxBou
 				r1i = 0;
 				r2i = 0;
 			} else {
-				// Tiny inaccuracy is introduced on a division where one end is closed and other is open.
+				// TODO Tiny inaccuracy is introduced on a division where one end is closed and other is open.
 				r1i = MathUtil.max(r1o - height, 0);
 				r2i = MathUtil.max(r2o - height, 0);
 			}
