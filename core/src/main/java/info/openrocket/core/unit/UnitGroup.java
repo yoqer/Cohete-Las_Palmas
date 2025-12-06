@@ -85,6 +85,7 @@ public class UnitGroup {
 	public static final UnitGroup UNITS_MOMENTUM;
 	public static final UnitGroup UNITS_VOLTAGE;
 	public static final UnitGroup UNITS_CURRENT;
+    public static final UnitGroup UNITS_STABILITY_SELECT_PLOT;
 
 	public static final UnitGroup UNITS_SCALING;
 
@@ -137,6 +138,10 @@ public class UnitGroup {
 		UNITS_LENGTH.addUnit(new InchUnit(0.0254, "in", 1));
 		UNITS_LENGTH.addUnit(new FractionalUnit(0.0254, "in/64", "in", 64, 1.0d / 16.0d, 0.5d / 64.0d));
 		UNITS_LENGTH.addUnit(new GeneralUnit(0.3048, "ft"));
+
+        UNITS_STABILITY_SELECT_PLOT = new UnitGroup();
+        UNITS_STABILITY_SELECT_PLOT.addUnit(new GeneralUnit(1.0, "cal"));
+        UNITS_STABILITY_SELECT_PLOT.addUnit(new GeneralUnit(100.0, "%"));
 
 		UNITS_MOTOR_DIMENSIONS = new UnitGroup();
 		UNITS_MOTOR_DIMENSIONS.addUnit(new GeneralUnit(0.001, "mm"));
