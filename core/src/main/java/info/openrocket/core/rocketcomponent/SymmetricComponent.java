@@ -30,11 +30,11 @@ public abstract class SymmetricComponent extends BodyComponent implements BoxBou
 	protected double thickness = DEFAULT_THICKNESS;
 
 	// Cached data, default values signify not calculated
-	private double wetArea = Double.NaN;
-	private double planArea = Double.NaN;
-	private double planCenter = Double.NaN;
+	protected double wetArea = Double.NaN;
+	protected double planArea = Double.NaN;
+	protected double planCenter = Double.NaN;
 	protected double volume = Double.NaN;
-	private double fullVolume = Double.NaN;
+	protected double fullVolume = Double.NaN;
 	protected double longitudinalUnitInertia = Double.NaN;
 	protected double rotationalUnitInertia = Double.NaN;
 	protected CoordinateIF cg = null;

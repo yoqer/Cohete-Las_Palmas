@@ -602,6 +602,84 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		}
 	}
 
+    /**
+     * Return the Volume with shoulders (by direct calculation or by the super() implementation fallback)
+     */
+    @Override
+    public double getComponentVolume() {
+        if (isClipped()) {
+            return super.getComponentVolume();
+        } else {
+			Optional<Double> optVolume = type.getComponentVolume(this);
+
+			// Prefer analytic shape volume when available, otherwise fall back to
+			// numerical super implementation for the transition core.
+			final double transVolume = optVolume.orElseGet(() -> super.getComponentVolume());
+
+			// Ensure shoulder properties are calculated and cached.
+			if (!shouldersComputed) {
+				calculateShoulderProperties();
+			}
+			// Total volume (core transition + shoulders + caps)
+			double totalVolume = foreCapVolume + foreShoulderVolume + transVolume + aftShoulderVolume + aftCapVolume;
+
+			// Write into the protected cache so subsequent calls reuse the value
+			this.volume = transVolume;
+
+			return totalVolume;
+        }
+    }
+
+    /**
+     * Return the Full Volume (by direct calculation or by the super() implementation)
+     */
+    @Override
+    public double getFullVolume() {
+        if (isClipped()) {
+            return super.getFullVolume();
+        } else {
+			Optional<Double> optfullVolume = type.getFullVolume(this);
+			// Prefer analytic full volume when available, otherwise fall back to
+			// numerical super implementation for the transition core.
+			final double transFull = optfullVolume.orElseGet(() -> super.getFullVolume());
+			this.fullVolume = transFull;
+			return transFull;
+        }
+    }
+
+	/**
+     * Return the Volume (by direct calculation or by the super() implementation)
+     */
+    @Override
+    public double getComponentWetArea() {
+        if (isClipped()) {
+            return super.getComponentWetArea();
+        } else {
+            Optional<Double> optwetArea =  type.getComponentWetArea(this);
+			
+			final double wetAreaValue = optwetArea.orElseGet(() -> super.getComponentWetArea());
+			this.wetArea = wetAreaValue;
+            return wetAreaValue;
+        }
+    }
+
+	/**
+	 * Return the Planform Area (by direct calculation or by the super() implementation)
+	 */
+	@Override
+    public double getComponentPlanformArea() {
+        if (isClipped()) {
+            return super.getComponentPlanformArea();
+        } else {
+            Optional<Double> optPlanformArea =  type.getComponentPlanformArea(this);
+			
+			final double planformAreaValue = optPlanformArea.orElseGet(() -> super.getComponentPlanformArea());
+			this.planArea = planformAreaValue;
+            return planformAreaValue;
+        }
+    }
+
+    // TODO, getComponentPlanformCenter, getSymmetricComponentCG,getLongitudinalUnitInertia, getRotationalUnitInertia
 	/**
 	 * Numerically solve clipLength from the equation
 	 * r1 == type.getRadius(clipLength,r2,clipLength+length)
@@ -917,6 +995,71 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 				assert radius >= 0;
 				return radius * x / length;
 			}
+
+            private double getConeVolume(double length, double r1, double r2) {
+                // Volume of a conical section: V = pi/3 * L * (r1^2 + r1*r2 + r2^2)
+                return Math.PI / 3.0 * length * (pow2(r1) + r1 * r2 + pow2((r2)));
+            }
+
+			@Override
+			public Optional<Double> getComponentVolume(Transition transition) {
+				// If filled, return full volume
+				if (transition.isFilled()) {
+					return getFullVolume(transition);
+				}
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+                double t = transition.getThickness();
+                double r1i = r1o-t;
+                double r2i = r2o-t;
+
+				// Outer full volume
+				double outerV = getConeVolume(l, r1o, r2o);
+
+                // Inner full volume // TODO, specials case of thickness
+                double innerV = getConeVolume(l, r1i, r2i);
+
+                return Optional.of(outerV - innerV);
+			}
+
+            @Override
+            public Optional<Double> getFullVolume(Transition transition) {
+                double l = transition.getLength();
+                double foreR = transition.getForeRadius();
+                double aftR = transition.getAftRadius();
+
+                double v = getConeVolume(l, foreR,  aftR);
+                return Optional.of(v);
+            }
+
+            @Override
+            public Optional<Double> getComponentWetArea(Transition transition) {
+                // Wet area of a conical is: wA = pi * r1 * r2 * sqrt(l^2 + (r1-r2)^2)
+
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+
+                double wetArea = Math.PI * (r1o + r2o) * Math.sqrt(pow2(l) + pow2(r1o - r2o));
+                return Optional.of(wetArea);
+            }
+
+            @Override
+            public Optional<Double> getComponentPlanformArea(Transition transition) {
+                // PlanformArea of a conical is a isosceles trapezoid of surface: 2*r1*length + (r1-r2)*length
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+
+                double planArea = l * ((2*r1o) + (r1o - r2o));
+                return Optional.of(planArea);
+            }
+
+            // TODO getComponentPlanformCenter : formula?
+            // TODO getSymmetricComponentCG
+            // TODO getLongitudinalUnitInertia
+            // TODO getLongitudinalUnitInertia
 		},
 
 		/**
