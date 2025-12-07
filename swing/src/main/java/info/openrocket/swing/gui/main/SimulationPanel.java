@@ -393,6 +393,37 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
                 simulationTable.setCursor(Cursor.getDefaultCursor());
             }
         });
+        simulationTable.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int row = simulationTable.rowAtPoint(e.getPoint());
+                int column = simulationTable.columnAtPoint(e.getPoint());
+
+                // If hovering over the Actions column
+                if (column == simulationTable.getColumnCount() - 1 && row >= 0) {
+                    Rectangle cellRect = simulationTable.getCellRect(row, column, true);
+                    int x = e.getX() - cellRect.x;
+
+                    // Determine which button is being hovered and show appropriate tooltip
+                    String tooltip = null;
+                    if (x >= 0 && x < 28) {
+                        // Edit button
+                        tooltip = trans.get("simpanel.but.ttip.editsim");
+                    } else if (x >= 28 && x < 56) {
+                        // Duplicate button
+                        tooltip = trans.get("simpanel.but.ttip.duplicatesim");
+                    } else if (x >= 56 && x < 90) {
+                        // Delete button
+                        tooltip = trans.get("simpanel.but.ttip.deletesim");
+                    }
+
+                    simulationTable.setToolTipText(tooltip);
+                } else {
+                    // Clear tooltip when not over Actions column
+                    simulationTable.setToolTipText(null);
+                }
+            }
+        });
 
 		simulationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			private int previousSelectedRow = -1;
@@ -1753,7 +1784,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 						}
 					},
                     //// Tools column - per-row actions
-                    new Column("Tools") {
+                    new Column("Actions") {
                         @Override
                         public Object getValueAt(int row) {
                             if (row < 0 || row >= document.getSimulationCount())
