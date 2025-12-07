@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for the scaling logic of the Transition component.
- * These tests are designed to capture and verify the fix for the AftDiameter scaling bug.
+ * After fixing the bug all tests pass
  **/
 public class ScaleTransitionTest extends ScaleDialogBaseTest {
 
@@ -25,10 +25,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
     // HELPER METHOD
     // ==========================================
 
-    /**
-     * Creates a proper rocket structure with a transition between body tubes.
-     * Structure: Rocket -> Stage -> NoseCone -> BodyTube -> Transition -> BodyTube
-     */
+
     private Transition createTransitionInRocket(
             double foreBodyRadius,
             double aftBodyRadius,
@@ -86,9 +83,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
     // STANDARD SCALING TESTS (BASELINE - ALWAYS PASS)
     // ==========================================
 
-    /**
-     * Baseline test: Both radii manual.
-     */
+
     @Test
     void testScaleWhenBothRadiiAreManual() throws Exception {
         Transition trans = new Transition();
@@ -121,10 +116,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
         assertEquals(3.0, trans.getAftShoulderLength(), 0.001);
     }
 
-    /**
-     * Baseline test: Manual radii scale correctly.
-     * This test PASSES with or without the bug (control test).
-     */
+
     @Test
     void testManualRadiiScaleCorrectly() throws Exception {
         final double initialForeRadius = 0.025;
@@ -147,9 +139,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
     }
 
 
-    /**
-     * PRIMARY BUG TEST: Aft radius should scale when fore is automatic.
-     */
+
     @Test
     void testAftRadiusScalesWhenForeIsAutomatic() throws Exception {
         final double foreBodyRadius = 0.025;
@@ -177,9 +167,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
                 "Aft radius must scale when manual, regardless of fore radius setting");
     }
 
-    /**
-     * BUG TEST: Aft radius should scale DOWN when fore is automatic.
-     */
+
     @Test
     void testAftRadiusScalesDownWhenForeIsAutomatic() throws Exception {
         final double foreBodyRadius = 0.030;
@@ -205,10 +193,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
                 "Aft radius must scale down correctly");
     }
 
-    /**
-     * BUG TEST: Aft shoulder dimensions should scale with aft radius.
-     * This demonstrates the CASCADE EFFECT of the bug
-     */
+
     @Test
     void testAftShouldersScaleWhenAftRadiusIsManual() throws Exception {
         final double foreBodyRadius = 0.025;
@@ -240,9 +225,6 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
                 "Aft shoulder length should scale");
     }
 
-    /**
-     This test PASSES with or without the bug
-     */
     @Test
     void testNeitherRadiusScalesWhenBothAreAutomatic() throws Exception {
         final double foreBodyRadius = 0.025;
@@ -332,9 +314,6 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
     // EDGE CASES
     // ==========================================
 
-    /**
-     This test PASSES with or without the bug.
-     */
     @Test
     void testScaleByOneResultsInNoChange() throws Exception {
         final double foreRadius = 0.025;
@@ -350,9 +329,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
         assertEquals(aftRadius, trans.getAftRadius(), DELTA);
     }
 
-    /**
-     * WITH BUG: FAILS - aftRadius stays 0.040
-     */
+
     @Test
     void testScaleWithSmallMultiplier() throws Exception {
         final double foreRadius = 0.050;
@@ -371,9 +348,7 @@ public class ScaleTransitionTest extends ScaleDialogBaseTest {
                 "Aft must scale with small multiplier");
     }
 
-    /**
-     * WITH BUG: FAILS - aftRadius stays 0.008
-     */
+
     @Test
     void testScaleWithLargeMultiplier() throws Exception {
         final double foreRadius = 0.010;
