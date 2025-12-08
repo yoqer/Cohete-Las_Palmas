@@ -258,7 +258,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		simulationTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		simulationTable.setDefaultRenderer(Object.class, new JLabelRenderer());
 		simulationTable.setDefaultRenderer(WarningsBox.class, new WarningsBoxRenderer());
-        simulationTable.setDefaultRenderer(Simulation.class, new ToolsColumnRenderer());
+        simulationTable.setDefaultRenderer(Simulation.class, new ActionsColumnRenderer());
 		simulationTableModel.setColumnWidths(simulationTable.getColumnModel());
 		simulationTable.setupAutoSizeColumns();
 		simulationTable.setFillsViewportHeight(true);
@@ -1471,13 +1471,13 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		}
 	}
 
-    private class ToolsColumnRenderer extends DefaultTableCellRenderer {
+    private class ActionsColumnRenderer extends DefaultTableCellRenderer {
         private final JPanel panel;
         private final JButton editBtn;
         private final JButton duplicateBtn;
         private final JButton deleteBtn;
 
-        public ToolsColumnRenderer() {
+        public ActionsColumnRenderer() {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
             panel.setOpaque(true);
 
@@ -1783,8 +1783,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 							return data.getGroundHitVelocity();
 						}
 					},
-                    //// Tools column - per-row actions
-                    new Column("Actions") {
+                    //// Actions column - per-row actions
+                    new Column(trans.get("simpanel.col.Actions")) {
                         @Override
                         public Object getValueAt(int row) {
                             if (row < 0 || row >= document.getSimulationCount())
