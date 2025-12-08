@@ -741,4 +741,29 @@ class MotorInformationPanel extends JPanel {
 		list.sort(MOTOR_COMPARATOR);
 		selectedMotor = list.get(0);
 	}
+
+	private class EjectionChargeDelaySelector extends JPanel {
+		ButtonGroup delayButtons;
+			
+		DelayChargeSelector() {
+			super(new MigLayout("inset 0, fill"));
+			setBorder(BorderFactory.createTitledBorder(
+					BorderFactory.createEtchedBorder(),
+					"<html><b>" +
+					trans.get("thrustcurve.lbl.Delay") +
+					"</b></html>"));
+			delayButtons = new ButtonGroup();
+		}
+
+		void setDelays(ThrustCurveMotorSet motorSet) {
+			>>> remove all current delays from panel and from buttongroup
+			for (double delay : motorSet.getDelays()) {
+				if (delay != Motor.PLUGGED_DELAY) {
+					JRadioButton button = new JRadioButton((int) (delay + 0.5));
+					add(button);
+					delayButtons.add(button);
+				}
+				>>> go to next line
+				>>> add plugged
+				>>> add custom
 }
