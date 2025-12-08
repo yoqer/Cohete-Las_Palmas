@@ -166,7 +166,8 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_CG_LOCATION = newType(trans.get("FlightDataType.TYPE_CG_LOCATION"), "Cg",
 			UnitGroup.UNITS_LENGTH,
 			FlightDataTypeGroup.STABILITY, 1);
-	//// Stability margin calibers
+
+    //// Stability margin
     public static final FlightDataType TYPE_STABILITY = newType(
             trans.get("FlightDataType.TYPE_STABILITY"),
             "S",
