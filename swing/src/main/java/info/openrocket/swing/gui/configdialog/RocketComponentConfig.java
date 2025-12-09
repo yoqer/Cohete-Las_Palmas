@@ -462,6 +462,10 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			@Override
 			public void run() {
 				if (presetComboBox == null || presetModel == null) return;
+				if (preferences.getBoolean(component.getComponentName() + "AlwaysOpenPreset", preferences.getAutoOpenPartsLibrary()) != preferences.getAutoOpenPartsLibrary()) {
+					preferences.putBoolean(component.getComponentName() + "AlwaysOpenPreset", preferences.getAutoOpenPartsLibrary());
+					return;
+				}
 				((ComponentPresetDatabase) Application.getComponentPresetDao()).addDatabaseListener(presetModel);
 				ComponentPresetChooserDialog dialog =
 						new ComponentPresetChooserDialog(SwingUtilities.getWindowAncestor(RocketComponentConfig.this),
