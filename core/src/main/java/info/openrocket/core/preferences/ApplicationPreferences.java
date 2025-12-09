@@ -153,6 +153,8 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public static final String CONSTANT_GRAVITY_VALUE = "ConstantGravityValue";
 	public static final String SIMULATION_STEPPER_METHOD = "SimulationStepperMethod";
 
+    public static final String AUTO_OPEN_PARTS_LIBRARY = "AutoOpenPartsLibrary";
+
 	public static final String UI_THEME = "UITheme";
 
 	// OBJ Export options
@@ -399,6 +401,14 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	public final double getDefaultMach() {
 		return Application.getPreferences().getChoice(ApplicationPreferences.DEFAULT_MACH_NUMBER, 0.9, 0.3);
 	}
+
+    public final void setAutoOpenPartsLibrary(boolean check) {
+        this.putBoolean(AUTO_OPEN_PARTS_LIBRARY, check);
+    }
+
+    public final boolean getAutoOpenPartsLibrary() {
+        return this.getBoolean(AUTO_OPEN_PARTS_LIBRARY, true);
+    }
 	
 	public final void setDefaultMach(double dfn) {
 		double oldDFN = Application.getPreferences().getChoice(ApplicationPreferences.DEFAULT_MACH_NUMBER, 0.9, 0.3);
