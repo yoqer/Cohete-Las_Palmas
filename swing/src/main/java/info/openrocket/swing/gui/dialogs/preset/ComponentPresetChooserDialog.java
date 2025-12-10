@@ -197,7 +197,7 @@ public class ComponentPresetChooserDialog extends JDialog {
 		// Always open this window when creating a new component
 		JCheckBox alwaysOpenPreset = new JCheckBox(String.format(trans.get("ComponentPresetChooserDialog.checkbox.alwaysOpenPreset"),
 				component.getComponentName()));
-		alwaysOpenPreset.setSelected(preferences.getBoolean(component.getComponentName() + "AlwaysOpenPreset", preferences.getAutoOpenPartsLibrary()));
+		alwaysOpenPreset.setSelected(preferences.getBoolean(component.getComponentName() + "AlwaysOpenPreset", true));
 		alwaysOpenPreset.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {

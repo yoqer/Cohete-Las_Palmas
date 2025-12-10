@@ -283,7 +283,8 @@ public class ComponentConfigDialog extends JDialog implements ComponentChangeLis
 
 		// Open preset dialog if set in preferences
 		if (isNewComponent && component.getPresetType() != null &&
-				preferences.getBoolean(component.getComponentName() + "AlwaysOpenPreset", preferences.getAutoOpenPartsLibrary()) &&
+				preferences.getBoolean(component.getComponentName() + "AlwaysOpenPreset", true) &&
+				preferences.getAutoOpenPartsLibrary() &&
 				component.getConfigListeners().size() == 0) {
 			dialog.configurator.selectPreset();
 		}
