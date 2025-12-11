@@ -41,6 +41,7 @@ import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.util.PreferencesExporter;
 import info.openrocket.swing.gui.util.PreferencesImporter;
+import info.openrocket.swing.gui.theme.UITheme;
 
 
 @SuppressWarnings("serial")
@@ -177,8 +178,8 @@ public class GeneralPreferencesPanel extends PreferencesPanel {
 		
 		//// Add directories, RASP motor files (*.eng), RockSim engine files (*.rse) or ZIP archives separated by a semicolon (;) to load external thrust curves.  Changes will take effect the next time you start OpenRocket.
 		DescriptionArea desc = new DescriptionArea(trans.get("pref.dlg.DescriptionArea.Adddirectories"), 3, -1.5f, false);
-		desc.setBackground(GUIUtil.getUITheme().getBackgroundColor());
-		desc.setForeground(GUIUtil.getUITheme().getTextColor());
+		desc.setBackground(UITheme.getColor(UITheme.Keys.BACKGROUND));
+		desc.setForeground(UITheme.getColor(UITheme.Keys.TEXT));
 		this.add(desc, "spanx, growx, wrap unrel");
 
 		//// User-defined component presets:

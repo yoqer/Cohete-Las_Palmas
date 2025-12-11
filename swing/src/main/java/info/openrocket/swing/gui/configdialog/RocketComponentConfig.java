@@ -214,8 +214,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 	}
 
 	public static void updateColors() {
-		darkErrorColor = GUIUtil.getUITheme().getDarkErrorColor();
-		multiCompEditColor = GUIUtil.getUITheme().getMultiCompEditColor();
+		darkErrorColor = UITheme.getColor(UITheme.Keys.DARK_ERROR);
+		multiCompEditColor = UITheme.getColor(UITheme.Keys.MULTI_COMP_EDIT);
 		marginBorder = GUIUtil.getUITheme().getMarginBorder();
 	}
 

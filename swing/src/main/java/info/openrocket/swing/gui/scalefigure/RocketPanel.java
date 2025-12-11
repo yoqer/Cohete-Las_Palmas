@@ -98,6 +98,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
+import info.openrocket.swing.gui.theme.UITheme;
 
 
 /**
@@ -1339,7 +1340,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		BufferedImage canvas = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D canvasGraphics = canvas.createGraphics();
 		try {
-			canvasGraphics.setColor(GUIUtil.getUITheme().getBackgroundColor());
+			canvasGraphics.setColor(UITheme.getColor(UITheme.Keys.BACKGROUND));
 			canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
 			int x = (canvasWidth - scaledWidth) / 2;
 			int y = (canvasHeight - scaledHeight) / 2;

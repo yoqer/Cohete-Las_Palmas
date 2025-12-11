@@ -106,8 +106,8 @@ class AerodynamicLookupDialog extends JDialog {
 	}
 
 	public static void updateColors() {
-		textColor = GUIUtil.getUITheme().getTextColor();
-		infoTextColor = GUIUtil.getUITheme().getInformationColor();
+		textColor = UITheme.getColor(UITheme.Keys.TEXT);
+		infoTextColor = UITheme.getColor(UITheme.Keys.INFO);
 	}
 
 	private void initUI() {
