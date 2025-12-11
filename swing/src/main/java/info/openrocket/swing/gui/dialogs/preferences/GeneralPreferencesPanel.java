@@ -350,7 +350,7 @@ public class GeneralPreferencesPanel extends PreferencesPanel {
         //// Auto-open parts library
         final JCheckBox partsLibraryAutoOpenBox = new JCheckBox(trans.get("pref.dlg.checkbox.AutoOpenPartsLibrary"));
         partsLibraryAutoOpenBox.setToolTipText(trans.get("pref.dlg.checkbox.AutoOpenPartsLibrary.ttip"));
-		partsLibraryAutoOpenBox.setSelected(preferences.getAutoOpenPartsLibrary());
+		partsLibraryAutoOpenBox.setSelected(preferences.isAutoOpenPartsLibrary());
         partsLibraryAutoOpenBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {

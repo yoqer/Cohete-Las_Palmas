@@ -71,6 +71,7 @@ public class SwingPreferences extends ApplicationPreferences {
 	public static final String UI_FONT_TRACKING = "UIFontTracking";
 	public static final String UPDATE_PLATFORM = "UpdatePlatform";
 	public static final String LOCK_CLICK_DRAG_ROTATION = "LockClickDragRotation";
+	public static final String AUTO_OPEN_PARTS_LIBRARY = "AutoOpenPartsLibrary";
 	
 	private static final List<Locale> SUPPORTED_LOCALES;
 	static {
@@ -653,6 +654,14 @@ public class SwingPreferences extends ApplicationPreferences {
 
 	public void setTableColumnWidth(Class<?> c, int columnIdx, Integer width) {
 		setTableColumnWidth(c.getCanonicalName(), columnIdx, width);
+	}
+
+	public void setAutoOpenPartsLibrary(boolean check) {
+		putBoolean(AUTO_OPEN_PARTS_LIBRARY, check);
+	}
+
+	public boolean isAutoOpenPartsLibrary() {
+		return getBoolean(AUTO_OPEN_PARTS_LIBRARY, true);
 	}
 	
 	/**
