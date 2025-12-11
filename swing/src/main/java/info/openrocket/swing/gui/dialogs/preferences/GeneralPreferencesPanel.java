@@ -348,6 +348,18 @@ public class GeneralPreferencesPanel extends PreferencesPanel {
 		});
 		this.add(prefsDiscardBox,"spanx, wrap");
 
+        //// Auto-open parts library
+        final JCheckBox partsLibraryAutoOpenBox = new JCheckBox(trans.get("pref.dlg.checkbox.AutoOpenPartsLibrary"));
+        partsLibraryAutoOpenBox.setToolTipText(trans.get("pref.dlg.checkbox.AutoOpenPartsLibrary.ttip"));
+		partsLibraryAutoOpenBox.setSelected(preferences.isAutoOpenPartsLibrary());
+        partsLibraryAutoOpenBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                preferences.setAutoOpenPartsLibrary(e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
+        this.add(partsLibraryAutoOpenBox, "spanx, wrap");
+
 		// Preference buttons
 		JPanel buttonPanel = new JPanel(new MigLayout("fillx, ins 0"));
 
