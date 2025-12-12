@@ -45,7 +45,11 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static info.openrocket.swing.gui.components.CsvOptionPanel.SPACE;
@@ -136,7 +140,9 @@ public class CSVImportSettingsDialog extends JDialog {
 		// Grid header labels
 		csvSettings.add(new StyledLabel(trans.get("CSVImportSettingsDialog.dataType"), StyledLabel.Style.BOLD), "width 120lp");
 		// Use a regular JLabel for the column type so we can change it dynamically
-		columnTypeLabel = new JLabel(trans.get("CSVImportSettingsDialog.columnName"));
+		columnTypeLabel = new JLabel(hasHeaderCheckBox.isSelected() ?
+				trans.get("CSVImportSettingsDialog.columnName") :
+				trans.get("CSVImportSettingsDialog.columnIndex"));
 		columnTypeLabel.setFont(columnTypeLabel.getFont().deriveFont(Font.BOLD));
 		csvSettings.add(columnTypeLabel, "growx");
 		csvSettings.add(new StyledLabel(trans.get("CSVImportSettingsDialog.unit"), StyledLabel.Style.BOLD), "width 120lp, wrap");
@@ -271,16 +277,19 @@ public class CSVImportSettingsDialog extends JDialog {
 		DocumentListener documentListener = new DocumentListener() {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
+				validateColumnNames();
 				updatePreview();
 			}
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
+				validateColumnNames();
 				updatePreview();
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
+				validateColumnNames();
 				updatePreview();
 			}
 		};
@@ -325,8 +334,7 @@ public class CSVImportSettingsDialog extends JDialog {
 			if (!hasHeaders) {
 				validateColumnIndices();
 			} else {
-				// When switching to header mode, clear any error outlines
-				resetErrorOutlines();
+				validateColumnNames();
 			}
 
 			// Update preview
@@ -342,6 +350,11 @@ public class CSVImportSettingsDialog extends JDialog {
 
 		// Initial column field validation setup
 		updateColumnFieldValidation();
+		if (hasHeaderCheckBox.isSelected()) {
+			validateColumnNames();
+		} else {
+			validateColumnIndices();
+		}
 
 		// Initial preview update
 		updatePreview();
@@ -354,8 +367,20 @@ public class CSVImportSettingsDialog extends JDialog {
 
 		JButton okButton = new JButton(trans.get("button.ok"));
 		okButton.addActionListener(e -> {
-			// Validate column indices one final time
+			// Validate column mappings one final time
 			validateColumnIndices();
+			validateColumnNames();
+
+			// When headers are used, validate column names (required + unique)
+			if (hasHeaderCheckBox.isSelected() && hasInvalidColumnNames()) {
+				JOptionPane.showMessageDialog(
+						this,
+						getColumnNameValidationErrorMessage(),
+						trans.get("CSVImportSettingsDialog.validationError"),
+						JOptionPane.ERROR_MESSAGE
+				);
+				return;
+			}
 
 			// When headers are not used, check for duplicate column indices
 			if (!hasHeaderCheckBox.isSelected() && hasDuplicateColumnIndices()) {
@@ -410,6 +435,94 @@ public class CSVImportSettingsDialog extends JDialog {
 		((CardLayout) speedColumnPanel.getLayout()).show(speedColumnPanel, hasHeaders ? "text" : "spinner");
 		((CardLayout) directionColumnPanel.getLayout()).show(directionColumnPanel, hasHeaders ? "text" : "spinner");
 		((CardLayout) stdDeviationColumnPanel.getLayout()).show(stdDeviationColumnPanel, hasHeaders ? "text" : "spinner");
+	}
+
+	private void validateColumnNames() {
+		if (!hasHeaderCheckBox.isSelected()) {
+			return;
+		}
+
+		resetErrorOutlines();
+
+		Map<String, List<JTextField>> fieldsByName = new HashMap<>();
+
+		if (!hasNonEmptyText(altitudeColumnField)) {
+			FlatLafOutlines.setOutline(altitudeColumnField, FlatLafOutlines.Outline.ERROR);
+		}
+		addColumnNameForValidation(fieldsByName, altitudeColumnField, true);
+
+		if (!hasNonEmptyText(speedColumnField)) {
+			FlatLafOutlines.setOutline(speedColumnField, FlatLafOutlines.Outline.ERROR);
+		}
+		addColumnNameForValidation(fieldsByName, speedColumnField, true);
+
+		if (!hasNonEmptyText(directionColumnField)) {
+			FlatLafOutlines.setOutline(directionColumnField, FlatLafOutlines.Outline.ERROR);
+		}
+		addColumnNameForValidation(fieldsByName, directionColumnField, true);
+
+		addColumnNameForValidation(fieldsByName, stdDeviationColumnField, false);
+
+		for (List<JTextField> fields : fieldsByName.values()) {
+			if (fields.size() > 1) {
+				for (JTextField field : fields) {
+					FlatLafOutlines.setOutline(field, FlatLafOutlines.Outline.ERROR);
+				}
+			}
+		}
+	}
+
+	private boolean hasInvalidColumnNames() {
+		return FlatLafOutlines.getOutline(altitudeColumnField) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(speedColumnField) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(directionColumnField) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(stdDeviationColumnField) == FlatLafOutlines.Outline.ERROR;
+	}
+
+	private String getColumnNameValidationErrorMessage() {
+		boolean emptyRequired = !hasNonEmptyText(altitudeColumnField) ||
+				!hasNonEmptyText(speedColumnField) ||
+				!hasNonEmptyText(directionColumnField);
+
+		boolean duplicateNames = hasDuplicateColumnNames();
+
+		if (emptyRequired && duplicateNames) {
+			return trans.get("CSVImportSettingsDialog.emptyColumnNameError") + "\n" +
+					trans.get("CSVImportSettingsDialog.duplicateColumnNameError");
+		}
+		if (emptyRequired) {
+			return trans.get("CSVImportSettingsDialog.emptyColumnNameError");
+		}
+		return trans.get("CSVImportSettingsDialog.duplicateColumnNameError");
+	}
+
+	private boolean hasDuplicateColumnNames() {
+		Map<String, List<JTextField>> fieldsByName = new HashMap<>();
+		addColumnNameForValidation(fieldsByName, altitudeColumnField, true);
+		addColumnNameForValidation(fieldsByName, speedColumnField, true);
+		addColumnNameForValidation(fieldsByName, directionColumnField, true);
+		addColumnNameForValidation(fieldsByName, stdDeviationColumnField, false);
+
+		for (List<JTextField> fields : fieldsByName.values()) {
+			if (fields.size() > 1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean addColumnNameForValidation(Map<String, List<JTextField>> fieldsByName, JTextField field,
+													 boolean required) {
+		String name = field.getText().trim();
+		if (name.isEmpty()) {
+			return required;
+		}
+		fieldsByName.computeIfAbsent(name, k -> new ArrayList<>()).add(field);
+		return false;
+	}
+
+	private static boolean hasNonEmptyText(JTextField field) {
+		return field.getText() != null && !field.getText().trim().isEmpty();
 	}
 
 	/**
