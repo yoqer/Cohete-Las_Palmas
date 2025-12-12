@@ -7,12 +7,20 @@ import javax.swing.JComponent;
 import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
+import javax.swing.JToolTip;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+import javax.swing.Timer;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Helpers for applying FlatLaf component outlines (e.g. "warning", "error") via
@@ -20,6 +28,8 @@ import java.util.function.BooleanSupplier;
  */
 public final class FlatLafOutlines {
 	public static final String OUTLINE_PROPERTY = "JComponent.outline";
+	private static final String BASE_TOOLTIP_PROPERTY = FlatLafOutlines.class.getName() + ".baseToolTip";
+	private static final Object NULL_TOOLTIP = new Object();
 
 	public enum Outline {
 		NONE(null),
@@ -40,24 +50,27 @@ public final class FlatLafOutlines {
 	private FlatLafOutlines() {
 	}
 
-	public static void setOutline(JComponent component, Outline outline) {
-		Objects.requireNonNull(component, "component");
-		final String value = outline == null ? null : outline.getFlatLafValue();
-
-		component.putClientProperty(OUTLINE_PROPERTY, value);
-
+	private static void forEachRelatedComponent(JComponent component, java.util.function.Consumer<JComponent> consumer) {
+		consumer.accept(component);
 		if (component instanceof JSpinner spinner) {
 			JComponent editor = spinner.getEditor();
 			if (editor != null) {
-				editor.putClientProperty(OUTLINE_PROPERTY, value);
+				consumer.accept(editor);
 				if (editor instanceof JSpinner.DefaultEditor defaultEditor) {
 					JFormattedTextField textField = defaultEditor.getTextField();
 					if (textField != null) {
-						textField.putClientProperty(OUTLINE_PROPERTY, value);
+						consumer.accept(textField);
 					}
 				}
 			}
 		}
+	}
+
+	public static void setOutline(JComponent component, Outline outline) {
+		Objects.requireNonNull(component, "component");
+		final String value = outline == null ? null : outline.getFlatLafValue();
+
+		forEachRelatedComponent(component, c -> c.putClientProperty(OUTLINE_PROPERTY, value));
 	}
 
 	public static Outline getOutline(JComponent component) {
@@ -75,26 +88,120 @@ public final class FlatLafOutlines {
 		return Outline.NONE;
 	}
 
+	private static void setValidationTooltip(JComponent component, String message) {
+		String tooltipMessage = message != null ? message.trim() : null;
+		if (tooltipMessage != null && tooltipMessage.isEmpty()) {
+			tooltipMessage = null;
+		}
+
+		final String finalTooltipMessage = tooltipMessage;
+		forEachRelatedComponent(component, c -> setValidationTooltipOnSingleComponent(c, finalTooltipMessage));
+	}
+
+	private static void setValidationTooltipOnSingleComponent(JComponent component, String message) {
+		if (message == null) {
+			Object base = component.getClientProperty(BASE_TOOLTIP_PROPERTY);
+			if (base == null) {
+				return;
+			}
+			component.setToolTipText(base == NULL_TOOLTIP ? null : (String) base);
+			component.putClientProperty(BASE_TOOLTIP_PROPERTY, null);
+			return;
+		}
+
+		Object base = component.getClientProperty(BASE_TOOLTIP_PROPERTY);
+		if (base == null) {
+			String existing = component.getToolTipText();
+			component.putClientProperty(BASE_TOOLTIP_PROPERTY, existing == null ? NULL_TOOLTIP : existing);
+		}
+
+		component.setToolTipText(formatTooltipText(message));
+	}
+
+	private static String formatTooltipText(String tooltip) {
+		if (tooltip == null) {
+			return null;
+		}
+		String trimmed = tooltip.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+		if (isHtml(trimmed)) {
+			return trimmed;
+		}
+		return "<html>" + escapeHtml(trimmed).replace("\n", "<br>") + "</html>";
+	}
+
+	private static boolean isHtml(String tooltip) {
+		return tooltip.toLowerCase(Locale.ROOT).startsWith("<html");
+	}
+
+	private static String escapeHtml(String text) {
+		StringBuilder sb = new StringBuilder(text.length());
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			switch (c) {
+				case '&' -> sb.append("&amp;");
+				case '<' -> sb.append("&lt;");
+				case '>' -> sb.append("&gt;");
+				case '"' -> sb.append("&quot;");
+				case '\'' -> sb.append("&#39;");
+				default -> sb.append(c);
+			}
+		}
+		return sb.toString();
+	}
+
 	public static final class Validator implements AutoCloseable {
-		private record Condition(Outline outline, BooleanSupplier predicate) {
+		private record Condition(Outline outline, BooleanSupplier predicate, Supplier<String> message) {
 		}
 
 		private final JComponent component;
 		private final List<Condition> conditions = new ArrayList<>();
 		private final Set<ChangeSource> sources = new HashSet<>();
 		private final StateChangeListener listener = e -> update();
+		private int transientMessageDurationMs = 0;
+		private Outline lastOutline = Outline.NONE;
+		private String lastMessage = null;
+		private Popup transientPopup;
+		private Timer transientTimer;
 
 		private Validator(JComponent component) {
 			this.component = Objects.requireNonNull(component, "component");
 		}
 
 		public Validator warnIf(BooleanSupplier predicate) {
-			conditions.add(new Condition(Outline.WARNING, Objects.requireNonNull(predicate, "predicate")));
+			return warnIf(predicate, (Supplier<String>) null);
+		}
+
+		public Validator warnIf(BooleanSupplier predicate, String message) {
+			return warnIf(predicate, message == null ? null : () -> message);
+		}
+
+		public Validator warnIf(BooleanSupplier predicate, Supplier<String> message) {
+			conditions.add(new Condition(Outline.WARNING, Objects.requireNonNull(predicate, "predicate"), message));
 			return this;
 		}
 
 		public Validator errorIf(BooleanSupplier predicate) {
-			conditions.add(new Condition(Outline.ERROR, Objects.requireNonNull(predicate, "predicate")));
+			return errorIf(predicate, (Supplier<String>) null);
+		}
+
+		public Validator errorIf(BooleanSupplier predicate, String message) {
+			return errorIf(predicate, message == null ? null : () -> message);
+		}
+
+		public Validator errorIf(BooleanSupplier predicate, Supplier<String> message) {
+			conditions.add(new Condition(Outline.ERROR, Objects.requireNonNull(predicate, "predicate"), message));
+			return this;
+		}
+
+		/**
+		 * When enabled, shows the validation message as a tooltip-like popup near the component
+		 * for a short period when the invalid state first appears or when the message changes.
+		 */
+		public Validator showMessagePopup(int durationMs) {
+			this.transientMessageDurationMs = Math.max(0, durationMs);
 			return this;
 		}
 
@@ -122,16 +229,82 @@ public final class FlatLafOutlines {
 
 		private void updateNow() {
 			Outline outline = Outline.NONE;
+			List<String> messages = new ArrayList<>();
 			for (Condition condition : conditions) {
-				if (condition.predicate().getAsBoolean()) {
-					outline = max(outline, condition.outline());
+				if (!condition.predicate().getAsBoolean()) {
+					continue;
+				}
+				Outline conditionOutline = condition.outline();
+				if (conditionOutline.ordinal() > outline.ordinal()) {
+					outline = conditionOutline;
+					messages.clear();
+				}
+				if (conditionOutline == outline && condition.message() != null) {
+					String message = condition.message().get();
+					if (message != null && !message.trim().isEmpty()) {
+						messages.add(message.trim());
+					}
 				}
 			}
 			FlatLafOutlines.setOutline(component, outline);
+			String message = messages.isEmpty() ? null : String.join("\n", messages);
+			setValidationTooltip(component, message);
+
+			if (outline == Outline.NONE || message == null) {
+				hideTransientMessage();
+			} else if (transientMessageDurationMs > 0 && (lastOutline == Outline.NONE || !Objects.equals(lastMessage, message))) {
+				showTransientMessage(message, transientMessageDurationMs);
+			}
+
+			lastOutline = outline;
+			lastMessage = message;
+		}
+
+		private void showTransientMessage(String message, int durationMs) {
+			hideTransientMessage();
+			if (!component.isShowing()) {
+				return;
+			}
+			Point location;
+			try {
+				location = component.getLocationOnScreen();
+			} catch (IllegalComponentStateException ignore) {
+				return;
+			}
+
+			JToolTip toolTip = component.createToolTip();
+			String tipText = formatTooltipText(message);
+			if (tipText == null) {
+				return;
+			}
+			toolTip.setTipText(tipText);
+			toolTip.setComponent(component);
+
+			int x = location.x;
+			int y = location.y + component.getHeight() + 2;
+			transientPopup = PopupFactory.getSharedInstance().getPopup(component, toolTip, x, y);
+			transientPopup.show();
+
+			transientTimer = new Timer(durationMs, e -> hideTransientMessage());
+			transientTimer.setRepeats(false);
+			transientTimer.start();
+		}
+
+		private void hideTransientMessage() {
+			if (transientTimer != null) {
+				transientTimer.stop();
+				transientTimer = null;
+			}
+			if (transientPopup != null) {
+				transientPopup.hide();
+				transientPopup = null;
+			}
 		}
 
 		@Override
 		public void close() {
+			hideTransientMessage();
+			setValidationTooltip(component, null);
 			for (ChangeSource source : sources) {
 				source.removeChangeListener(listener);
 			}
@@ -153,4 +326,3 @@ public final class FlatLafOutlines {
 		return a.ordinal() >= b.ordinal() ? a : b;
 	}
 }
-

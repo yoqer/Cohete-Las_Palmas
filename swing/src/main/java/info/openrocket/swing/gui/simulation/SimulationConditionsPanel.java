@@ -266,8 +266,11 @@ public class SimulationConditionsPanel extends JPanel {
 		sub.add(slider, "w 75lp, wrap");
 
 		FlatLafOutlines.validator(pressureSpinner)
-				.warnIf(() -> !isa.getValue() && isPressureSuspicious(pressureModel.getValue(), altitudeModel.getValue(),
-						standardAtmosphere))
+				.warnIf(() -> !isa.getValue() && isPressureTooLow(pressureModel.getValue(), altitudeModel.getValue(),
+						standardAtmosphere), () -> trans.get("simedtdlg.warning.pressureTooLow"))
+				.warnIf(() -> !isa.getValue() && isPressureTooHigh(pressureModel.getValue(), altitudeModel.getValue(),
+						standardAtmosphere), () -> trans.get("simedtdlg.warning.pressureTooHigh"))
+				.showMessagePopup(2500)
 				.listenTo(pressureModel, altitudeModel, isa);
 
 
@@ -366,10 +369,17 @@ public class SimulationConditionsPanel extends JPanel {
 		intoWind.addEnableComponent(directionSlider, false);
 	}
 
-	private static boolean isPressureSuspicious(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
+	private static boolean isPressureTooLow(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
+		return pressureRatio(pressurePa, altitudeM, standardAtmosphere) < 0.75;
+	}
+
+	private static boolean isPressureTooHigh(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
+		return pressureRatio(pressurePa, altitudeM, standardAtmosphere) > 1.25;
+	}
+
+	private static double pressureRatio(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
 		double standardPressurePa = standardAtmosphere.getConditions(altitudeM).getPressure();
-		double ratio = pressurePa / standardPressurePa;
-		return ratio < 0.75 || ratio > 1.25;
+		return pressurePa / standardPressurePa;
 	}
 
 	public static void addSimulationConditionsPanel(JPanel parent, SimulationOptionsInterface target) {
