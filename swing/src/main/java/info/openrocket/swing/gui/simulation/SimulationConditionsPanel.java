@@ -38,6 +38,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.swing.gui.util.Icons;
+import info.openrocket.swing.gui.util.FlatLafOutlines;
 import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.BooleanModel;
@@ -73,10 +74,12 @@ public class SimulationConditionsPanel extends JPanel {
 		DoubleModel pressureModel;
 		DoubleModel m;
 		JSpinner spin;
+		JSpinner pressureSpinner;
 		DoubleModel temperatureModel;
 		String tip;
 		BasicSlider slider;
 		UnitSelector unit;
+		final ExtendedISAModel standardAtmosphere = new ExtendedISAModel();
 
 		//// Wind settings:  Average wind speed, turbulence intensity, std. deviation, and direction
 		sub = new JPanel(new MigLayout("fill, ins 20 20 0 20", "[grow]", ""));
@@ -165,6 +168,7 @@ public class SimulationConditionsPanel extends JPanel {
 		spin.setEditor(new SpinnerEditor(spin));
 		spin.setToolTipText(tip);
 		isa.addEnableComponent(spin, false);
+		pressureSpinner = spin;
 		sub.add(spin, "growx");
 
 		unit = new UnitSelector(pressureModel);
@@ -247,6 +251,7 @@ public class SimulationConditionsPanel extends JPanel {
 		sub.add(label);
 
 		m = new DoubleModel(target, "LaunchAltitude", UnitGroup.UNITS_DISTANCE, 0, ExtendedISAModel.getMaximumAllowedAltitude());
+		final DoubleModel altitudeModel = m;
 
 		spin = new JSpinner(m.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin));
@@ -259,6 +264,11 @@ public class SimulationConditionsPanel extends JPanel {
 		slider = new BasicSlider(m.getSliderModel(0, 250, 1000));
 		slider.setToolTipText(tip);
 		sub.add(slider, "w 75lp, wrap");
+
+		FlatLafOutlines.validator(pressureSpinner)
+				.warnIf(() -> !isa.getValue() && isPressureSuspicious(pressureModel.getValue(), altitudeModel.getValue(),
+						standardAtmosphere))
+				.listenTo(pressureModel, altitudeModel, isa);
 
 
 		//// Launch rod
@@ -354,6 +364,12 @@ public class SimulationConditionsPanel extends JPanel {
 		intoWind.addEnableComponent(directionSpin, false);
 		intoWind.addEnableComponent(unit, false);
 		intoWind.addEnableComponent(directionSlider, false);
+	}
+
+	private static boolean isPressureSuspicious(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
+		double standardPressurePa = standardAtmosphere.getConditions(altitudeM).getPressure();
+		double ratio = pressurePa / standardPressurePa;
+		return ratio < 0.75 || ratio > 1.25;
 	}
 
 	public static void addSimulationConditionsPanel(JPanel parent, SimulationOptionsInterface target) {
