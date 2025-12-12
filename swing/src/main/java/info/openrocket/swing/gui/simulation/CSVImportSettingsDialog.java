@@ -9,6 +9,7 @@ import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.components.FieldSeparatorComboBox;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.components.UnitSelector;
+import info.openrocket.swing.gui.util.FlatLafOutlines;
 import info.openrocket.swing.gui.util.GUIUtil;
 import net.miginfocom.swing.MigLayout;
 
@@ -465,12 +466,7 @@ public class CSVImportSettingsDialog extends JDialog {
 
 		// Mark error spinners
 		for (JSpinner spinner : errorSpinners) {
-			spinner.putClientProperty("JComponent.outline", "error");
-			// Mark the editor component as well for better visibility
-			JComponent editor = spinner.getEditor();
-			if (editor != null) {
-				editor.putClientProperty("JComponent.outline", "error");
-			}
+			FlatLafOutlines.setOutline(spinner, FlatLafOutlines.Outline.ERROR);
 		}
 	}
 
@@ -485,38 +481,25 @@ public class CSVImportSettingsDialog extends JDialog {
 		validateColumnIndices();
 
 		// Check if any spinners have error styling
-		return altitudeColumnSpinner.getClientProperty("JComponent.outline") == "error" ||
-				speedColumnSpinner.getClientProperty("JComponent.outline") == "error" ||
-				directionColumnSpinner.getClientProperty("JComponent.outline") == "error" ||
-				stdDeviationColumnSpinner.getClientProperty("JComponent.outline") == "error";
+		return FlatLafOutlines.getOutline(altitudeColumnSpinner) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(speedColumnSpinner) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(directionColumnSpinner) == FlatLafOutlines.Outline.ERROR ||
+				FlatLafOutlines.getOutline(stdDeviationColumnSpinner) == FlatLafOutlines.Outline.ERROR;
 	}
 
 	/**
 	 * Resets the error outlines on all column fields
 	 */
 	private void resetErrorOutlines() {
-		// Reset outlines on text fields
-		altitudeColumnField.putClientProperty("JComponent.outline", "");
-		speedColumnField.putClientProperty("JComponent.outline", "");
-		directionColumnField.putClientProperty("JComponent.outline", "");
-		stdDeviationColumnField.putClientProperty("JComponent.outline", "");
+		FlatLafOutlines.setOutline(altitudeColumnField, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(speedColumnField, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(directionColumnField, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(stdDeviationColumnField, FlatLafOutlines.Outline.NONE);
 
-		// Reset outlines on spinners
-		altitudeColumnSpinner.putClientProperty("JComponent.outline", "");
-		speedColumnSpinner.putClientProperty("JComponent.outline", "");
-		directionColumnSpinner.putClientProperty("JComponent.outline", "");
-		stdDeviationColumnSpinner.putClientProperty("JComponent.outline", "");
-
-		// Reset outlines on spinner editors
-		JComponent altEditor = altitudeColumnSpinner.getEditor();
-		JComponent speedEditor = speedColumnSpinner.getEditor();
-		JComponent dirEditor = directionColumnSpinner.getEditor();
-		JComponent stdDevEditor = stdDeviationColumnSpinner.getEditor();
-
-		if (altEditor != null) altEditor.putClientProperty("JComponent.outline", "");
-		if (speedEditor != null) speedEditor.putClientProperty("JComponent.outline", "");
-		if (dirEditor != null) dirEditor.putClientProperty("JComponent.outline", "");
-		if (stdDevEditor != null) stdDevEditor.putClientProperty("JComponent.outline", "");
+		FlatLafOutlines.setOutline(altitudeColumnSpinner, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(speedColumnSpinner, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(directionColumnSpinner, FlatLafOutlines.Outline.NONE);
+		FlatLafOutlines.setOutline(stdDeviationColumnSpinner, FlatLafOutlines.Outline.NONE);
 	}
 
 	/**
