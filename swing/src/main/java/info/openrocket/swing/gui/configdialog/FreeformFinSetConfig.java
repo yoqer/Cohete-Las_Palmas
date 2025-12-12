@@ -611,7 +611,13 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					point = snapPoint(point, finset.getFinPoints()[lockIndex]);
 					int highlightIndex = getHighlightIndex(lockIndex);
 					figure.setHighlightIndex(highlightIndex);
+				} else {
+					// No valid lock index, reset highlight
+					figure.setHighlightIndex(-1);
 				}
+			} else {
+				// Shift not held down, reset highlight
+				figure.setHighlightIndex(-1);
 			}
 
 			try {
