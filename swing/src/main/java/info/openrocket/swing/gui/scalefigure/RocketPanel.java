@@ -797,6 +797,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		double newRotation = originalRotation - rotationOffset;
 		// Ensure the rotation is within the range [0, 2*PI]
 		newRotation = (newRotation + 2 * Math.PI) % (2 * Math.PI);
+		
+		// Apply snapping if Shift key is pressed
+		if (event.isShiftDown()) {
+			newRotation = ViewRotationControl.snapRotation(newRotation);
+		}
+		
 		figure.setRotation(newRotation);
 	}
 
