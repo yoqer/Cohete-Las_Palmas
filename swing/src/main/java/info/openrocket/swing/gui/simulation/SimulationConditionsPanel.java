@@ -75,6 +75,7 @@ public class SimulationConditionsPanel extends JPanel {
 		DoubleModel m;
 		JSpinner spin;
 		JSpinner pressureSpinner;
+		JSpinner temperatureSpinner;
 		DoubleModel temperatureModel;
 		String tip;
 		BasicSlider slider;
@@ -142,6 +143,7 @@ public class SimulationConditionsPanel extends JPanel {
 		spin.setEditor(new SpinnerEditor(spin));
 		spin.setToolTipText(tip);
 		isa.addEnableComponent(spin, false);
+		temperatureSpinner = spin;
 		sub.add(spin, "growx");
 
 		unit = new UnitSelector(temperatureModel);
@@ -273,6 +275,18 @@ public class SimulationConditionsPanel extends JPanel {
 				.showMessagePopup(2500)
 				.listenTo(pressureModel, altitudeModel, isa);
 
+		FlatLafOutlines.validator(temperatureSpinner)
+				.errorIf(() -> !isa.getValue() && isTemperatureExtremeLow(temperatureModel.getValue()),
+						() -> trans.get("simedtdlg.error.temperatureTooLow"))
+				.errorIf(() -> !isa.getValue() && isTemperatureExtremeHigh(temperatureModel.getValue()),
+						() -> trans.get("simedtdlg.error.temperatureTooHigh"))
+				.warnIf(() -> !isa.getValue() && isTemperatureTooLow(temperatureModel.getValue()),
+						() -> trans.get("simedtdlg.warning.temperatureTooLow"))
+				.warnIf(() -> !isa.getValue() && isTemperatureTooHigh(temperatureModel.getValue()),
+						() -> trans.get("simedtdlg.warning.temperatureTooHigh"))
+				.showMessagePopup(2500)
+				.listenTo(temperatureModel, isa);
+
 
 		//// Launch rod
 		sub = new JPanel(new MigLayout("fill, gap rel unrel",
@@ -392,6 +406,30 @@ public class SimulationConditionsPanel extends JPanel {
 		return Math.abs(launchRodAngleRad) >= Math.toRadians(60);
 	}
 
+	private static boolean isWindSpeedHigh(double windSpeedMps) {
+		return windSpeedMps >= 10;
+	}
+
+	private static boolean isWindSpeedExtreme(double windSpeedMps) {
+		return windSpeedMps >= 20;
+	}
+
+	private static boolean isTemperatureTooLow(double temperatureK) {
+		return temperatureK <= 233.15; // -40°C
+	}
+
+	private static boolean isTemperatureTooHigh(double temperatureK) {
+		return temperatureK >= 323.15; // 50°C
+	}
+
+	private static boolean isTemperatureExtremeLow(double temperatureK) {
+		return temperatureK <= 193.15; // -80°C
+	}
+
+	private static boolean isTemperatureExtremeHigh(double temperatureK) {
+		return temperatureK >= 353.15; // 80°C
+	}
+
 	private static double pressureRatio(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
 		double standardPressurePa = standardAtmosphere.getConditions(altitudeM).getPressure();
 		return pressurePa / standardPressurePa;
@@ -470,8 +508,15 @@ public class SimulationConditionsPanel extends JPanel {
 		PinkNoiseWindModel model = target.getAverageWindModel();
 
 		// Wind average
-		final DoubleModel windSpeedAverage = addDoubleModel(panel, "Averwindspeed", trans.get("simedtdlg.lbl.ttip.Averwindspeed"), model, "Average",
-															UnitGroup.UNITS_WINDSPEED, 0, 10.0, Double.MAX_VALUE);
+		DoubleModelRow averageWind = addDoubleModelRow(panel, "Averwindspeed", trans.get("simedtdlg.lbl.ttip.Averwindspeed"), model, "Average",
+				UnitGroup.UNITS_WINDSPEED, 0, 10.0, Double.MAX_VALUE);
+		final DoubleModel windSpeedAverage = averageWind.model();
+
+		FlatLafOutlines.validator(averageWind.spinner())
+				.errorIf(() -> isWindSpeedExtreme(windSpeedAverage.getValue()), () -> trans.get("simedtdlg.error.windSpeedExtreme"))
+				.warnIf(() -> isWindSpeedHigh(windSpeedAverage.getValue()), () -> trans.get("simedtdlg.warning.windSpeedHigh"))
+				.showMessagePopup(2500)
+				.listenTo(windSpeedAverage);
 
 		// Wind standard deviation
 		final DoubleModel windSpeedDeviation = addDoubleModel(panel, "Stddeviation", trans.get("simedtdlg.lbl.ttip.Stddeviation"),
@@ -604,6 +649,19 @@ public class SimulationConditionsPanel extends JPanel {
 
 	private static DoubleModel addDoubleModel(JPanel panel, String labelKey, String tooltipText, Object source, String sourceKey,
 											  UnitGroup unit, double min, Object maxSlider, Object max, boolean easterEgg) {
+		return addDoubleModelRow(panel, labelKey, tooltipText, source, sourceKey, unit, min, maxSlider, max, easterEgg).model();
+	}
+
+	private record DoubleModelRow(DoubleModel model, JSpinner spinner) {
+	}
+
+	private static DoubleModelRow addDoubleModelRow(JPanel panel, String labelKey, String tooltipText, Object source, String sourceKey,
+													UnitGroup unit, double min, Object maxSlider, Object max) {
+		return addDoubleModelRow(panel, labelKey, tooltipText, source, sourceKey, unit, min, maxSlider, max, false);
+	}
+
+	private static DoubleModelRow addDoubleModelRow(JPanel panel, String labelKey, String tooltipText, Object source, String sourceKey,
+													UnitGroup unit, double min, Object maxSlider, Object max, boolean easterEgg) {
 		JLabel label = new JLabel(trans.get("simedtdlg.lbl." + labelKey));
 		panel.add(label);
 
@@ -640,7 +698,7 @@ public class SimulationConditionsPanel extends JPanel {
 		}
 		panel.add(slider, "w 75lp, wrap");
 
-		return model;
+		return new DoubleModelRow(model, spin);
 	}
 
 	private static DoubleModel addDoubleModel(JPanel panel, String labelKey, String tooltipText, Object source, String sourceKey,
