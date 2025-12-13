@@ -322,21 +322,28 @@ public class SimulationConditionsPanel extends JPanel {
 		label.setToolTipText(tip);
 		sub.add(label);
 
-		m = new DoubleModel(target, "LaunchRodAngle", UnitGroup.UNITS_ANGLE,
+		final DoubleModel launchRodAngleModel = new DoubleModel(target, "LaunchRodAngle", UnitGroup.UNITS_ANGLE,
 				-SimulationOptions.MAX_LAUNCH_ROD_ANGLE, SimulationOptions.MAX_LAUNCH_ROD_ANGLE);
 
-		spin = new JSpinner(m.getSpinnerModel());
+		spin = new JSpinner(launchRodAngleModel.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin));
 		spin.setToolTipText(tip);
 		sub.add(spin, "growx");
+		final JSpinner launchRodAngleSpinner = spin;
 
-		unit = new UnitSelector(m);
+		unit = new UnitSelector(launchRodAngleModel);
 		unit.setToolTipText(tip);
 		sub.add(unit, "growx");
-		slider = new BasicSlider(m.getSliderModel(-SimulationOptions.MAX_LAUNCH_ROD_ANGLE, 0,
+		slider = new BasicSlider(launchRodAngleModel.getSliderModel(-SimulationOptions.MAX_LAUNCH_ROD_ANGLE, 0,
 				SimulationOptions.MAX_LAUNCH_ROD_ANGLE));
 		slider.setToolTipText(tip);
 		sub.add(slider, "w 75lp, wrap");
+
+		FlatLafOutlines.validator(launchRodAngleSpinner)
+				.warnIf(() -> isLaunchRodAngleLarge(launchRodAngleModel.getValue()), () -> trans.get("simedtdlg.warning.launchRodAngleLarge"))
+				.errorIf(() -> isLaunchRodAngleMaxed(launchRodAngleModel.getValue()), () -> trans.get("simedtdlg.error.launchRodAngleMaxed"))
+				.showMessagePopup(2500)
+				.listenTo(launchRodAngleModel);
 
 
 		// Direction:
@@ -375,6 +382,14 @@ public class SimulationConditionsPanel extends JPanel {
 
 	private static boolean isPressureTooHigh(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
 		return pressureRatio(pressurePa, altitudeM, standardAtmosphere) > 1.25;
+	}
+
+	private static boolean isLaunchRodAngleLarge(double launchRodAngleRad) {
+		return Math.abs(launchRodAngleRad) >= Math.toRadians(45);
+	}
+
+	private static boolean isLaunchRodAngleMaxed(double launchRodAngleRad) {
+		return Math.abs(launchRodAngleRad) >= Math.toRadians(60);
 	}
 
 	private static double pressureRatio(double pressurePa, double altitudeM, ExtendedISAModel standardAtmosphere) {
