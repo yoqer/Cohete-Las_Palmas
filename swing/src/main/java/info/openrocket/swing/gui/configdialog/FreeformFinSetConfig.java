@@ -85,6 +85,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 	private JTable table = null;
 	private FinPointTableModel tableModel = null;
 	private JPopupMenu pm;
+	private JPopupMenu figurePopupMenu;
 	
 	private int dragIndex = -1;
 	private Point dragPoint = null;
@@ -333,6 +334,10 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		pm = new JPopupMenu();
 		pm.add(insertFinPointAction);
 		pm.add(deleteFinPointAction);
+		
+		// Context menu for figure
+		figurePopupMenu = new JPopupMenu();
+		figurePopupMenu.add(deleteFinPointAction);
 
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
@@ -611,7 +616,13 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					point = snapPoint(point, finset.getFinPoints()[lockIndex]);
 					int highlightIndex = getHighlightIndex(lockIndex);
 					figure.setHighlightIndex(highlightIndex);
+				} else {
+					// No valid lock index, reset highlight
+					figure.setHighlightIndex(-1);
 				}
+			} else {
+				// Shift not held down, reset highlight
+				figure.setHighlightIndex(-1);
 			}
 
 			try {
@@ -745,7 +756,19 @@ public class FreeformFinSetConfig extends FinSetConfig {
                     }
                     return;
                 }
-            }
+            } else if (event.getButton() == MouseEvent.BUTTON3) {
+				// Right-click: show context menu if clicking on a fin point
+				int clickIndex = getPoint(event);
+				if (clickIndex >= 0) {
+					// Select the point in the table so action state is correct
+					table.setRowSelectionInterval(clickIndex, clickIndex);
+					updateActionStates();
+					// Show context menu - convert coordinates to scroll pane coordinates
+					Point point = SwingUtilities.convertPoint(event.getComponent(), event.getX(), event.getY(), this);
+					figurePopupMenu.show(this, point.x, point.y);
+					return;
+				}
+			}
 			super.mouseClicked(event);
         }
 
