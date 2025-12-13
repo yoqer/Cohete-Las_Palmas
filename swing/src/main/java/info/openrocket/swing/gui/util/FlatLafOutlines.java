@@ -13,6 +13,8 @@ import javax.swing.PopupFactory;
 import javax.swing.Timer;
 import java.awt.IllegalComponentStateException;
 import java.awt.Point;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -203,14 +205,22 @@ public final class FlatLafOutlines {
 		private final List<Condition> conditions = new ArrayList<>();
 		private final Set<ChangeSource> sources = new HashSet<>();
 		private final StateChangeListener listener = e -> update();
+		private final HierarchyListener autoCloseListener;
 		private int transientMessageDurationMs = 0;
 		private Outline lastOutline = Outline.NONE;
 		private String lastMessage = null;
 		private Popup transientPopup;
 		private Timer transientTimer;
+		private boolean closed = false;
 
 		private Validator(JComponent component) {
 			this.component = Objects.requireNonNull(component, "component");
+			this.autoCloseListener = e -> {
+				if ((e.getChangeFlags() & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0 && !component.isDisplayable()) {
+					close();
+				}
+			};
+			this.component.addHierarchyListener(autoCloseListener);
 		}
 
 		/**
@@ -315,6 +325,9 @@ public final class FlatLafOutlines {
 		 * Recompute outline/message and apply them to the component (runs on the EDT).
 		 */
 		public void update() {
+			if (closed) {
+				return;
+			}
 			if (SwingUtilities.isEventDispatchThread()) {
 				updateNow();
 			} else {
@@ -323,6 +336,9 @@ public final class FlatLafOutlines {
 		}
 
 		private void updateNow() {
+			if (closed) {
+				return;
+			}
 			Outline outline = Outline.NONE;
 			List<String> messages = new ArrayList<>();
 			for (Condition condition : conditions) {
@@ -410,6 +426,11 @@ public final class FlatLafOutlines {
 		 */
 		@Override
 		public void close() {
+			if (closed) {
+				return;
+			}
+			closed = true;
+			component.removeHierarchyListener(autoCloseListener);
 			hideTransientMessage();
 			setValidationTooltip(component, null);
 			for (ChangeSource source : sources) {
