@@ -20,20 +20,33 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * Helpers for applying FlatLaf component outlines (e.g. "warning", "error") via
- * the {@code JComponent.outline} client property.
+ * the {@code JComponent.outline} client property, with optional validation messages.
  */
 public final class FlatLafOutlines {
+	/**
+	 * FlatLaf client property key used by many Swing components to render validation outlines.
+	 */
 	public static final String OUTLINE_PROPERTY = "JComponent.outline";
+	/**
+	 * Client property key holding the original tooltip while a validation tooltip is active.
+	 */
 	private static final String BASE_TOOLTIP_PROPERTY = FlatLafOutlines.class.getName() + ".baseToolTip";
+	/**
+	 * Sentinel value meaning "original tooltip was null".
+	 */
 	private static final Object NULL_TOOLTIP = new Object();
 
 	public enum Outline {
+		/** Removes the outline. */
 		NONE(null),
+		/** Draws a warning outline (yellow/orange depending on theme). */
 		WARNING("warning"),
+		/** Draws an error outline (red depending on theme). */
 		ERROR("error");
 
 		private final String flatLafValue;
@@ -50,7 +63,13 @@ public final class FlatLafOutlines {
 	private FlatLafOutlines() {
 	}
 
-	private static void forEachRelatedComponent(JComponent component, java.util.function.Consumer<JComponent> consumer) {
+	/**
+	 * Apply an operation to the component and any related editor subcomponents (e.g. spinner editor/textfield).
+	 *
+	 * @param component base component
+	 * @param consumer operation to apply to each related component
+	 */
+	private static void forEachRelatedComponent(JComponent component, Consumer<JComponent> consumer) {
 		consumer.accept(component);
 		if (component instanceof JSpinner spinner) {
 			JComponent editor = spinner.getEditor();
@@ -66,6 +85,12 @@ public final class FlatLafOutlines {
 		}
 	}
 
+	/**
+	 * Set a FlatLaf outline on a component. For spinners, also applies to the editor and editor text field.
+	 *
+	 * @param component component to style
+	 * @param outline outline to apply (null clears)
+	 */
 	public static void setOutline(JComponent component, Outline outline) {
 		Objects.requireNonNull(component, "component");
 		final String value = outline == null ? null : outline.getFlatLafValue();
@@ -73,6 +98,12 @@ public final class FlatLafOutlines {
 		forEachRelatedComponent(component, c -> c.putClientProperty(OUTLINE_PROPERTY, value));
 	}
 
+	/**
+	 * Read the current FlatLaf outline from the component.
+	 *
+	 * @param component component to query
+	 * @return {@link Outline#NONE} if unset/unknown.
+	 */
 	public static Outline getOutline(JComponent component) {
 		Objects.requireNonNull(component, "component");
 		Object value = component.getClientProperty(OUTLINE_PROPERTY);
@@ -88,6 +119,12 @@ public final class FlatLafOutlines {
 		return Outline.NONE;
 	}
 
+	/**
+	 * Replace the component tooltip with a validation message (when non-null), and restore the original tooltip when cleared.
+	 *
+	 * @param component component whose tooltip should change
+	 * @param message validation message, or null to restore the original tooltip
+	 */
 	private static void setValidationTooltip(JComponent component, String message) {
 		String tooltipMessage = message != null ? message.trim() : null;
 		if (tooltipMessage != null && tooltipMessage.isEmpty()) {
@@ -98,6 +135,12 @@ public final class FlatLafOutlines {
 		forEachRelatedComponent(component, c -> setValidationTooltipOnSingleComponent(c, finalTooltipMessage));
 	}
 
+	/**
+	 * Set/restore the tooltip for a single component, preserving the original tooltip in a client property.
+	 *
+	 * @param component component whose tooltip should change
+	 * @param message validation message, or null to restore the original tooltip
+	 */
 	private static void setValidationTooltipOnSingleComponent(JComponent component, String message) {
 		if (message == null) {
 			Object base = component.getClientProperty(BASE_TOOLTIP_PROPERTY);
@@ -118,6 +161,12 @@ public final class FlatLafOutlines {
 		component.setToolTipText(formatTooltipText(message));
 	}
 
+	/**
+	 * Normalize tooltip text: keep HTML tooltips as-is; otherwise escape and wrap in {@code <html>}.
+	 *
+	 * @param tooltip raw tooltip text (plain text or HTML)
+	 * @return tooltip text suitable for {@link JComponent#setToolTipText(String)}, or null to clear
+	 */
 	private static String formatTooltipText(String tooltip) {
 		if (tooltip == null) {
 			return null;
@@ -132,10 +181,20 @@ public final class FlatLafOutlines {
 		return "<html>" + escapeHtml(trimmed).replace("\n", "<br>") + "</html>";
 	}
 
+	/**
+	 * @param tooltip tooltip string to inspect
+	 * @return true if the tooltip already looks like an HTML tooltip.
+	 */
 	private static boolean isHtml(String tooltip) {
 		return tooltip.toLowerCase(Locale.ROOT).startsWith("<html");
 	}
 
+	/**
+	 * Escape basic characters for safe HTML tooltip rendering.
+	 *
+	 * @param text plain text
+	 * @return HTML-escaped text
+	 */
 	private static String escapeHtml(String text) {
 		StringBuilder sb = new StringBuilder(text.length());
 		for (int i = 0; i < text.length(); i++) {
@@ -152,6 +211,10 @@ public final class FlatLafOutlines {
 		return sb.toString();
 	}
 
+	/**
+	 * Binds outline + optional message to a component based on one or more conditions.
+	 * Call {@link #listenTo(ChangeSource...)} to keep it up to date.
+	 */
 	public static final class Validator implements AutoCloseable {
 		private record Condition(Outline outline, BooleanSupplier predicate, Supplier<String> message) {
 		}
@@ -170,27 +233,67 @@ public final class FlatLafOutlines {
 			this.component = Objects.requireNonNull(component, "component");
 		}
 
+		/**
+		 * Add a warning condition without a message.
+		 *
+		 * @param predicate returns true when the warning is active
+		 * @return this
+		 */
 		public Validator warnIf(BooleanSupplier predicate) {
 			return warnIf(predicate, (Supplier<String>) null);
 		}
 
+		/**
+		 * Add a warning condition with a fixed message (shown in tooltip/popup).
+		 *
+		 * @param predicate returns true when the warning is active
+		 * @param message message to show (tooltip/popup), may be null/blank
+		 * @return this
+		 */
 		public Validator warnIf(BooleanSupplier predicate, String message) {
 			return warnIf(predicate, message == null ? null : () -> message);
 		}
 
+		/**
+		 * Add a warning condition with a dynamic message supplier.
+		 *
+		 * @param predicate returns true when the warning is active
+		 * @param message message supplier (tooltip/popup), may be null
+		 * @return this
+		 */
 		public Validator warnIf(BooleanSupplier predicate, Supplier<String> message) {
 			conditions.add(new Condition(Outline.WARNING, Objects.requireNonNull(predicate, "predicate"), message));
 			return this;
 		}
 
+		/**
+		 * Add an error condition without a message.
+		 *
+		 * @param predicate returns true when the error is active
+		 * @return this
+		 */
 		public Validator errorIf(BooleanSupplier predicate) {
 			return errorIf(predicate, (Supplier<String>) null);
 		}
 
+		/**
+		 * Add an error condition with a fixed message (shown in tooltip/popup).
+		 *
+		 * @param predicate returns true when the error is active
+		 * @param message message to show (tooltip/popup), may be null/blank
+		 * @return this
+		 */
 		public Validator errorIf(BooleanSupplier predicate, String message) {
 			return errorIf(predicate, message == null ? null : () -> message);
 		}
 
+		/**
+		 * Add an error condition with a dynamic message supplier.
+		 *
+		 * @param predicate returns true when the error is active
+		 * @param message message supplier (tooltip/popup), may be null
+		 * @return this
+		 */
 		public Validator errorIf(BooleanSupplier predicate, Supplier<String> message) {
 			conditions.add(new Condition(Outline.ERROR, Objects.requireNonNull(predicate, "predicate"), message));
 			return this;
@@ -199,12 +302,21 @@ public final class FlatLafOutlines {
 		/**
 		 * When enabled, shows the validation message as a tooltip-like popup near the component
 		 * for a short period when the invalid state first appears or when the message changes.
+		 *
+		 * @param durationMs popup duration in milliseconds (0 disables)
+		 * @return this
 		 */
 		public Validator showMessagePopup(int durationMs) {
 			this.transientMessageDurationMs = Math.max(0, durationMs);
 			return this;
 		}
 
+		/**
+		 * Register one or more {@link ChangeSource}s that will trigger validation updates.
+		 *
+		 * @param changeSources sources that fire when inputs change
+		 * @return this
+		 */
 		public Validator listenTo(ChangeSource... changeSources) {
 			if (changeSources == null) {
 				return this;
@@ -219,6 +331,9 @@ public final class FlatLafOutlines {
 			return this;
 		}
 
+		/**
+		 * Recompute outline/message and apply them to the component (runs on the EDT).
+		 */
 		public void update() {
 			if (SwingUtilities.isEventDispatchThread()) {
 				updateNow();
@@ -260,6 +375,12 @@ public final class FlatLafOutlines {
 			lastMessage = message;
 		}
 
+		/**
+		 * Show a tooltip-like popup near the component.
+		 *
+		 * @param message message to show
+		 * @param durationMs popup duration in milliseconds
+		 */
 		private void showTransientMessage(String message, int durationMs) {
 			hideTransientMessage();
 			if (!component.isShowing()) {
@@ -290,6 +411,9 @@ public final class FlatLafOutlines {
 			transientTimer.start();
 		}
 
+		/**
+		 * Hide any active transient popup.
+		 */
 		private void hideTransientMessage() {
 			if (transientTimer != null) {
 				transientTimer.stop();
@@ -301,6 +425,9 @@ public final class FlatLafOutlines {
 			}
 		}
 
+		/**
+		 * Detach listeners, hide any popup, and restore the original tooltip.
+		 */
 		@Override
 		public void close() {
 			hideTransientMessage();
@@ -312,10 +439,23 @@ public final class FlatLafOutlines {
 		}
 	}
 
+	/**
+	 * Create a new validator for a component.
+	 *
+	 * @param component component to style/validate
+	 * @return new validator instance
+	 */
 	public static Validator validator(JComponent component) {
 		return new Validator(component);
 	}
 
+	/**
+	 * Return the more severe outline, based on enum ordering.
+	 *
+	 * @param a first outline (may be null)
+	 * @param b second outline (may be null)
+	 * @return the more severe outline (never null)
+	 */
 	private static Outline max(Outline a, Outline b) {
 		if (a == null) {
 			return b == null ? Outline.NONE : b;
