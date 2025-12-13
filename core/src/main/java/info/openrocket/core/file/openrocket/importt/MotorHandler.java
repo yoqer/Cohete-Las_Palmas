@@ -54,22 +54,35 @@ class MotorHandler extends AbstractElementHandler {
 	 * <p>
 	 * Preference order:
 	 * <ol>
-	 *   <li>Embedded thrust curve data (one or more {@code <thrustcurvepoint>} elements), if present.</li>
 	 *   <li>Lookup via {@link DocumentLoadingContext#getMotorFinder()} (typically the motor database).</li>
+	 *   <li>Embedded thrust curve data (one or more {@code <thrustcurvepoint>} elements), if present.</li>
 	 * </ol>
 	 *
 	 * @param warnings warnings sink
 	 * @return the resolved motor, or {@code null} if not found/invalid
 	 */
 	public Motor getMotor(WarningSet warnings) {
+		// First try to locate an equivalent motor in the motor database.
+		// If that fails, fall back to the embedded thrust curve data (if present).
+		WarningSet databaseWarnings = new WarningSet();
+		Motor databaseMotor = context.getMotorFinder().findMotor(type, manufacturer, designation, Double.NaN, Double.NaN, digest,
+				databaseWarnings);
+		if (databaseMotor != null) {
+			warnings.addAll(databaseWarnings);
+			return databaseMotor;
+		}
+
 		if (!thrustCurveTime.isEmpty()) {
 			Motor embedded = buildEmbeddedThrustCurveMotor(warnings);
 			if (embedded != null) {
+				// Deliberately discard databaseWarnings here: the motor isn't missing since we loaded it from the file.
 				return embedded;
 			}
 		}
-		return context.getMotorFinder().findMotor(type, manufacturer, designation, Double.NaN, Double.NaN, digest,
-				warnings);
+
+		// Nothing worked: surface any database lookup warnings (e.g. missing motor).
+		warnings.addAll(databaseWarnings);
+		return null;
 	}
 
 	/**
