@@ -23,6 +23,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static info.openrocket.core.util.StringUtils.escapeHtml;
+
 /**
  * Helpers for applying FlatLaf component outlines (e.g. "warning", "error") via
  * the {@code JComponent.outline} client property, with optional validation messages.
@@ -178,7 +180,7 @@ public final class FlatLafOutlines {
 		if (isHtml(trimmed)) {
 			return trimmed;
 		}
-		return "<html>" + escapeHtml(trimmed).replace("\n", "<br>") + "</html>";
+		return "<html>" + escapeHtml(trimmed)  + "</html>";
 	}
 
 	/**
@@ -187,28 +189,6 @@ public final class FlatLafOutlines {
 	 */
 	private static boolean isHtml(String tooltip) {
 		return tooltip.toLowerCase(Locale.ROOT).startsWith("<html");
-	}
-
-	/**
-	 * Escape basic characters for safe HTML tooltip rendering.
-	 *
-	 * @param text plain text
-	 * @return HTML-escaped text
-	 */
-	private static String escapeHtml(String text) {
-		StringBuilder sb = new StringBuilder(text.length());
-		for (int i = 0; i < text.length(); i++) {
-			char c = text.charAt(i);
-			switch (c) {
-				case '&' -> sb.append("&amp;");
-				case '<' -> sb.append("&lt;");
-				case '>' -> sb.append("&gt;");
-				case '"' -> sb.append("&quot;");
-				case '\'' -> sb.append("&#39;");
-				default -> sb.append(c);
-			}
-		}
-		return sb.toString();
 	}
 
 	/**
