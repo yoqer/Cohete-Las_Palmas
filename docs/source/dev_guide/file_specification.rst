@@ -140,6 +140,7 @@ of our repository).
      - * Added ``<simulationsteppermethod>`` to simulation conditions
        * Added simulation table column visibility preferences
        * Include file preview image (``preview.png``) in .ork zip file
+       * Embedded thrust curve motor data (``<standarddelays>``, ``<thrustcurvepoint>``) into ``<motor>`` elements so designs are self-contained when sharing custom motors
 
 ----
 
@@ -151,7 +152,7 @@ The following shows the root XML structure of an OpenRocket design file:
 .. code-block:: xml
 
    <?xml version='1.0' encoding='utf-8'?>
-   <openrocket version="1.11" creator="OpenRocket 25.xx">
+   <openrocket version="1.12" creator="OpenRocket 25.xx">
       <rocket>
          <!-- Rocket definition -->
       </rocket>
@@ -537,6 +538,10 @@ be present in the XML component block:
             <type>single</type>
             <manufacturer>Estes</manufacturer>
             <digest>22aec01287ea1e3b8c6f66b26fe5fea6</digest>
+            <standarddelays>0,3,5,none</standarddelays>
+            <thrustcurvepoint>0,0,0.035,0.0164</thrustcurvepoint>
+            <thrustcurvepoint>1,9,0.035,0.0145</thrustcurvepoint>
+            <thrustcurvepoint>2,0,0.035,0.0131</thrustcurvepoint>
             <designation>A8</designation>
             <diameter>0.018</diameter>
             <length>0.07</length>
@@ -548,6 +553,15 @@ be present in the XML component block:
          </ignitionconfiguration>
       </motormount>
    </bodytube>
+
+As of file format version ``1.11``, OpenRocket embeds the full thrust curve motor data directly inside ``<motor>``
+elements. This is primarily intended to make designs self-contained when sharing custom motors.
+
+* ``standarddelays``: Comma-separated list of standard motor delays in seconds; use ``none`` for plugged/no ejection charge.
+* ``thrustcurvepoint``: Repeated element containing ``time,thrust,cg_x,mass`` values (seconds, Newtons, meters, kg).
+
+When one or more ``thrustcurvepoint`` elements are present, OpenRocket will reconstruct the motor from the embedded data
+instead of looking it up in the motor database.
 
 ----
 
@@ -1320,4 +1334,3 @@ Important Notes
 2. When a component is first created in a .ork file, the material definition is copied from the .orc file. Subsequent changes to the material definition in the .orc file will not automatically update existing components in .ork files.
 3. To update a component's material properties, you must manually reselect the component preset from the database.
 4. The XML schema for .orc files is not formally defined in an XSD file.
-
