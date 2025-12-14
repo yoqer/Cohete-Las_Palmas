@@ -96,6 +96,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 	private final LinkedList<Rocket> undoHistory = new LinkedList<>();
 	private final LinkedList<String> undoDescription = new LinkedList<>();
 	private final LinkedList<ArrayList<Simulation>> undoSimulationHistory = new LinkedList<>();
+	private boolean inUndoRedo = false;
 	
 	/**
 	 * The position in the undoHistory we are currently at.  If modifications have been
@@ -623,7 +624,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		// Add the current state to the undo history
 		undoHistory.add(rocket.copyWithOriginalID());
 		undoDescription.add(null);
-		undoSimulationHistory.add(simulations.clone());
+		undoSimulationHistory.add(copySimulationsForUndo());
 		nextDescription = description;
 		undoPosition++;
 	}
@@ -714,7 +715,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		
 		undoHistory.add(rocket.copyWithOriginalID());
 		undoDescription.add(null);
-		undoSimulationHistory.add(simulations.clone());
+		undoSimulationHistory.add(copySimulationsForUndo());
 		undoPosition = 0;
 		
 		fireUndoRedoChangeEvent();
@@ -741,6 +742,29 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 	@Override
 	public void stateChanged(EventObject e) {
 		modID = new ModID();
+		if (!inUndoRedo && (e.getSource() instanceof Simulation)) {
+			boolean simulationsEqual = simulations.equals(undoSimulationHistory.get(undoPosition));
+			if (simulationsEqual && rocket.getModID() == undoHistory.get(undoPosition).getModID()) {
+				// Keep the "clean state" simulation snapshot in sync for non-undoable simulation changes
+				// (e.g. simulated data/status updates).
+					int index = getSimulationIndex((Simulation) e.getSource());
+					if (index >= 0 && index < undoSimulationHistory.get(undoPosition).size()) {
+						undoSimulationHistory.get(undoPosition).set(index,
+								((Simulation) e.getSource()).cloneForUndo());
+					} else {
+						undoSimulationHistory.set(undoPosition, copySimulationsForUndo());
+					}
+				} else if (!simulationsEqual) {
+				if (undoPosition < undoHistory.size() - 1) {
+					log.info("Simulation changed while in undo history, removing redo information for " + this +
+							" undoPosition=" + undoPosition + " undoHistory.size=" + undoHistory.size() +
+							" isClean=" + isCleanState());
+				}
+				removeRedoInfo();
+				setLatestDescription();
+				fireUndoRedoChangeEvent();
+			}
+		}
 		fireDocumentChangeEvent(new DocumentChangeEvent(e.getSource()));
 	}
 
@@ -837,13 +861,19 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 			// Modifications have been made, save the state and restore previous state
 			undoHistory.add(rocket.copyWithOriginalID());
 			undoDescription.add(null);
-			undoSimulationHistory.add(simulations.clone());
+			undoSimulationHistory.add(copySimulationsForUndo());
 		}
-		
-		rocket.checkComponentStructure();
-		rocket.loadFrom(undoHistory.get(undoPosition));
-		rocket.checkComponentStructure();
-		loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
+
+		inUndoRedo = true;
+		try {
+			rocket.checkComponentStructure();
+			rocket.loadFrom(undoHistory.get(undoPosition));
+			rocket.checkComponentStructure();
+			loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
+		} finally {
+			inUndoRedo = false;
+			fireUndoRedoChangeEvent();
+		}
 	}
 	
 	
@@ -863,9 +893,15 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		}
 		
 		undoPosition++;
-		
-		rocket.loadFrom(undoHistory.get(undoPosition).copyWithOriginalID());
-		loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
+
+		inUndoRedo = true;
+		try {
+			rocket.loadFrom(undoHistory.get(undoPosition).copyWithOriginalID());
+			loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
+		} finally {
+			inUndoRedo = false;
+			fireUndoRedoChangeEvent();
+		}
 	}
 	
 	
@@ -874,13 +910,36 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 				simulations.equals(undoSimulationHistory.get(undoPosition));
 	}
 
+	private ArrayList<Simulation> copySimulationsForUndo() {
+		ArrayList<Simulation> copy = new ArrayList<>(simulations.size());
+		for (Simulation simulation : simulations) {
+			copy.add(simulation.cloneForUndo());
+		}
+		return copy;
+	}
+
 	private void loadSimulationsFrom(ArrayList<Simulation> simulationsSnapshot) {
 		if (simulationsSnapshot == null) {
 			return;
 		}
 
-		simulations.clear();
-		simulations.addAll(simulationsSnapshot);
+		if (simulations.size() == simulationsSnapshot.size()) {
+			for (int i = 0; i < simulations.size(); i++) {
+				simulations.get(i).loadFrom(simulationsSnapshot.get(i));
+			}
+			} else {
+				simulations.clear();
+				for (Simulation snapshot : simulationsSnapshot) {
+					Simulation simulation = snapshot.cloneForUndo();
+					FlightConfigurationId simId = simulation.getId();
+					if (!rocket.containsFlightConfigurationID(simId)) {
+						rocket.createFlightConfiguration(simId);
+					}
+					simulation.syncModID();
+					simulation.addChangeListener(this);
+					simulations.add(simulation);
+				}
+			}
 		fireDocumentChangeEvent(new SimulationChangeEvent(this));
 	}
 	

@@ -91,6 +91,12 @@ public class SimulationConfigDialog extends JDialog {
 		this.initialIsSaved = document.isSaved();
 		this.isNewSimulation = isNewSimulation;
 
+		if (simulationList.length == 1) {
+			document.addUndoPosition("Edit " + simulationList[0].getName());
+		} else {
+			document.addUndoPosition("Edit simulations");
+		}
+
 		simulationList[0].addChangeListener(new StateChangeListener() {
 			@Override
 			public void stateChanged(EventObject e) {
