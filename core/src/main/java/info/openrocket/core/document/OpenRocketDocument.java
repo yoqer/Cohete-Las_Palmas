@@ -95,6 +95,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 	 */
 	private final LinkedList<Rocket> undoHistory = new LinkedList<>();
 	private final LinkedList<String> undoDescription = new LinkedList<>();
+	private final LinkedList<ArrayList<Simulation>> undoSimulationHistory = new LinkedList<>();
 	
 	/**
 	 * The position in the undoHistory we are currently at.  If modifications have been
@@ -482,6 +483,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		if( !rocket.containsFlightConfigurationID( simId )){
 			rocket.createFlightConfiguration(simId);
 		}
+		simulationsChanged();
 		fireDocumentChangeEvent(new SimulationChangeEvent(simulation));
 	}
 	
@@ -491,6 +493,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 	 */
 	public void removeSimulation(Simulation simulation) {
 		simulations.remove(simulation);
+		simulationsChanged();
 		fireDocumentChangeEvent(new SimulationChangeEvent(simulation));
 	}
 	
@@ -502,8 +505,22 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 	 */
 	public Simulation removeSimulation(int n) {
 		Simulation simulation = simulations.remove(n);
+		simulationsChanged();
 		fireDocumentChangeEvent(new SimulationChangeEvent(simulation));
 		return simulation;
+	}
+
+	private void simulationsChanged() {
+		modID = new ModID();
+		if (undoPosition < undoHistory.size() - 1) {
+			log.info("Simulations changed while in undo history, removing redo information for " + this +
+					" undoPosition=" + undoPosition + " undoHistory.size=" + undoHistory.size() +
+					" isClean=" + isCleanState());
+		}
+
+		removeRedoInfo();
+		setLatestDescription();
+		fireUndoRedoChangeEvent();
 	}
 	
 	/**
@@ -593,6 +610,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 			for (int i = 0; i < UNDO_MARGIN; i++) {
 				undoHistory.removeFirst();
 				undoDescription.removeFirst();
+				undoSimulationHistory.removeFirst();
 				undoPosition--;
 			}
 		}
@@ -605,6 +623,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		// Add the current state to the undo history
 		undoHistory.add(rocket.copyWithOriginalID());
 		undoDescription.add(null);
+		undoSimulationHistory.add(simulations.clone());
 		nextDescription = description;
 		undoPosition++;
 	}
@@ -691,9 +710,11 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		//log.info("Clearing undo history of " + this);
 		undoHistory.clear();
 		undoDescription.clear();
+		undoSimulationHistory.clear();
 		
 		undoHistory.add(rocket.copyWithOriginalID());
 		undoDescription.add(null);
+		undoSimulationHistory.add(simulations.clone());
 		undoPosition = 0;
 		
 		fireUndoRedoChangeEvent();
@@ -737,6 +758,7 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		while (undoPosition < undoHistory.size() - 1) {
 			undoHistory.removeLast();
 			undoDescription.removeLast();
+			undoSimulationHistory.removeLast();
 		}
 	}
 	
@@ -815,11 +837,13 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 			// Modifications have been made, save the state and restore previous state
 			undoHistory.add(rocket.copyWithOriginalID());
 			undoDescription.add(null);
+			undoSimulationHistory.add(simulations.clone());
 		}
 		
 		rocket.checkComponentStructure();
 		rocket.loadFrom(undoHistory.get(undoPosition));
 		rocket.checkComponentStructure();
+		loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
 	}
 	
 	
@@ -841,11 +865,23 @@ public class OpenRocketDocument implements ComponentChangeListener, StateChangeL
 		undoPosition++;
 		
 		rocket.loadFrom(undoHistory.get(undoPosition).copyWithOriginalID());
+		loadSimulationsFrom(undoSimulationHistory.get(undoPosition));
 	}
 	
 	
 	private boolean isCleanState() {
-		return rocket.getModID() == undoHistory.get(undoPosition).getModID();
+		return rocket.getModID() == undoHistory.get(undoPosition).getModID() &&
+				simulations.equals(undoSimulationHistory.get(undoPosition));
+	}
+
+	private void loadSimulationsFrom(ArrayList<Simulation> simulationsSnapshot) {
+		if (simulationsSnapshot == null) {
+			return;
+		}
+
+		simulations.clear();
+		simulations.addAll(simulationsSnapshot);
+		fireDocumentChangeEvent(new SimulationChangeEvent(this));
 	}
 	
 	
