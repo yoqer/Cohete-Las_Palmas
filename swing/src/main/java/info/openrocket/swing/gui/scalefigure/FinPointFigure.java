@@ -46,6 +46,7 @@ public class FinPointFigure extends AbstractScaleFigure {
 	private static final int LINE_WIDTH_BOX_PIXELS = 1;
 	private static final float BOX_WIDTH_PIXELS = 12;
 	private static final float SELECTED_BOX_WIDTH_PIXELS = BOX_WIDTH_PIXELS + 4;
+	private static final double POINT_HIT_DETECTION_MULTIPLIER = 1.5;
 	private static final double MINOR_TICKS = 10.0;
 	private static final double MAJOR_TICKS = 100.0;
 
@@ -344,13 +345,30 @@ public class FinPointFigure extends AbstractScaleFigure {
 		if (p == null)
 			return -1;
 
-		 for (int i = 0; i < finPointHandles.length; i++) {
-			 if (finPointHandles[i].contains(p)) {
-				 return i;
-			 }
-		 }
+		// Use a larger hit detection radius for easier point selection
+		// This multiplies the visual box size to make clicking more forgiving
+		final double hitDetectionRadius = (BOX_WIDTH_PIXELS * POINT_HIT_DETECTION_MULTIPLIER) / scale;
+		final double hitDetectionRadiusSquared = hitDetectionRadius * hitDetectionRadius;
+		
+		// Get the actual fin point coordinates for distance calculation
+		final CoordinateIF[] points = finset.getFinPoints();
+		
+		// Find the closest point within the threshold (using squared distance to avoid sqrt)
+		int closestIndex = -1;
+		double closestDistanceSquared = Double.MAX_VALUE;
+		
+		for (int i = 0; i < points.length; i++) {
+			final double dx = p.getX() - points[i].getX();
+			final double dy = p.getY() - points[i].getY();
+			final double distanceSquared = dx * dx + dy * dy;
+			
+			if (distanceSquared <= hitDetectionRadiusSquared && distanceSquared < closestDistanceSquared) {
+				closestIndex = i;
+				closestDistanceSquared = distanceSquared;
+			}
+		}
 
-		 return -1;
+		return closestIndex;
 	}
 
 	public int getSegmentByPoint(final int x, final int y) {
