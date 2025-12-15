@@ -462,6 +462,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		Simulation sim = new Simulation(document, document.getRocket());
 		sim.setName(document.getNextSimulationName());
 
+		document.addUndoPosition("Add " + sim.getName());
+
 		int n = document.getSimulationCount();
 		document.addSimulation(sim);
 		simulationTableModel.fireTableDataChanged();
