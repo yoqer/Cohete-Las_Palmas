@@ -593,6 +593,11 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				return;
 			}
 
+			// Deselect point if clicking on the figure but not on a point or segment
+			figure.resetSelectedIndex();
+			table.clearSelection();
+			figure.updateFigure();
+
 			super.mousePressed(event);
 		}
 
