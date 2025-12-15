@@ -44,6 +44,7 @@ import javax.swing.table.AbstractTableModel;
 import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.util.Icons;
+import info.openrocket.swing.gui.util.SwingPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,13 +75,13 @@ import info.openrocket.swing.gui.scalefigure.ScaleScrollPane;
 import info.openrocket.swing.gui.scalefigure.ScaleSelector;
 import info.openrocket.swing.gui.util.CustomFinImporter;
 import info.openrocket.swing.gui.util.FileHelper;
-import info.openrocket.swing.gui.util.SwingPreferences;
 
 @SuppressWarnings("serial")
 public class FreeformFinSetConfig extends FinSetConfig {
 
 	private static final Logger log = LoggerFactory.getLogger(FreeformFinSetConfig.class);
 	private static final Translator trans = Application.getTranslator();
+	private static final SwingPreferences prefs = (SwingPreferences) Application.getPreferences();
 	
 	private JTable table = null;
 	private FinPointTableModel tableModel = null;
@@ -316,7 +317,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				table.clearSelection();
 			}
 		});
-		
+
+		// Scale Fin
 		JButton scaleButton = new JButton(trans.get("FreeformFinSetConfig.lbl.scaleFin"));
 		scaleButton.addActionListener(new ActionListener() {
 			@Override
@@ -573,8 +575,10 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				dragIndex = pressIndex;
 				dragPoint = event.getPoint();
 				
-				// Freeze rocket to batch component change events during dragging
-				finset.getRocket().freeze();
+				// Freeze rocket to batch component change events during dragging (unless preference is enabled)
+				if (!prefs.isUpdateRocketWhileDraggingPoint()) {
+					finset.getRocket().freeze();
+				}
 
 				updateFields();
 				return;
@@ -592,8 +596,10 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				dragIndex = segmentIndex;
 				dragPoint = event.getPoint();
 
-				// Freeze rocket to batch component change events during dragging
-				finset.getRocket().freeze();
+				// Freeze rocket to batch component change events during dragging (unless preference is enabled)
+				if (!prefs.isUpdateRocketWhileDraggingPoint()) {
+					finset.getRocket().freeze();
+				}
 
 				updateFields();
 				return;
@@ -753,8 +759,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			
 			try {
 				// Thaw rocket to fire batched component change events
-				// Only thaw if we were dragging (rocket might be frozen from mousePressed)
-				if (dragIndex >= 0) {
+				// Only thaw if we were dragging and rocket was frozen (i.e., preference is disabled)
+				if (dragIndex >= 0 && !prefs.isUpdateRocketWhileDraggingPoint()) {
 					finset.getRocket().thaw();
 				}
 			} finally {

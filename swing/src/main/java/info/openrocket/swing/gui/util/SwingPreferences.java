@@ -72,6 +72,7 @@ public class SwingPreferences extends ApplicationPreferences {
 	public static final String UPDATE_PLATFORM = "UpdatePlatform";
 	public static final String LOCK_CLICK_DRAG_ROTATION = "LockClickDragRotation";
 	public static final String AUTO_OPEN_PARTS_LIBRARY = "AutoOpenPartsLibrary";
+	public static final String UPDATE_ROCKET_WHILE_DRAGGING_POINT = "UpdateRocketWhileDraggingPoint";
 	
 	private static final List<Locale> SUPPORTED_LOCALES;
 	static {
@@ -493,6 +494,22 @@ public class SwingPreferences extends ApplicationPreferences {
 	 */
 	public void setClickDragRotationLocked(boolean lock) {
 		putBoolean(LOCK_CLICK_DRAG_ROTATION, lock);
+	}
+
+	/**
+	 * Get whether to update the rocket figure while dragging fin points.
+	 * @return true if the rocket should be updated during dragging, false if it should be frozen
+	 */
+	public boolean isUpdateRocketWhileDraggingPoint() {
+		return getBoolean(UPDATE_ROCKET_WHILE_DRAGGING_POINT, false);
+	}
+
+	/**
+	 * Set whether to update the rocket figure while dragging fin points.
+	 * @param update true to update the rocket during dragging, false to freeze it (better performance)
+	 */
+	public void setUpdateRocketWhileDraggingPoint(boolean update) {
+		putBoolean(UPDATE_ROCKET_WHILE_DRAGGING_POINT, update);
 	}
 
 	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
