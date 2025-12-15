@@ -23,6 +23,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -402,9 +403,22 @@ public class FreeformFinSetConfig extends FinSetConfig {
         
         // row of controls at the bottom of the tab:
         panel.add(selector.getAsPanel(), "aligny bottom, gap unrel");
-        panel.add(scaleButton, "");
-        panel.add(importButton, "");
-        panel.add(exportCsvButton, "");
+        
+        // Checkbox to control whether rocket updates during dragging
+        JCheckBox updateRocketWhileDraggingPointCheckBox = new JCheckBox(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint"));
+        updateRocketWhileDraggingPointCheckBox.setSelected(prefs.isUpdateRocketWhileDraggingPoint());
+        updateRocketWhileDraggingPointCheckBox.setToolTipText(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint.ttip"));
+        updateRocketWhileDraggingPointCheckBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				prefs.setUpdateRocketWhileDraggingPoint(updateRocketWhileDraggingPointCheckBox.isSelected());
+			}
+		});
+        panel.add(updateRocketWhileDraggingPointCheckBox, "aligny bottom, gap unrel");
+        
+        panel.add(scaleButton);
+        panel.add(importButton);
+        panel.add(exportCsvButton);
 		
 		//		panel.add(new CustomFinBmpImporter(finset), "spany 2, bottom");
 		

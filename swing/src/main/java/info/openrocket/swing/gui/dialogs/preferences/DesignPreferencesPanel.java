@@ -146,19 +146,6 @@ public class DesignPreferencesPanel extends PreferencesPanel {
 		});
 		this.add(showMarkers, "wrap, growx, spanx");
 
-		// // Update rocket while dragging fin points
-		final JCheckBox updateRocketWhileDraggingPoint = new JCheckBox(
-				trans.get("pref.dlg.checkbox.UpdateRocketWhileDraggingPoint"));
-		updateRocketWhileDraggingPoint.setSelected(preferences.isUpdateRocketWhileDraggingPoint());
-		updateRocketWhileDraggingPoint.setToolTipText(trans.get("pref.dlg.checkbox.UpdateRocketWhileDraggingPoint.ttip"));
-		updateRocketWhileDraggingPoint.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				preferences.setUpdateRocketWhileDraggingPoint(e.getStateChange() == ItemEvent.SELECTED);
-			}
-		});
-		this.add(updateRocketWhileDraggingPoint, "wrap, growx, spanx");
-
 		// // File preview view type
 		// TODO: uncomment this once 3D preview export is functional (in RocketPanel - capturePreviewImage)
 		/*add(new JLabel(trans.get("pref.dlg.lbl.previewSource")), "growx");
