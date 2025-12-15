@@ -110,8 +110,10 @@ public class FinPointFigure extends AbstractScaleFigure {
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g.create();
 
-		if (modID != finset.getRocket().getAerodynamicModID()) {
-			modID = finset.getRocket().getAerodynamicModID();
+		// Check if aerodynamic modID changed (only update transform if needed)
+		ModID currentModID = finset.getRocket().getAerodynamicModID();
+		if (modID != currentModID) {
+			modID = currentModID;
 			updateTransform();
 		}
 
