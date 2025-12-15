@@ -46,7 +46,7 @@ public class FinPointFigure extends AbstractScaleFigure {
 	private static final int LINE_WIDTH_BOX_PIXELS = 1;
 	private static final float BOX_WIDTH_PIXELS = 12;
 	private static final float SELECTED_BOX_WIDTH_PIXELS = BOX_WIDTH_PIXELS + 4;
-	private static final double POINT_HIT_DETECTION_MULTIPLIER = 1.5;
+	private static final double POINT_HIT_DETECTION_MULTIPLIER = 1.25;
 	private static final double MINOR_TICKS = 10.0;
 	private static final double MAJOR_TICKS = 100.0;
 
