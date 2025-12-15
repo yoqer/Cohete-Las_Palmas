@@ -572,6 +572,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			if (pressIndex >= 0) {
 				dragIndex = pressIndex;
 				dragPoint = event.getPoint();
+				
+				// Freeze rocket to batch component change events during dragging
+				finset.getRocket().freeze();
 
 				updateFields();
 				return;
@@ -588,6 +591,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 				dragIndex = segmentIndex;
 				dragPoint = event.getPoint();
+
+				// Freeze rocket to batch component change events during dragging
+				finset.getRocket().freeze();
 
 				updateFields();
 				return;
@@ -631,6 +637,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			}
 
 			try {
+				// Rocket is frozen during dragging to batch component change events
+				// setPoint() will queue events instead of firing them immediately
 				finset.setPoint(dragIndex, point.x, point.y);
 			} catch (IllegalFinPointException e) {
 				throw new RuntimeException(e);
@@ -639,6 +647,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			dragPoint.x = event.getX();
 			dragPoint.y = event.getY();
 
+			// During dragging, just repaint the figure (layout doesn't change, only point positions)
+			// This avoids expensive updateFigure() calls which trigger layout recalculations
+			figure.repaint();
 			updateFields();
 
 			// Handle scrolling if point is dragged out of view
@@ -738,12 +749,22 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 		@Override
 		public void mouseReleased(MouseEvent event) {
-			dragIndex = -1;
-			dragPoint = null;
-			figure.setHighlightIndex(-1);
-			figure.updateFigure();
-
-			super.mouseReleased(event);
+			final FreeformFinSet finset = (FreeformFinSet) component;
+			
+			try {
+				// Thaw rocket to fire batched component change events
+				// Only thaw if we were dragging (rocket might be frozen from mousePressed)
+				if (dragIndex >= 0) {
+					finset.getRocket().thaw();
+				}
+			} finally {
+				dragIndex = -1;
+				dragPoint = null;
+				figure.setHighlightIndex(-1);
+				figure.updateFigure();
+				
+				super.mouseReleased(event);
+			}
 		}
 
 		@Override
