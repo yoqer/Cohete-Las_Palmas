@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultCellEditor;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -76,6 +75,7 @@ import info.openrocket.swing.gui.scalefigure.ScaleScrollPane;
 import info.openrocket.swing.gui.scalefigure.ScaleSelector;
 import info.openrocket.swing.gui.util.CustomFinImporter;
 import info.openrocket.swing.gui.util.FileHelper;
+import info.openrocket.swing.gui.widgets.DropdownButton;
 
 @SuppressWarnings("serial")
 public class FreeformFinSetConfig extends FinSetConfig {
@@ -300,6 +300,56 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			}
 		});
 		JScrollPane tablePane = new JScrollPane(table);
+		
+		// Point Actions button
+		DropdownButton pointDataButton = new DropdownButton(trans.get("FreeformFinSetConfig.lbl.pointActions"));
+		
+		//// Scale Fin
+		pointDataButton.addMenuItem(trans.get("FreeformFinSetConfig.lbl.scaleFin"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Scaling free-form fin");
+				ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
+				dialog.setVisible(true);
+				dialog.dispose();
+			}
+		});
+		
+		//// Import from image
+		pointDataButton.addMenuItem(trans.get("CustomFinImport.button.label"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				importImage();
+			}
+		});
+		
+		//// Export CSV
+		pointDataButton.addMenuItem(trans.get("FreeformFinSetConfig.lbl.exportCSV"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
+				
+				JFileChooser chooser = new JFileChooser();
+				chooser.setFileFilter(FileHelper.CSV_FILTER);
+				chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
+
+				if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FreeformFinSetConfig.this)){
+					File selectedFile= chooser.getSelectedFile();
+					selectedFile = FileHelper.forceExtension(selectedFile, "csv");
+					if (!FileHelper.confirmWrite(selectedFile, panel)) {
+						return;
+					}
+
+					FreeformFinSetConfig.writeCSVFile(table, selectedFile);
+					Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
+				}
+			}
+		});
+		
+		// Create a vertical panel to hold the table and dropdown button
+		JPanel leftPanel = new JPanel(new MigLayout("fill, insets 0"));
+		leftPanel.add(tablePane, "grow, wrap");
+		leftPanel.add(pointDataButton, "alignx left, gapbottom unrel");
 
 		// Remove focus from table when interacting on the figure
 		figurePane.addFocusListener(new FocusAdapter() {
@@ -316,18 +366,6 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					}
 				}
 				table.clearSelection();
-			}
-		});
-
-		// Scale Fin
-		JButton scaleButton = new JButton(trans.get("FreeformFinSetConfig.lbl.scaleFin"));
-		scaleButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				log.info(Markers.USER_MARKER, "Scaling free-form fin");
-				ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
-				dialog.setVisible(true);
-				dialog.dispose();
 			}
 		});
 
@@ -352,44 +390,14 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		
 		//		panel.add(new JLabel("Coordinates:"), "aligny bottom, alignx 50%");
 		//		panel.add(new JLabel("    View:"), "wrap, aligny bottom");
-		
-		JButton exportCsvButton = new JButton(trans.get("FreeformFinSetConfig.lbl.exportCSV"));
-		exportCsvButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
-				
-				JFileChooser chooser = new JFileChooser();
-				chooser.setFileFilter(FileHelper.CSV_FILTER);
-				chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
-
-                if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FreeformFinSetConfig.this)){
-                	File selectedFile= chooser.getSelectedFile();
-					selectedFile = FileHelper.forceExtension(selectedFile, "csv");
-					if (!FileHelper.confirmWrite(selectedFile, panel)) {
-						return;
-					}
-
-				    FreeformFinSetConfig.writeCSVFile(table, selectedFile);
-					Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
-				}
-			}
-		});
-        JButton importButton = new JButton(trans.get("CustomFinImport.button.label"));
-            importButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    importImage();
-                }
-            });
-        selector = new ScaleSelector(figurePane);
+		selector = new ScaleSelector(figurePane);
         // fit on first start-up
         figurePane.setFitting(true);
         
         panel.setLayout(new MigLayout("fill, gap 5!","", "[nogrid, fill, sizegroup display, growprio 200]5![sizegroup text, growprio 5]5![sizegroup buttons, align top, growprio 5]0!"));
         
         // first row: main display
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tablePane, figurePane);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, figurePane);
 		splitPane.setResizeWeight(0.15);
 		splitPane.setBorder(null);
 		panel.add(splitPane, "width 300lp:500lp:, gap unrel, grow, height 100lp:250lp:, wrap");
@@ -415,10 +423,6 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			}
 		});
         panel.add(updateRocketWhileDraggingPointCheckBox, "aligny bottom, gap unrel");
-        
-        panel.add(scaleButton);
-        panel.add(importButton);
-        panel.add(exportCsvButton);
 		
 		//		panel.add(new CustomFinBmpImporter(finset), "spany 2, bottom");
 		
