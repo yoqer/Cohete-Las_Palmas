@@ -22,7 +22,7 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultCellEditor;
-import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -44,6 +44,7 @@ import javax.swing.table.AbstractTableModel;
 import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.swing.gui.adaptors.CustomFocusTraversalPolicy;
 import info.openrocket.swing.gui.util.Icons;
+import info.openrocket.swing.gui.util.SwingPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,13 +75,14 @@ import info.openrocket.swing.gui.scalefigure.ScaleScrollPane;
 import info.openrocket.swing.gui.scalefigure.ScaleSelector;
 import info.openrocket.swing.gui.util.CustomFinImporter;
 import info.openrocket.swing.gui.util.FileHelper;
-import info.openrocket.swing.gui.util.SwingPreferences;
+import info.openrocket.swing.gui.widgets.DropdownButton;
 
 @SuppressWarnings("serial")
 public class FreeformFinSetConfig extends FinSetConfig {
 
 	private static final Logger log = LoggerFactory.getLogger(FreeformFinSetConfig.class);
 	private static final Translator trans = Application.getTranslator();
+	private static final SwingPreferences prefs = (SwingPreferences) Application.getPreferences();
 	
 	private JTable table = null;
 	private FinPointTableModel tableModel = null;
@@ -298,6 +300,56 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			}
 		});
 		JScrollPane tablePane = new JScrollPane(table);
+		
+		// Point Actions button
+		DropdownButton pointDataButton = new DropdownButton(trans.get("FreeformFinSetConfig.lbl.pointActions"));
+		
+		//// Scale Fin
+		pointDataButton.addMenuItem(trans.get("FreeformFinSetConfig.lbl.scaleFin"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Scaling free-form fin");
+				ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
+				dialog.setVisible(true);
+				dialog.dispose();
+			}
+		});
+		
+		//// Import from image
+		pointDataButton.addMenuItem(trans.get("CustomFinImport.button.label"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				importImage();
+			}
+		});
+		
+		//// Export CSV
+		pointDataButton.addMenuItem(trans.get("FreeformFinSetConfig.lbl.exportCSV"), new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
+				
+				JFileChooser chooser = new JFileChooser();
+				chooser.setFileFilter(FileHelper.CSV_FILTER);
+				chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
+
+				if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FreeformFinSetConfig.this)){
+					File selectedFile= chooser.getSelectedFile();
+					selectedFile = FileHelper.forceExtension(selectedFile, "csv");
+					if (!FileHelper.confirmWrite(selectedFile, panel)) {
+						return;
+					}
+
+					FreeformFinSetConfig.writeCSVFile(table, selectedFile);
+					Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
+				}
+			}
+		});
+		
+		// Create a vertical panel to hold the table and dropdown button
+		JPanel leftPanel = new JPanel(new MigLayout("fill, insets 0"));
+		leftPanel.add(tablePane, "grow, wrap");
+		leftPanel.add(pointDataButton, "alignx left, gapbottom unrel");
 
 		// Remove focus from table when interacting on the figure
 		figurePane.addFocusListener(new FocusAdapter() {
@@ -314,17 +366,6 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					}
 				}
 				table.clearSelection();
-			}
-		});
-		
-		JButton scaleButton = new JButton(trans.get("FreeformFinSetConfig.lbl.scaleFin"));
-		scaleButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				log.info(Markers.USER_MARKER, "Scaling free-form fin");
-				ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
-				dialog.setVisible(true);
-				dialog.dispose();
 			}
 		});
 
@@ -349,45 +390,15 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		
 		//		panel.add(new JLabel("Coordinates:"), "aligny bottom, alignx 50%");
 		//		panel.add(new JLabel("    View:"), "wrap, aligny bottom");
-		
-		JButton exportCsvButton = new JButton(trans.get("FreeformFinSetConfig.lbl.exportCSV"));
-		exportCsvButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				log.info(Markers.USER_MARKER, "Export CSV free-form fin");
-				
-				JFileChooser chooser = new JFileChooser();
-				chooser.setFileFilter(FileHelper.CSV_FILTER);
-				chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
-
-                if (JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(FreeformFinSetConfig.this)){
-                	File selectedFile= chooser.getSelectedFile();
-					selectedFile = FileHelper.forceExtension(selectedFile, "csv");
-					if (!FileHelper.confirmWrite(selectedFile, panel)) {
-						return;
-					}
-
-				    FreeformFinSetConfig.writeCSVFile(table, selectedFile);
-					Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
-				}
-			}
-		});
-        JButton importButton = new JButton(trans.get("CustomFinImport.button.label"));
-            importButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    importImage();
-                }
-            });
-        selector = new ScaleSelector(figurePane);
+		selector = new ScaleSelector(figurePane);
         // fit on first start-up
         figurePane.setFitting(true);
         
         panel.setLayout(new MigLayout("fill, gap 5!","", "[nogrid, fill, sizegroup display, growprio 200]5![sizegroup text, growprio 5]5![sizegroup buttons, align top, growprio 5]0!"));
         
         // first row: main display
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tablePane, figurePane);
-		splitPane.setResizeWeight(0.15);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, figurePane);
+		splitPane.setResizeWeight(0.01);
 		splitPane.setBorder(null);
 		panel.add(splitPane, "width 300lp:500lp:, gap unrel, grow, height 100lp:250lp:, wrap");
 		order.add(table);
@@ -400,9 +411,18 @@ public class FreeformFinSetConfig extends FinSetConfig {
         
         // row of controls at the bottom of the tab:
         panel.add(selector.getAsPanel(), "aligny bottom, gap unrel");
-        panel.add(scaleButton, "");
-        panel.add(importButton, "");
-        panel.add(exportCsvButton, "");
+        
+        // Checkbox to control whether rocket updates during dragging
+        JCheckBox liveUpdateCheckbox = new JCheckBox(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint"));
+        liveUpdateCheckbox.setSelected(prefs.isUpdateRocketWhileDraggingPoint());
+        liveUpdateCheckbox.setToolTipText(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint.ttip"));
+        liveUpdateCheckbox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				prefs.setUpdateRocketWhileDraggingPoint(liveUpdateCheckbox.isSelected());
+			}
+		});
+        panel.add(liveUpdateCheckbox, "aligny bottom, gap unrel");
 		
 		//		panel.add(new CustomFinBmpImporter(finset), "spany 2, bottom");
 		
@@ -572,6 +592,11 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			if (pressIndex >= 0) {
 				dragIndex = pressIndex;
 				dragPoint = event.getPoint();
+				
+				// Freeze rocket to batch component change events during dragging (unless preference is enabled)
+				if (!prefs.isUpdateRocketWhileDraggingPoint()) {
+					finset.getRocket().freeze();
+				}
 
 				updateFields();
 				return;
@@ -589,9 +614,19 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				dragIndex = segmentIndex;
 				dragPoint = event.getPoint();
 
+				// Freeze rocket to batch component change events during dragging (unless preference is enabled)
+				if (!prefs.isUpdateRocketWhileDraggingPoint()) {
+					finset.getRocket().freeze();
+				}
+
 				updateFields();
 				return;
 			}
+
+			// Deselect point if clicking on the figure but not on a point or segment
+			figure.resetSelectedIndex();
+			table.clearSelection();
+			figure.updateFigure();
 
 			super.mousePressed(event);
 		}
@@ -626,6 +661,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			}
 
 			try {
+				// Rocket is frozen during dragging to batch component change events
+				// setPoint() will queue events instead of firing them immediately
 				finset.setPoint(dragIndex, point.x, point.y);
 			} catch (IllegalFinPointException e) {
 				throw new RuntimeException(e);
@@ -634,6 +671,9 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			dragPoint.x = event.getX();
 			dragPoint.y = event.getY();
 
+			// During dragging, just repaint the figure (layout doesn't change, only point positions)
+			// This avoids expensive updateFigure() calls which trigger layout recalculations
+			figure.repaint();
 			updateFields();
 
 			// Handle scrolling if point is dragged out of view
@@ -733,12 +773,22 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 		@Override
 		public void mouseReleased(MouseEvent event) {
-			dragIndex = -1;
-			dragPoint = null;
-			figure.setHighlightIndex(-1);
-			figure.updateFigure();
-
-			super.mouseReleased(event);
+			final FreeformFinSet finset = (FreeformFinSet) component;
+			
+			try {
+				// Thaw rocket to fire batched component change events
+				// Only thaw if we were dragging and rocket was frozen (i.e., preference is disabled)
+				if (dragIndex >= 0 && !prefs.isUpdateRocketWhileDraggingPoint()) {
+					finset.getRocket().thaw();
+				}
+			} finally {
+				dragIndex = -1;
+				dragPoint = null;
+				figure.setHighlightIndex(-1);
+				figure.updateFigure();
+				
+				super.mouseReleased(event);
+			}
 		}
 
 		@Override
