@@ -462,6 +462,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		Simulation sim = new Simulation(document, document.getRocket());
 		sim.setName(document.getNextSimulationName());
 
+		document.addUndoPosition("Add " + sim.getName());
+
 		int n = document.getSimulationCount();
 		document.addSimulation(sim);
 		simulationTableModel.fireTableDataChanged();
@@ -504,6 +506,12 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			return;
 		}
 
+		if (sims.length == 1) {
+			document.addUndoPosition("Delete " + sims[0].getName());
+		} else {
+			document.addUndoPosition("Delete simulations");
+		}
+
 		// Delete simulations
 		for (Simulation sim : sims) {
 			document.removeSimulation(sim);
@@ -535,8 +543,6 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 				new Object[] {
 				//// Delete the selected simulations?
 				trans.get("simpanel.dlg.lbl.DeleteSim1"),
-				//// <html><i>This operation cannot be undone.</i>
-				trans.get("simpanel.dlg.lbl.DeleteSim2"),
 				"",
 				panel },
 				//// Delete simulations
@@ -758,7 +764,6 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 	public void duplicateSimulation(Simulation[] sims, int index) {
 		if (sims == null || sims.length == 0) return;
 
-		// TODO: the undoing doesn't do anything...
 		if (sims.length == 1) {
 			document.addUndoPosition("Duplicate " + sims[0].getName());
 		} else {

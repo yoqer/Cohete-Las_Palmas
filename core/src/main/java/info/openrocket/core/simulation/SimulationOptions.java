@@ -159,7 +159,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 			} else {
 				windDirection = multiLevelPinkNoiseWindModel.getWindDirection(0, launchAltitude);
 			}
-			this.setLaunchRodDirection(windDirection);
+			return MathUtil.reduce2Pi(windDirection);
 		}
 		return launchRodDirection;
 	}
