@@ -1009,7 +1009,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.edit"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.edit.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_E);
-			this.putValue(ACCELERATOR_KEY, RocketActions.EDIT_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getEditKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_EDIT);
 		}
 
@@ -1029,7 +1029,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.cut"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.cut.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_X);
-			this.putValue(ACCELERATOR_KEY, RocketActions.CUT_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getCutKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_CUT);
 		}
 
@@ -1055,7 +1055,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.copy"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.copy.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_C);
-			this.putValue(ACCELERATOR_KEY, RocketActions.COPY_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getCopyKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_COPY);
 		}
 
@@ -1075,7 +1075,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.paste"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.paste.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_V);
-			this.putValue(ACCELERATOR_KEY, RocketActions.PASTE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getPasteKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_PASTE);
 		}
 
@@ -1096,7 +1096,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.duplicate"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.duplicate.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_D);
-			this.putValue(ACCELERATOR_KEY, RocketActions.DUPLICATE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getDuplicateKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_DUPLICATE);
 		}
 
@@ -1116,7 +1116,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			this.putValue(NAME, trans.get("simpanel.pop.delete"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.delete.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_DELETE);
-			this.putValue(ACCELERATOR_KEY, RocketActions.DELETE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getDeleteKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_DELETE);
 		}
 
