@@ -398,7 +398,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
         
         // first row: main display
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, figurePane);
-		splitPane.setResizeWeight(0.15);
+		splitPane.setResizeWeight(0.01);
 		splitPane.setBorder(null);
 		panel.add(splitPane, "width 300lp:500lp:, gap unrel, grow, height 100lp:250lp:, wrap");
 		order.add(table);
