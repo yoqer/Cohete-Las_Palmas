@@ -413,16 +413,16 @@ public class FreeformFinSetConfig extends FinSetConfig {
         panel.add(selector.getAsPanel(), "aligny bottom, gap unrel");
         
         // Checkbox to control whether rocket updates during dragging
-        JCheckBox updateRocketWhileDraggingPointCheckBox = new JCheckBox(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint"));
-        updateRocketWhileDraggingPointCheckBox.setSelected(prefs.isUpdateRocketWhileDraggingPoint());
-        updateRocketWhileDraggingPointCheckBox.setToolTipText(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint.ttip"));
-        updateRocketWhileDraggingPointCheckBox.addActionListener(new ActionListener() {
+        JCheckBox liveUpdateCheckbox = new JCheckBox(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint"));
+        liveUpdateCheckbox.setSelected(prefs.isUpdateRocketWhileDraggingPoint());
+        liveUpdateCheckbox.setToolTipText(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint.ttip"));
+        liveUpdateCheckbox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				prefs.setUpdateRocketWhileDraggingPoint(updateRocketWhileDraggingPointCheckBox.isSelected());
+				prefs.setUpdateRocketWhileDraggingPoint(liveUpdateCheckbox.isSelected());
 			}
 		});
-        panel.add(updateRocketWhileDraggingPointCheckBox, "aligny bottom, gap unrel");
+        panel.add(liveUpdateCheckbox, "aligny bottom, gap unrel");
 		
 		//		panel.add(new CustomFinBmpImporter(finset), "spany 2, bottom");
 		
