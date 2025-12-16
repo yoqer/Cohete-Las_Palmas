@@ -117,9 +117,9 @@ public class ScaleSelector {
 	}
 
 	public JPanel getAsPanel() {
-		JPanel panel = new JPanel(new MigLayout("insets 0"));
+		JPanel panel = new JPanel(new MigLayout("insets 0", "[][]0[]", "[]"));
 		panel.add(zoomOutButton);
-		panel.add(scaleSelectorCombo);
+		panel.add(scaleSelectorCombo, "wmin 120lp, growx");
 		panel.add(zoomInButton);
 
 		return panel;
