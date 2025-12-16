@@ -194,7 +194,44 @@ Common edits:
 
 * Change a color: update the relevant ``OR.colors.*`` entry in each theme file.
 * Add a new UI default: define it in the theme files and add a corresponding lookup in ``UITheme``.
-* Test changes by switching themes in the UI preferences; the properties are loaded through ``UIManager`` when ``UITheme.applyTheme`` runs.
+* Test changes by switching themes in the UI preferences; the properties are loaded through ``UIManager`` when
+  ``UITheme.applyTheme`` runs.
+
+Input validation (FlatLaf outlines)
+===================================
+
+OpenRocket uses FlatLaf’s ``JComponent.outline`` client property to give immediate visual feedback for suspicious or
+invalid inputs (e.g. warning/error outlines).
+Prefer :file:`swing/src/main/java/info/openrocket/swing/gui/util/FlatLafOutlines.java` over ad-hoc ``putClientProperty``
+calls because it:
+
+* Applies the outline to related subcomponents (e.g. spinner editor/text field)
+* Can bind multiple warning/error conditions to one component
+* Can attach an optional i18n message via tooltip (and a short-lived popup)
+* Automatically detaches listeners when the component is disposed
+
+Simple outline:
+
+.. code-block:: java
+
+   FlatLafOutlines.setOutline(myComponent, FlatLafOutlines.Outline.WARNING);
+
+Live validation:
+
+.. code-block:: java
+
+   FlatLafOutlines.validator(mySpinner)
+       .warnIf(() -> suspiciousValue(), () -> trans.get("my.warning.key"))
+       .errorIf(() -> invalidValue(), () -> trans.get("my.error.key"))
+       .showMessagePopup(2500)
+       .listenTo(model1, model2);
+
+.. note::
+
+   * Use ``warnIf`` for “dubious but allowed” values; use ``errorIf`` for values that should block confirmation.
+   * Validation tooltips temporarily replace the component tooltip and are restored when the value becomes valid.
+   * For dialogs, combine live outlines with an OK-time validation error message (see
+     :file:`swing/src/main/java/info/openrocket/swing/gui/simulation/CSVImportSettingsDialog.java`).
 
 Units used in OpenRocket
 ========================
