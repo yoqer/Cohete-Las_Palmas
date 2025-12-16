@@ -164,7 +164,7 @@ public class SimulationConditionsPanel extends JPanel {
 		isa.addEnableComponent(label, false);
 		sub.add(label);
 
-		pressureModel = new DoubleModel(target, "LaunchPressure", UnitGroup.UNITS_PRESSURE, 0);
+		pressureModel = new DoubleModel(target, "LaunchPressure", UnitGroup.UNITS_PRESSURE, 0.001);
 
 		spin = new JSpinner(pressureModel.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin));
