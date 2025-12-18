@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 
 /**
  * A kebab menu (three vertical dots) that can be placed anywhere like a button, while still being a {@link JMenu}.
@@ -34,7 +35,7 @@ import java.awt.event.MouseEvent;
  */
 public class KebabMenu extends JMenu {
 	private static final Insets DEFAULT_MARGIN = new Insets(3, 1, 3, 1);
-	private static final int MIN_ICON_SIZE = 16;
+	private static final int MIN_ICON_SIZE = 8;
 
 	private boolean hovering = false;
 	private boolean popupVisibleOnPress = false;
@@ -278,44 +279,53 @@ public class KebabMenu extends JMenu {
 	/**
 	 * An icon that paints three vertical dots (kebab menu).
 	 */
-		private record KebabIcon(int size) implements Icon {
+	private record KebabIcon(int size) implements Icon {
+		private static final float DOT_SCALE = 0.9f;
+		private static final float MIN_DOT_SIZE = 1.5f;
 
 		@Override
-			public int getIconWidth() {
-				return size;
-			}
+		public int getIconWidth() {
+			return size;
+		}
 
-			@Override
-			public int getIconHeight() {
-				return size;
-			}
+		@Override
+		public int getIconHeight() {
+			return size;
+		}
 
-			@Override
-			public void paintIcon(Component c, Graphics g, int x, int y) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				try {
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			try {
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-					Color color = c.isEnabled() ? c.getForeground() : UIManager.getColor("Label.disabledForeground");
-					if (color == null) {
-						color = c.getForeground();
-					}
-					g2.setColor(color);
-
-					int dot = Math.max(2, Math.round(size / 5f));
-					int gap = dot;
-					int total = dot * 3 + gap * 2;
-
-					int dotX = x + (size - dot) / 2;
-					int startY = y + (size - total) / 2;
-
-					for (int i = 0; i < 3; i++) {
-						int dotY = startY + i * (dot + gap);
-						g2.fillOval(dotX, dotY, dot, dot);
-					}
-				} finally {
-					g2.dispose();
+				Color color = c.isEnabled() ? c.getForeground() : UIManager.getColor("Label.disabledForeground");
+				if (color == null) {
+					color = c.getForeground();
 				}
+				g2.setColor(color);
+
+				float dot = Math.max(MIN_DOT_SIZE, Math.round(size / 5f) * DOT_SCALE);
+				float gap = dot;
+				float total = dot * 3f + gap * 2f;
+
+				if (total > size) {
+					float scale = size / total;
+					dot *= scale;
+					gap *= scale;
+					total = dot * 3f + gap * 2f;
+				}
+
+				float dotX = x + (size - dot) / 2f;
+				float startY = y + (size - total) / 2f;
+
+				for (int i = 0; i < 3; i++) {
+					float dotY = startY + i * (dot + gap);
+					g2.fill(new Ellipse2D.Float(dotX, dotY, dot, dot));
+				}
+			} finally {
+				g2.dispose();
 			}
 		}
+	}
 }

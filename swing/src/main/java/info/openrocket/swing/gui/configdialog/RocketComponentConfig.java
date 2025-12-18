@@ -228,7 +228,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			return;
 		}
 
-		this.add(menu, "gapleft unrel");
+		this.add(menu, "gapleft unrel, gapright 0");
 		order.add(menu);
 	}
 
