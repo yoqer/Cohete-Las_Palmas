@@ -33,8 +33,6 @@ import java.awt.event.MouseEvent;
  * @author Sibo Van Gool <sibo.vangool@hotmail.com>
  */
 public class KebabMenu extends JMenu {
-	private static final long serialVersionUID = 1L;
-
 	private static final Insets DEFAULT_MARGIN = new Insets(3, 1, 3, 1);
 	private static final int MIN_ICON_SIZE = 16;
 
