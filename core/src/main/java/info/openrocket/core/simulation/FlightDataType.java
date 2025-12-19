@@ -108,6 +108,26 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_LONGITUDE = newType(trans.get("FlightDataType.TYPE_LONGITUDE"), "\u03bb",
 			UnitGroup.UNITS_LONGITUDE,
 			FlightDataTypeGroup.POSITION_AND_MOTION, 17);
+	//// X acceleration
+	public static final FlightDataType TYPE_ACCELERATION_X = newType(trans.get("FlightDataType.TYPE_ACCELERATION_X"),
+			"Ax", UnitGroup.UNITS_ACCELERATION,
+			FlightDataTypeGroup.POSITION_AND_MOTION, 18);
+	//// Y acceleration
+	public static final FlightDataType TYPE_ACCELERATION_Y = newType(trans.get("FlightDataType.TYPE_ACCELERATION_Y"),
+			"Ay", UnitGroup.UNITS_ACCELERATION,
+			FlightDataTypeGroup.POSITION_AND_MOTION, 19);
+	//// X body acceleration
+	public static final FlightDataType TYPE_ACCELERATION_BODYX = newType(trans.get("FlightDataType.TYPE_ACCELERATION_BODYX"),
+			"Abx", UnitGroup.UNITS_ACCELERATION,
+			FlightDataTypeGroup.POSITION_AND_MOTION, 20);
+	//// Y body acceleration
+	public static final FlightDataType TYPE_ACCELERATION_BODYY = newType(trans.get("FlightDataType.TYPE_ACCELERATION_BODYY"),
+			"Aby", UnitGroup.UNITS_ACCELERATION,
+			FlightDataTypeGroup.POSITION_AND_MOTION, 21);
+	//// Z body acceleration
+	public static final FlightDataType TYPE_ACCELERATION_BODYZ = newType(trans.get("FlightDataType.TYPE_ACCELERATION_BODYZ"),
+			"Abz", UnitGroup.UNITS_ACCELERATION,
+			FlightDataTypeGroup.POSITION_AND_MOTION, 22);
 
 	// Orientation
 	//// Angle of attack
@@ -310,10 +330,15 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 			TYPE_ALTITUDE_ABOVE_SEA,
 			TYPE_VELOCITY_Z,
 			TYPE_ACCELERATION_Z,
+			TYPE_ACCELERATION_BODYZ,
 			TYPE_VELOCITY_TOTAL,
 			TYPE_ACCELERATION_TOTAL,
 			TYPE_POSITION_X,
+			TYPE_ACCELERATION_X,
+			TYPE_ACCELERATION_BODYX,
 			TYPE_POSITION_Y,
+			TYPE_ACCELERATION_Y,
+			TYPE_ACCELERATION_BODYY,
 			TYPE_POSITION_XY,
 			TYPE_POSITION_DIRECTION,
 			TYPE_VELOCITY_XY,
