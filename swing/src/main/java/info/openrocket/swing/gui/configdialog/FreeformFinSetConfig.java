@@ -3,10 +3,13 @@ package info.openrocket.swing.gui.configdialog;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
@@ -22,8 +25,10 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultCellEditor;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -35,6 +40,7 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
@@ -98,6 +104,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 	private FinPointAction insertFinPointAction;
 	private FinPointAction deleteFinPointAction;
+	private JButton finPointUndoButton = null;
+	private JButton finPointRedoButton = null;
 	
 	public FreeformFinSetConfig(OpenRocketDocument d, RocketComponent component, JDialog parent) {
 		super(d, component, parent);
@@ -309,9 +317,14 @@ public class FreeformFinSetConfig extends FinSetConfig {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				log.info(Markers.USER_MARKER, "Scaling free-form fin");
-				ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
-				dialog.setVisible(true);
-				dialog.dispose();
+				beginFinPointEdit();
+				try {
+					ScaleDialog dialog = new ScaleDialog(document, new ArrayList<>(List.of(finset)), SwingUtilities.getWindowAncestor(FreeformFinSetConfig.this), true);
+					dialog.setVisible(true);
+					dialog.dispose();
+				} finally {
+					commitFinPointEdit();
+				}
 			}
 		});
 		
@@ -410,7 +423,25 @@ public class FreeformFinSetConfig extends FinSetConfig {
         panel.add(new StyledLabel(trans.get("FreeformFinSetConfig.lbl.ctrlShiftClickDrag"), -2), "spanx 2, wrap");
         
         // row of controls at the bottom of the tab:
-        panel.add(selector.getAsPanel(), "aligny bottom, gap unrel");
+		finPointUndoButton = new JButton(Icons.EDIT_UNDO);
+		finPointUndoButton.setToolTipText(trans.get("FreeformFinSetConfig.btn.undo.ttip"));
+		finPointUndoButton.setFocusable(false);
+		finPointUndoButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				performFinPointUndo();
+			}
+		});
+
+		finPointRedoButton = new JButton(Icons.EDIT_REDO);
+		finPointRedoButton.setToolTipText(trans.get("FreeformFinSetConfig.btn.redo.ttip"));
+		finPointRedoButton.setFocusable(false);
+		finPointRedoButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				performFinPointRedo();
+			}
+		});
         
         // Checkbox to control whether rocket updates during dragging
         JCheckBox liveUpdateCheckbox = new JCheckBox(trans.get("FreeformFinSetConfig.lbl.updateRocketWhileDraggingPoint"));
@@ -422,7 +453,16 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				prefs.setUpdateRocketWhileDraggingPoint(liveUpdateCheckbox.isSelected());
 			}
 		});
-        panel.add(liveUpdateCheckbox, "aligny bottom, gap unrel");
+
+		JPanel bottomControlsPanel = new JPanel(new MigLayout("ins 0, gap 5!, align left", "[]", ""));
+		bottomControlsPanel.add(selector.getAsPanel());
+		bottomControlsPanel.add(finPointUndoButton, "gapleft para");
+		bottomControlsPanel.add(finPointRedoButton);
+		bottomControlsPanel.add(liveUpdateCheckbox, "gapleft para");
+		panel.add(bottomControlsPanel, "spanx, alignx left");
+
+		installFinPointUndoRedoKeyBindings(panel);
+		updateFinPointUndoRedoControls();
 		
 		//		panel.add(new CustomFinBmpImporter(finset), "spany 2, bottom");
 		
@@ -476,17 +516,26 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		int option = chooser.showOpenDialog(this);
 		
 		if (option == JFileChooser.APPROVE_OPTION) {
+			boolean startedUndo = false;
+			beginFinPointEdit();
 			try {
 				CustomFinImporter importer = new CustomFinImporter();
 				ArrayList<CoordinateIF> points = importer.getPoints(chooser.getSelectedFile());
 				document.startUndo(trans.get("CustomFinImport.undo"));
+				startedUndo = true;
 				finset.setPoints( points);
 			} catch (IOException e) {
 				log.warn("Error loading file", e);
 				JOptionPane.showMessageDialog(this, e.getLocalizedMessage(),
 						trans.get("CustomFinImport.error.title"), JOptionPane.ERROR_MESSAGE);
 			} finally {
-				document.stopUndo();
+				try {
+					if (startedUndo) {
+						document.stopUndo();
+					}
+				} finally {
+					commitFinPointEdit();
+				}
 				Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 			}
 		}	
@@ -520,6 +569,8 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		if (figurePane != null) {
 			figurePane.revalidate();
 		}
+
+		updateFinPointUndoRedoControls();
 	}
 
 	/**
@@ -535,7 +586,12 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		CoordinateIF currentPoint = finSet.getFinPoints()[currentPointIdx];
 		CoordinateIF nextPoint = finSet.getFinPoints()[currentPointIdx + 1];
 		Point2D.Double toAdd = new Point2D.Double((currentPoint.getX() + nextPoint.getX()) / 2, (currentPoint.getY() + nextPoint.getY()) / 2);
-		finSet.addPoint(currentPointIdx + 1, toAdd);
+		beginFinPointEdit();
+		try {
+			finSet.addPoint(currentPointIdx + 1, toAdd);
+		} finally {
+			commitFinPointEdit();
+		}
 	}
 
 	/**
@@ -555,9 +611,12 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		
 		final FreeformFinSet finSet = (FreeformFinSet) component;
 		try {
+			beginFinPointEdit();
 			finSet.removePoint(currentPointIdx);
 		} catch (IllegalFinPointException ex) {
 			throw new RuntimeException(ex);
+		} finally {
+			commitFinPointEdit();
 		}
 	}
 
@@ -590,6 +649,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 			final int pressIndex = getPoint(event);
 			if (pressIndex >= 0) {
+				beginFinPointEdit();
 				dragIndex = pressIndex;
 				dragPoint = event.getPoint();
 				
@@ -604,6 +664,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 
 			final int segmentIndex = getSegment(event);
 			if (segmentIndex >= 0) {
+				beginFinPointEdit();
 				Point2D.Double point = getCoordinates(event);
 				try {
 					finset.addPoint(segmentIndex, point);
@@ -786,6 +847,7 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				dragPoint = null;
 				figure.setHighlightIndex(-1);
 				figure.updateFigure();
+				commitFinPointEdit();
 				
 				super.mouseReleased(event);
 			}
@@ -800,7 +862,12 @@ public class FreeformFinSetConfig extends FinSetConfig {
                     // if ctrl+click, delete point
                     try {
                         final FreeformFinSet finset = (FreeformFinSet)component;
-                        finset.removePoint(clickIndex);
+						beginFinPointEdit();
+						try {
+							finset.removePoint(clickIndex);
+						} finally {
+							commitFinPointEdit();
+						}
                     } catch (IllegalFinPointException ignore) {
                         log.error("Ignoring IllegalFinPointException while dragging, dragIndex=" + dragIndex + ".  This is likely an internal error.");
                     }
@@ -942,7 +1009,12 @@ public class FreeformFinSetConfig extends FinSetConfig {
 					c = c.setY(value);
 				}
 
-				finset.setPoint(rowIndex, c.getX(), c.getY());
+				beginFinPointEdit();
+				try {
+					finset.setPoint(rowIndex, c.getX(), c.getY());
+				} finally {
+					commitFinPointEdit();
+				}
 				
 				updateFields();
 			} catch (NumberFormatException ignore) {
@@ -951,6 +1023,96 @@ public class FreeformFinSetConfig extends FinSetConfig {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	/**
+	 * Call before beginning an undoable edit of fin points.
+	 */
+	private void beginFinPointEdit() {
+		if (figure != null) {
+			figure.beginUndoableEdit();
+		}
+		updateFinPointUndoRedoControls();
+	}
+
+	/**
+	 * Call after completing an undoable edit of fin points.
+	 */
+	private void commitFinPointEdit() {
+		if (figure != null) {
+			figure.commitUndoableEdit();
+		}
+		updateFinPointUndoRedoControls();
+	}
+
+	/**
+	 * Perform an undo of the last fin point edit.
+	 */
+	private void performFinPointUndo() {
+		if (figure == null) {
+			return;
+		}
+		if (dragIndex >= 0 || figure.isUndoableEditInProgress()) {
+			return;
+		}
+		figure.undo();
+		updateFinPointUndoRedoControls();
+	}
+
+	/**
+	 * Perform a redo of the last undone fin point edit.
+	 */
+	private void performFinPointRedo() {
+		if (figure == null) {
+			return;
+		}
+		if (dragIndex >= 0 || figure.isUndoableEditInProgress()) {
+			return;
+		}
+		figure.redo();
+		updateFinPointUndoRedoControls();
+	}
+
+	/**
+	 * Update the enabled state of the fin point undo/redo buttons.
+	 */
+	private void updateFinPointUndoRedoControls() {
+		if (figure == null) {
+			return;
+		}
+
+		final boolean busy = dragIndex >= 0 || figure.isUndoableEditInProgress();
+		if (finPointUndoButton != null) {
+			finPointUndoButton.setEnabled(!busy && figure.canUndo());
+		}
+		if (finPointRedoButton != null) {
+			finPointRedoButton.setEnabled(!busy && figure.canRedo());
+		}
+	}
+
+	/**
+	 * Install undo/redo key bindings for fin point editing on the given component.
+	 * @param component The component to install the key bindings on
+	 */
+	private void installFinPointUndoRedoKeyBindings(JComponent component) {
+		// Always consume the keystroke while editing fin points so global (document-level) undo/redo isn't triggered.
+		component.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.META_DOWN_MASK), "finPointUndo");
+		component.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.META_DOWN_MASK), "finPointRedo");
+
+		component.getActionMap().put("finPointUndo", new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				performFinPointUndo();
+			}
+		});
+		component.getActionMap().put("finPointRedo", new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				performFinPointRedo();
+			}
+		});
 	}
 
 	private abstract static class FinPointAction extends AbstractAction {

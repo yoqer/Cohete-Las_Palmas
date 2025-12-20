@@ -12,12 +12,13 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.Coordinate;
-import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.core.rocketcomponent.FreeformFinSet;
 import info.openrocket.core.rocketcomponent.RocketComponent;
@@ -52,6 +53,7 @@ public class FinPointFigure extends AbstractScaleFigure {
 
 	private final FreeformFinSet finset;
 	private ModID modID = ModID.INVALID;
+	private final FinPointEditHistory editHistory;
 
 	protected BoundingBox finBounds_m = null;
 	// Fin parent bounds
@@ -78,6 +80,7 @@ public class FinPointFigure extends AbstractScaleFigure {
 	
 	public FinPointFigure(FreeformFinSet finset) {
 		this.finset = finset;
+		this.editHistory = new FinPointEditHistory(finset, OpenRocketDocument.UNDO_LEVELS);
 
 		setBackground(backgroundColor);
 		setOpaque(true);
@@ -480,12 +483,286 @@ public class FinPointFigure extends AbstractScaleFigure {
 		this.selectedIndex = -1;
 	}
 
+	/**
+	 * Sets the index of the currently selected fin point.
+	 * @param newIndex The index of the selected fin point.
+	 */
 	public void setSelectedIndex(final int newIndex) {
 		this.selectedIndex = newIndex;
 	}
 
+	/**
+	 * Sets the index of the segment to highlight when snapping to a fin point.
+	 * @param newIndex The index of the starting point of the segment to highlight.
+	 */
 	public void setHighlightIndex(final int newIndex) {
 		this.highlightIndex = newIndex;
+	}
+
+	/**
+	 * Must be called before starting an undoable edit.
+	 */
+	public void beginUndoableEdit() {
+		editHistory.beginEdit();
+	}
+
+	/**
+	 * Must be called to commit the current undoable edit (after you performed the fin point edit).
+	 */
+	public void commitUndoableEdit() {
+		editHistory.commitEdit();
+	}
+
+	/**
+	 * Returns whether an undoable edit is currently in progress.
+	 * @return true if an edit is in progress, false otherwise.
+	 */
+	public boolean isUndoableEditInProgress() {
+		return editHistory.isEditInProgress();
+	}
+
+	/**
+	 * Returns whether an undo is possible.
+	 * @return true if an undo can be performed, false otherwise.
+	 */
+	public boolean canUndo() {
+		return editHistory.canUndo();
+	}
+
+	/**
+	 * Returns whether a redo is possible.
+	 * @return true if a redo can be performed, false otherwise.
+	 */
+	public boolean canRedo() {
+		return editHistory.canRedo();
+	}
+
+	/**
+	 * Undoes the last fin point edit.
+	 */
+	public void undo() {
+		editHistory.undo();
+	}
+
+	/**
+	 * Redoes the last undone fin point edit.
+	 */
+	public void redo() {
+		editHistory.redo();
+	}
+
+	/**
+	 * Class to manage the undo/redo history of fin point edits.
+	 */
+	private static final class FinPointEditHistory {
+		private final FreeformFinSet finset;
+		private final int maxSize;
+
+		private final ArrayList<CoordinateIF[]> history = new ArrayList<>();
+		private int position = -1;
+
+		private CoordinateIF[] pendingBefore = null;
+		private boolean editInProgress = false;
+		private boolean applying = false;
+
+		private FinPointEditHistory(FreeformFinSet finset, int maxSize) {
+			this.finset = finset;
+			this.maxSize = Math.max(1, maxSize);
+			reset();
+		}
+
+		/**
+		 * Resets the history to contain only the current fin points.
+		 */
+		private void reset() {
+			history.clear();
+			history.add(snapshotCurrent());
+			position = 0;
+		}
+
+		/**
+		 * Returns whether an undo is possible.
+		 * @return true if an undo can be performed, false otherwise.
+		 */
+		private boolean canUndo() {
+			return position > 0;
+		}
+
+		/**
+		 * Returns whether a redo is possible.
+		 * @return true if a redo can be performed, false otherwise.
+		 */
+		private boolean canRedo() {
+			return position >= 0 && position < history.size() - 1;
+		}
+
+		/**
+		 * Returns whether an edit is currently in progress.
+		 * @return true if an edit is in progress, false otherwise.
+		 */
+		private boolean isEditInProgress() {
+			return editInProgress || applying;
+		}
+
+		/**
+		 * Begins an edit, storing the current fin points as the "before" state.
+		 */
+		private void beginEdit() {
+			if (applying || editInProgress) {
+				return;
+			}
+			pendingBefore = snapshotCurrent();
+			editInProgress = true;
+		}
+
+		/**
+		 * Commits the current edit, pushing it to the history if there was a change.
+		 */
+		private void commitEdit() {
+			if (applying || !editInProgress) {
+				return;
+			}
+
+			final CoordinateIF[] before = pendingBefore;
+			pendingBefore = null;
+			editInProgress = false;
+
+			final CoordinateIF[] after = snapshotCurrent();
+			if (before != null && !snapshotsEqual(before, after)) {
+				push(after);
+			}
+		}
+
+		/**
+		 * Undoes the last edit.
+		 */
+		private void undo() {
+			if (isEditInProgress() || !canUndo()) {
+				return;
+			}
+			position--;
+			applyFromHistory();
+		}
+
+		/**
+		 * Redoes the last undone edit.
+		 */
+		private void redo() {
+			if (isEditInProgress() || !canRedo()) {
+				return;
+			}
+			position++;
+			applyFromHistory();
+		}
+
+		/**
+		 * Applies the fin points at the current position in history to the finset.
+		 */
+		private void applyFromHistory() {
+			if (position < 0 || position >= history.size()) {
+				return;
+			}
+
+			applying = true;
+			try {
+				finset.setPoints(deepCopy(history.get(position)));
+			} finally {
+				applying = false;
+			}
+		}
+
+		/**
+		 * Pushes a new snapshot onto the history, discarding any redo states.
+		 * @param snapshot The snapshot to push.
+		 */
+		private void push(CoordinateIF[] snapshot) {
+			// Discard redo states
+			if (position < history.size() - 1) {
+				history.subList(position + 1, history.size()).clear();
+			}
+
+			// Don't add duplicates
+			if (!history.isEmpty() && snapshotsEqual(history.get(position), snapshot)) {
+				return;
+			}
+
+			history.add(deepCopy(snapshot));
+			position = history.size() - 1;
+
+			// Limit size
+			while (history.size() > maxSize) {
+				history.remove(0);
+				position = Math.max(0, position - 1);
+			}
+		}
+
+		/**
+		 * Takes a snapshot of the current fin points.
+		 * @return A deep copy of the current fin points.
+		 */
+		private CoordinateIF[] snapshotCurrent() {
+			return deepCopy(finset.getFinPoints());
+		}
+
+		/**
+		 * Creates a deep copy of the given array of CoordinateIF.
+		 * @param points The array to copy.
+		 * @return A deep copy of the array.
+		 */
+		private static CoordinateIF[] deepCopy(CoordinateIF[] points) {
+			if (points == null) {
+				return new CoordinateIF[0];
+			}
+			CoordinateIF[] copy = new CoordinateIF[points.length];
+			for (int i = 0; i < points.length; i++) {
+				CoordinateIF p = points[i];
+				copy[i] = (p == null) ? Coordinate.NaN : new Coordinate(p.getX(), p.getY(), p.getZ(), p.getWeight());
+			}
+			return copy;
+		}
+
+		/**
+		 * Compares two snapshots of CoordinateIF arrays for equality.
+		 * @param a The first snapshot.
+		 * @param b The second snapshot.
+		 * @return true if the snapshots are equal, false otherwise.
+		 */
+		private static boolean snapshotsEqual(CoordinateIF[] a, CoordinateIF[] b) {
+			if (a == b) {
+				return true;
+			}
+			if (a == null || b == null) {
+				return false;
+			}
+			if (a.length != b.length) {
+				return false;
+			}
+
+			for (int i = 0; i < a.length; i++) {
+				CoordinateIF p1 = a[i];
+				CoordinateIF p2 = b[i];
+				if (p1 == p2) {
+					continue;
+				}
+				if (p1 == null || p2 == null) {
+					return false;
+				}
+				if (!MathUtil.equals(p1.getX(), p2.getX())) {
+					return false;
+				}
+				if (!MathUtil.equals(p1.getY(), p2.getY())) {
+					return false;
+				}
+				if (!MathUtil.equals(p1.getZ(), p2.getZ())) {
+					return false;
+				}
+				if (!MathUtil.equals(p1.getWeight(), p2.getWeight())) {
+					return false;
+				}
+			}
+
+			return true;
+		}
 	}
 
 }
