@@ -552,6 +552,14 @@ public class FinPointFigure extends AbstractScaleFigure {
 	}
 
 	/**
+	 * Clears undo/redo history snapshots so any deep-copied point arrays can be garbage-collected.
+	 * This is intended to be called when the owning dialog/figure is disposed.
+	 */
+	public void dispose() {
+		editHistory.clear();
+	}
+
+	/**
 	 * Class to manage the undo/redo history of fin point edits.
 	 */
 	private static final class FinPointEditHistory {
@@ -631,6 +639,14 @@ public class FinPointFigure extends AbstractScaleFigure {
 			if (before != null && !snapshotsEqual(before, after)) {
 				push(after);
 			}
+		}
+
+		private void clear() {
+			history.clear();
+			position = -1;
+			pendingBefore = null;
+			editInProgress = false;
+			applying = false;
 		}
 
 		/**

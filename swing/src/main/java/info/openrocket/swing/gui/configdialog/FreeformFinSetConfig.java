@@ -573,6 +573,17 @@ public class FreeformFinSetConfig extends FinSetConfig {
 		updateFinPointUndoRedoControls();
 	}
 
+	@Override
+	public void removeNotify() {
+		try {
+			if (figure != null) {
+				figure.dispose();
+			}
+		} finally {
+			super.removeNotify();
+		}
+	}
+
 	/**
 	 * Insert a new fin point between the currently selected point and the next point.
 	 * The coordinates of the new point will be the average of the two points.
