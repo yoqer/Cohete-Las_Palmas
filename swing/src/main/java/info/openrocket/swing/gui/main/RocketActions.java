@@ -30,7 +30,6 @@ import info.openrocket.core.rocketcomponent.CenteringRing;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
 import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FinSet;
-import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.ParallelStage;
 import info.openrocket.core.rocketcomponent.RailButton;
 import info.openrocket.core.rocketcomponent.Rocket;
@@ -1294,7 +1293,6 @@ public class RocketActions {
 				return;
 			}
 
-			ComponentConfigDialog.disposeDialog();
 			parentFrame.exportWavefrontOBJAction();
 		}
 
@@ -1337,7 +1335,6 @@ public class RocketActions {
 				return;
 			}
 
-			ComponentConfigDialog.disposeDialog();
 			parentFrame.exportSVGAction();
 		}
 
