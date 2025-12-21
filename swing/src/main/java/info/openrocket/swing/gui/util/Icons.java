@@ -1,5 +1,7 @@
 package info.openrocket.swing.gui.util;
 
+import com.formdev.flatlaf.FlatLaf.DisabledIconProvider;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
@@ -10,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.GrayFilter;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.UIManager;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -23,6 +27,9 @@ public class Icons {
 	private static final Logger log = LoggerFactory.getLogger(Icons.class);
 	private static final Translator trans = Application.getTranslator();
 	private static final SwingPreferences prefs = (SwingPreferences) Application.getPreferences();
+	// SVGs can opt into theme coloring by using this placeholder RGB.
+	private static final int SVG_THEME_COLOR_RGB = 0xFF00FF;
+	private static final String SVG_DEFAULT_COLOR_KEY = "OR.icons.default";
 	
 	static {
 		log.debug("Starting to load icons");
@@ -173,6 +180,127 @@ public class Icons {
 	}
 
 	/**
+	 * Loads an SVG icon from the specified file without color theming.
+	 * @param file the SVG file path
+	 * @param name the description of the icon
+	 * @return the loaded Icon, or null if the SVG file could not be found
+	 */
+	public static Icon loadSvgIcon(String file, String name) {
+		return loadSvgIcon(file, name, Collections.emptyMap());
+	}
+
+	/**
+	 * Loads an SVG icon from the specified file with a single color theming key.
+	 * @param file the SVG file path
+	 * @param name the description of the icon
+	 * @param colorKey the UIManager color key for theming (can be null)
+	 * @return the loaded Icon, or null if the SVG file could not be found
+	 */
+	public static Icon loadSvgIcon(String file, String name, String colorKey) {
+		if (colorKey == null) {
+			return loadSvgIcon(file, name);
+		}
+		return loadSvgIcon(file, name, Collections.singletonMap(SVG_THEME_COLOR_RGB, colorKey));
+	}
+
+	/**
+	 * Loads an icon, preferring SVG format if available, otherwise falling back to a raster image.
+	 * @param svgFile the SVG file path
+	 * @param rasterFile the raster image file path
+	 * @param name the description of the icon
+	 * @param colorKey the UIManager color key for theming (can be null)
+	 * @return the loaded Icon, or null if neither file could be found
+	 */
+	public static Icon loadIcon(String svgFile, String rasterFile, String name, String colorKey) {
+		if (hasResource(svgFile)) {
+			return loadSvgIcon(svgFile, name, colorKey);
+		}
+		return loadImageIcon(rasterFile, name);
+	}
+
+	/**
+	 * Loads an SVG icon from the specified file with optional color theming.
+	 * @param file the SVG file path
+	 * @param name the description of the icon
+	 * @param colorKeys map of RGB integer values to UIManager color keys for theming
+	 * @return the loaded Icon, or null if the SVG file could not be found
+	 */
+	private static Icon loadSvgIcon(String file, String name, Map<Integer, String> colorKeys) {
+		if (System.getProperty("openrocket.unittest") != null) {
+			return new ImageIcon();
+		}
+
+		if (!hasResource(file)) {
+			Application.getExceptionHandler().handleErrorCondition("Image file " + file + " not found, ignoring.");
+			return null;
+		}
+
+		FlatSVGIcon icon = new FlatSVGIcon(file, Icons.class.getClassLoader());
+		icon.setDescription(name);
+
+		FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
+		if (colorFilter != null) {
+			icon.setColorFilter(colorFilter);
+		}
+		return icon;
+	}
+
+	/**
+	 * Checks if a resource file exists in the classpath.
+	 * @param file the resource file path
+	 * @return true if the resource exists, false otherwise
+	 */
+	private static boolean hasResource(String file) {
+		if (file == null) {
+			return false;
+		}
+		return Icons.class.getClassLoader().getResource(file) != null;
+	}
+
+	/**
+	 * Creates a color filter for SVG icons that maps specific RGB colors to UIManager color keys.
+	 * @param colorKeys map of RGB integer values to UIManager color keys
+	 * @return a FlatSVGIcon.ColorFilter that applies the color mapping, or null if no mapping is provided
+	 */
+	private static FlatSVGIcon.ColorFilter createSvgColorFilter(Map<Integer, String> colorKeys) {
+		if (colorKeys == null || colorKeys.isEmpty()) {
+			return null;
+		}
+
+		return new FlatSVGIcon.ColorFilter((component, color) -> {
+			String key = colorKeys.get(color.getRGB() & 0x00ffffff);
+			if (key == null) {
+				return color;
+			}
+
+			Color themed = UIManager.getColor(key);
+			if (themed == null) {
+				themed = UIManager.getColor(SVG_DEFAULT_COLOR_KEY);
+			}
+			if (themed == null) {
+				themed = UIManager.getColor("Label.foreground");
+			}
+			if (themed == null) {
+				return color;
+			}
+			return preserveAlpha(themed, color);
+		});
+	}
+
+	/**
+	 * Preserves the alpha channel of the source color when applying the target color.
+	 * @param target the target color
+	 * @param source the source color
+	 * @return a new Color with the RGB of target and the alpha of source
+	 */
+	private static Color preserveAlpha(Color target, Color source) {
+		if (target.getAlpha() == source.getAlpha()) {
+			return target;
+		}
+		return new Color((target.getRGB() & 0x00ffffff) | (source.getRGB() & 0xff000000), true);
+	}
+
+	/**
 	 * Scales an ImageIcon to the specified scale.
 	 * @param icon icon to scale
 	 * @param scale the scale to scale to (1 = no scale, < 1 = smaller, > 1 = bigger)
@@ -205,6 +333,9 @@ public class Icons {
 	}
 
 	public static Icon createDisabledIcon(Icon icon) {
+		if (icon instanceof DisabledIconProvider) {
+			return ((DisabledIconProvider) icon).getDisabledIcon();
+		}
 		if (!(icon instanceof ImageIcon)) {
 			return icon;
 		}
