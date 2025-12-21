@@ -83,7 +83,10 @@ public class Icons {
 			"Open document");
 	public static final Icon FILE_OPEN_RECENT = loadSvgIcon("pix/icons/lucide/file-clock.svg", "Open recent document");
 	public static final Icon FILE_OPEN_EXAMPLE = loadImageIcon("pix/icons/document-open-example.png", "Open example document");
-	public static final Icon FILE_SAVE = loadImageIcon("pix/icons/document-save.png", "Save document");
+	public static final Icon FILE_SAVE = loadIcon(
+			"pix/icons/lucide/save.svg",
+			"pix/icons/document-save.png",
+			"Save document");
 	public static final Icon FILE_SAVE_AS = loadImageIcon("pix/icons/document-save-as.png", "Save document as");
 	public static final Icon SAVE_DECAL = loadImageIcon("pix/icons/Painting-Transparent-PNG_16.png", "Save decal image");
 	public static final Icon FILE_PRINT = loadImageIcon("pix/icons/print-design.specs.png", "Print specifications");
@@ -100,16 +103,43 @@ public class Icons {
 	public static final Icon EXPORT_SVG = loadImageIcon("pix/icons/svg-logo.png", "Export SVG");
 	public static final Icon FILE_CLOSE = loadImageIcon("pix/icons/document-close.png", "Close document");
 	public static final Icon FILE_QUIT = loadImageIcon("pix/icons/application-exit.png", "Quit OpenRocket");
-	public static final Icon EDIT_UNDO = loadImageIcon("pix/icons/edit-undo.png", trans.get("Icons.Undo"));
-	public static final Icon EDIT_REDO = loadImageIcon("pix/icons/edit-redo.png", trans.get("Icons.Redo"));
-	public static final Icon EDIT_EDIT = loadImageIcon("pix/icons/edit-edit.png", "Edit");
+	public static final Icon EDIT_UNDO = loadIcon(
+			"pix/icons/lucide/undo.svg",
+			"pix/icons/edit-undo.png",
+			trans.get("Icons.Undo"));
+	public static final Icon EDIT_REDO = loadIcon(
+			"pix/icons/lucide/redo.svg",
+			"pix/icons/edit-redo.png",
+			trans.get("Icons.Redo"));
+	public static final Icon EDIT_EDIT = loadIcon(
+			"pix/icons/lucide/square-pen.svg",
+			"pix/icons/edit-edit.png",
+			"Edit");
 	public static final Icon EDIT_RENAME = loadImageIcon("pix/icons/edit-rename.png", "Rename");
-	public static final Icon EDIT_CUT = loadImageIcon("pix/icons/edit-cut.png", "Cut");
-	public static final Icon EDIT_COPY = loadImageIcon("pix/icons/edit-copy.png", "Copy");
-	public static final Icon EDIT_PASTE = loadImageIcon("pix/icons/edit-paste.png", "Paste");
-	public static final Icon EDIT_DUPLICATE = loadImageIcon("pix/icons/edit-duplicate.png", "Duplicate");
-	public static final Icon EDIT_DELETE = loadImageIcon("pix/icons/edit-delete.png", "Delete");
-	public static final Icon EDIT_SCALE = loadImageIcon("pix/icons/edit-scale.png", "Scale");
+	public static final Icon EDIT_CUT = loadIcon(
+			"pix/icons/lucide/scissors.svg",
+			"pix/icons/edit-cut.png",
+			"Cut");
+	public static final Icon EDIT_COPY = loadIcon(
+			"pix/icons/lucide/copy.svg",
+			"pix/icons/edit-copy.png",
+			"Copy");
+	public static final Icon EDIT_PASTE = loadIcon(
+			"pix/icons/lucide/clipboard-paste.svg",
+			"pix/icons/edit-paste.png",
+			"Paste");
+	public static final Icon EDIT_DUPLICATE = loadIcon(
+			"pix/icons/lucide/copy-plus.svg",
+			"pix/icons/edit-duplicate.png",
+			"Duplicate");
+	public static final Icon EDIT_DELETE = loadIcon(
+			"pix/icons/lucide/trash-2.svg",
+			"pix/icons/edit-delete.png",
+			"Delete");
+	public static final Icon EDIT_SCALE = loadIcon(
+			"pix/icons/lucide/scaling.svg",
+			"pix/icons/edit-scale.png",
+			"Scale");
 
 	public static final Icon SIM_RUN = loadImageIcon("pix/icons/sim-run.png", "Run");
 	public static final Icon SIM_PLOT = loadImageIcon("pix/icons/sim-plot.png", "Plot");
@@ -130,8 +160,14 @@ public class Icons {
 	
 	public static final Icon CONFIGURE = loadImageIcon("pix/icons/configure.png", "Configure");
 	public static final Icon HELP = loadImageIcon("pix/icons/help-about.png", "Help");
-	public static final Icon UP = loadImageIcon("pix/icons/up.png", "Up");
-	public static final Icon DOWN = loadImageIcon("pix/icons/down.png", "Down");
+	public static final Icon UP = loadIcon(
+			"pix/icons/lucide/arrow-big-up-dash.svg",
+			"pix/icons/up.png",
+			"Up");
+	public static final Icon DOWN = loadIcon(
+			"pix/icons/lucide/arrow-big-down-dash.svg",
+			"pix/icons/down.png",
+			"Down");
 	public static final Icon REFRESH = loadImageIcon("pix/icons/refresh.png", "Refresh");
 	
 	public static final Icon NOT_FAVORITE = loadImageIcon("pix/icons/star_silver.png", "Not favorite");
