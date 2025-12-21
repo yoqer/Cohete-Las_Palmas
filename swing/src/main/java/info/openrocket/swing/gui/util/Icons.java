@@ -2,9 +2,11 @@ package info.openrocket.swing.gui.util;
 
 import com.formdev.flatlaf.FlatLaf.DisabledIconProvider;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.startup.Application;
+import com.jthemedetecor.OsThemeDetector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +14,15 @@ import org.slf4j.LoggerFactory;
 import javax.swing.GrayFilter;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.UIManager;
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.net.URL;
@@ -180,10 +188,11 @@ public class Icons {
 	}
 
 	/**
-	 * Loads an SVG icon from the specified file without color theming.
-	 * @param file the SVG file path
-	 * @param name the description of the icon
-	 * @return the loaded Icon, or null if the SVG file could not be found
+	 * Load an SVG icon without explicit color mapping.
+	 *
+	 * @param file SVG resource path
+	 * @param name description of the icon
+	 * @return the SVG icon or null if not found
 	 */
 	public static Icon loadSvgIcon(String file, String name) {
 		return loadSvgIcon(file, name, Collections.emptyMap());
@@ -301,6 +310,81 @@ public class Icons {
 	}
 
 	/**
+	 * Apply macOS menu icon theming to all menu items in the menu bar.
+	 *
+	 * @param menuBar the menu bar to update
+	 */
+	public static void applyMenuBarIconTheme(JMenuBar menuBar) {
+		if (menuBar == null || SystemInfo.getPlatform() != SystemInfo.Platform.MAC_OS) {
+			return;
+		}
+
+		for (int i = 0; i < menuBar.getMenuCount(); i++) {
+			JMenu menu = menuBar.getMenu(i);
+			if (menu == null) {
+				continue;
+			}
+			applyMenuItemIcon(menu);
+			applyMenuIconTheme(menu);
+		}
+	}
+
+	/**
+	 * Apply menu icon theming to menu items recursively.
+	 *
+	 * @param menu the menu to walk
+	 */
+	private static void applyMenuIconTheme(JMenu menu) {
+		for (int i = 0; i < menu.getItemCount(); i++) {
+			JMenuItem item = menu.getItem(i);
+			if (item == null) {
+				continue;
+			}
+			applyMenuItemIcon(item);
+			if (item instanceof JMenu) {
+				applyMenuIconTheme((JMenu) item);
+			}
+		}
+	}
+
+	/**
+	 * Replace the icon on a menu item with a themed variant when applicable.
+	 *
+	 * @param item the menu item to update
+	 */
+	private static void applyMenuItemIcon(JMenuItem item) {
+		Icon icon = item.getIcon();
+		if (icon != null) {
+			Icon menuIcon = getMenuIcon(icon);
+			if (menuIcon != icon) {
+				item.setIcon(menuIcon);
+			}
+		}
+	}
+
+	/**
+	 * Wrap an icon for use in macOS menus so it follows system light/dark appearance.
+	 *
+	 * @param icon the source icon
+	 * @return the themed icon for macOS menus, or the original icon
+	 */
+	public static Icon getMenuIcon(Icon icon) {
+		if (icon == null) {
+			return null;
+		}
+		if (SystemInfo.getPlatform() != SystemInfo.Platform.MAC_OS) {
+			return icon;
+		}
+		if (icon instanceof MacMenuIcon) {
+			return icon;
+		}
+		if (!(icon instanceof FlatSVGIcon)) {
+			return icon;
+		}
+		return new MacMenuIcon(icon, false);
+	}
+
+	/**
 	 * Scales an ImageIcon to the specified scale.
 	 * @param icon icon to scale
 	 * @param scale the scale to scale to (1 = no scale, < 1 = smaller, > 1 = bigger)
@@ -345,5 +429,144 @@ public class Icons {
 		g.dispose();
 
 		return new ImageIcon(GrayFilter.createDisabledImage(((ImageIcon) icon).getImage()));
+	}
+
+	/**
+	 * An icon wrapper that tints the icon to match macOS menu text colors.
+	 */
+	private static final class MacMenuIcon implements Icon, DisabledIconProvider {
+		private final Icon delegate;
+		private final boolean forcedDisabled;
+		private Color cachedColor;
+		private int cachedWidth;
+		private int cachedHeight;
+		private Image cachedImage;
+
+		private MacMenuIcon(Icon delegate, boolean forcedDisabled) {
+			this.delegate = delegate;
+			this.forcedDisabled = forcedDisabled;
+		}
+
+		@Override
+		public int getIconWidth() {
+			return delegate.getIconWidth();
+		}
+
+		@Override
+		public int getIconHeight() {
+			return delegate.getIconHeight();
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			int width = getIconWidth();
+			int height = getIconHeight();
+			if (width <= 0 || height <= 0) {
+				delegate.paintIcon(c, g, x, y);
+				return;
+			}
+
+			Color color = resolveMenuColor(c);
+			if (color == null) {
+				delegate.paintIcon(c, g, x, y);
+				return;
+			}
+
+			Image image = getOrCreateImage(c, color, width, height);
+			if (image != null) {
+				g.drawImage(image, x, y, null);
+			} else {
+				delegate.paintIcon(c, g, x, y);
+			}
+		}
+
+		@Override
+		public Icon getDisabledIcon() {
+			return new MacMenuIcon(delegate, true);
+		}
+
+		/**
+		 * Return a cached tinted image for the given size and color.
+		 */
+		private Image getOrCreateImage(Component c, Color color, int width, int height) {
+			if (cachedImage == null || cachedWidth != width || cachedHeight != height || !color.equals(cachedColor)) {
+				BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g2 = image.createGraphics();
+				try {
+					delegate.paintIcon(c, g2, 0, 0);
+					g2.setComposite(AlphaComposite.SrcIn);
+					g2.setColor(color);
+					g2.fillRect(0, 0, width, height);
+				} finally {
+					g2.dispose();
+				}
+				cachedImage = image;
+				cachedWidth = width;
+				cachedHeight = height;
+				cachedColor = color;
+			}
+			return cachedImage;
+		}
+
+		/**
+		 * Resolve the menu icon color, preferring macOS menu text colors.
+		 */
+		private Color resolveMenuColor(Component c) {
+			boolean disabled = forcedDisabled || (c != null && !c.isEnabled());
+			Color color = getMacOsMenuColor(disabled);
+			if (color != null) {
+				return color;
+			}
+
+			color = (c != null) ? c.getForeground() : null;
+			if (disabled) {
+				Color disabledColor = UIManager.getColor("MenuItem.disabledForeground");
+				if (disabledColor != null) {
+					color = disabledColor;
+				}
+			}
+			if (color == null) {
+				color = UIManager.getColor(disabled ? "MenuItem.disabledForeground" : "MenuItem.foreground");
+			}
+			if (color == null) {
+				color = UIManager.getColor("Menu.foreground");
+			}
+			if (color == null) {
+				color = UIManager.getColor("Label.foreground");
+			}
+			if (color == null) {
+				color = Color.BLACK;
+			}
+			return color;
+		}
+
+		/**
+		 * Determine the macOS menu text color (light/dark) with a disabled fallback.
+		 */
+		private Color getMacOsMenuColor(boolean disabled) {
+			if (SystemInfo.getPlatform() != SystemInfo.Platform.MAC_OS) {
+				return null;
+			}
+			Color base = java.awt.SystemColor.menuText;
+			if (base != null) {
+				if (!disabled) {
+					return base;
+				}
+				int alpha = (base.getRed() + base.getGreen() + base.getBlue() < 384) ? 120 : 160;
+				return new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha);
+			}
+			try {
+				OsThemeDetector detector = OsThemeDetector.getDetector();
+				boolean isDark = detector.isDark();
+				Color fallback = isDark ? Color.WHITE : Color.BLACK;
+				if (!disabled) {
+					return fallback;
+				}
+				int alpha = isDark ? 160 : 120;
+				return new Color(fallback.getRed(), fallback.getGreen(), fallback.getBlue(), alpha);
+			} catch (Exception ignore) {
+				return null;
+			}
+		}
 	}
 }

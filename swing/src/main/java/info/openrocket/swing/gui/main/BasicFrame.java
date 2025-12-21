@@ -815,6 +815,7 @@ private static final Translator trans = Application.getTranslator();
 		////	Help
 		generateHelpMenu(menubar, this);
 
+		Icons.applyMenuBarIconTheme(menubar);
 		this.setJMenuBar(menubar);
 	}
 

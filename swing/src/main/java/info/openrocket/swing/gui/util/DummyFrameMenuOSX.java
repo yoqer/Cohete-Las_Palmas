@@ -86,6 +86,7 @@ public class DummyFrameMenuOSX extends JFrame {
         ////	Help
         BasicFrame.generateHelpMenu(menubar, this);
 
+        Icons.applyMenuBarIconTheme(menubar);
         this.setJMenuBar(menubar);
     }
 }
