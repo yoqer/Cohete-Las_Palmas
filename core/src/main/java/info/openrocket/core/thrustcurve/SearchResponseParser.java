@@ -1,196 +1,290 @@
 package info.openrocket.core.thrustcurve;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import info.openrocket.core.logging.WarningSet;
-import info.openrocket.core.file.simplesax.ElementHandler;
-import info.openrocket.core.file.simplesax.SimpleSAX;
+public class SearchResponseParser {
 
-public class SearchResponseParser implements ElementHandler {
-
-	private static final String thrustcurveURI = "http://www.thrustcurve.org/2008/SearchResponse";
-	/*
-	 * XML Tags in SearchResult xsd
-	 */
-	private static final String root_tag = "search-response";
-	private static final String criteria = "criteria";
-	private static final String criterion = "criterion";
-	private static final String name = "name";
-	private static final String value = "value";
-	private static final String matches = "matches";
-	private static final String results = "results";
-	private static final String result = "result";
-
-	private static final String motor_id = "motor-id";
-	private static final String manufacturer = "manufacturer";
-	private static final String manufacturer_abbr = "manufacturer-abbrev";
-	private static final String designation = "designation";
-	private static final String brand_name = "brand-name";
-	private static final String common_name = "common-name";
-	private static final String impulse_class = "impulse-class";
-	private static final String diameter = "diameter";
-	private static final String length = "length";
-	private static final String type = "type";
-	private static final String cert_org = "cert-org";
-	private static final String avg_thrust_n = "avg-thrust-n";
-	private static final String max_thrust_n = "max-thrust-n";
-	private static final String tot_impulse_ns = "tot-impulse-ns";
-	private static final String burn_time_s = "burn-time-s";
-	private static final String data_files = "data-files";
-	private static final String info_url = "info-url";
-	private static final String total_weight_g = "total-weight-g";
-	private static final String prop_weight_g = "prop-weight-g";
-	private static final String delays = "delays";
-	private static final String case_info = "case-info";
-	private static final String prop_info = "prop-info";
-	private static final String updated_on = "updated-on";
-	private static final String availability = "availability";
-
-	private final SearchResponse response = new SearchResponse();
-
-	private TCMotor currentMotor;
-
-	private SearchResponseParser() {
-	}
-
-	public static SearchResponse parse(InputStream in) throws IOException, SAXException {
-
-		SearchResponseParser handler = new SearchResponseParser();
-		WarningSet warnings = new WarningSet();
-		SimpleSAX.readXML(new InputSource(in), handler, warnings);
-
-		return handler.response;
-
-	}
-
-	@Override
-	public ElementHandler openElement(String element, HashMap<String, String> attributes, WarningSet warnings)
-			throws SAXException {
-		if (result.equals(element)) {
-			currentMotor = new TCMotor();
-		}
-		return this;
-	}
-
-	@Override
-	public void closeElement(String element, HashMap<String, String> attributes, String content, WarningSet warnings)
-			throws SAXException {
-
-		switch (element) {
-			case result:
-				// Convert impulse class. ThrustCurve puts mmx, 1/4a and 1/2a as A.
-				if ("a".equalsIgnoreCase(currentMotor.getImpulse_class())) {
-					if (currentMotor.getCommon_name().startsWith("1/2A")) {
-						currentMotor.setImpulse_class("1/2A");
-					} else if (currentMotor.getCommon_name().startsWith("1/4A")) {
-						currentMotor.setImpulse_class("1/4A");
-					} else if (currentMotor.getCommon_name().startsWith("Micro")) {
-						currentMotor.setImpulse_class("1/8A");
-					}
-				}
-
-				// Convert Case Info.
-				if (currentMotor.getCase_info() == null
-						|| "single use".equalsIgnoreCase(currentMotor.getCase_info())
-						|| "single-use".equalsIgnoreCase(currentMotor.getCase_info())) {
-					currentMotor.setCase_info(
-							currentMotor.getType() + " " + currentMotor.getDiameter() + "x" + currentMotor.getLength());
-				}
-				response.addMotor(currentMotor);
-				break;
-			case matches:
-				this.response.setMatches(Integer.parseInt(content));
-				break;
-			case motor_id:
-				currentMotor.setMotor_id(Integer.parseInt(content));
-				break;
-			case manufacturer:
-				currentMotor.setManufacturer(content);
-				break;
-			case manufacturer_abbr:
-				currentMotor.setManufacturer_abbr(content);
-				break;
-			case designation:
-				currentMotor.setDesignation(content);
-				break;
-			case brand_name:
-				currentMotor.setBrand_name(content);
-				break;
-			case common_name:
-				currentMotor.setCommon_name(content);
-				break;
-			case impulse_class:
-				currentMotor.setImpulse_class(content);
-				break;
-			case diameter:
-				currentMotor.setDiameter(Float.parseFloat(content));
-				break;
-			case length:
-				currentMotor.setLength(Float.parseFloat(content));
-				break;
-			case type:
-				currentMotor.setType(content);
-				break;
-			case cert_org:
-				currentMotor.setCert_org(content);
-				break;
-			case avg_thrust_n:
-				currentMotor.setAvg_thrust_n(Float.parseFloat(content));
-				break;
-			case max_thrust_n:
-				currentMotor.setMax_thrust_n(Float.parseFloat(content));
-				break;
-			case tot_impulse_ns:
-				currentMotor.setTot_impulse_ns(Float.parseFloat(content));
-				break;
-			case burn_time_s:
-				currentMotor.setBurn_time_s(Float.parseFloat(content));
-				break;
-			case data_files:
-				currentMotor.setData_files(Integer.parseInt(content));
-				break;
-			case info_url:
-				currentMotor.setInfo_url(content);
-				break;
-			case total_weight_g:
-				currentMotor.setTot_mass_g(Double.parseDouble(content));
-				break;
-			case prop_weight_g:
-				currentMotor.setProp_mass_g(Double.parseDouble(content));
-				break;
-			case delays:
-				currentMotor.setDelays(content);
-				break;
-			case case_info:
-				currentMotor.setCase_info(content);
-				break;
-			case prop_info:
-				currentMotor.setProp_info(content);
-				break;
-			case availability:
-				currentMotor.setAvailability(content);
-				break;
-			case updated_on:
-				SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-				try {
-					currentMotor.setUpdated_on(formatter.parse(content));
-				} catch (ParseException ignored) {
-				}
-				break;
+	public static SearchResponse parse(InputStream in) throws IOException {
+		SearchResponse response = new SearchResponse();
+		String jsonString = readStream(in);
+		String trimmed = jsonString.trim();
+		if (trimmed.isEmpty()) {
+			return response;
 		}
 
+		// Check if response is XML
+		if (trimmed.charAt(0) == '<') {
+			String lowered = trimmed.toLowerCase(Locale.ROOT);
+			if (lowered.contains("<!doctype") || lowered.contains("<html")) {
+				response.setError("Unexpected HTML/DTD response from ThrustCurve API");
+				return response;
+			}
+			return parseXmlResponse(jsonString, response);
+		}
+
+		Object root;
+		try {
+			root = SimpleJsonParser.parse(jsonString);
+		} catch (RuntimeException ex) {
+			response.setError("Unable to parse JSON response: " + ex.getMessage());
+			return response;
+		}
+		if (!(root instanceof Map)) return response;
+
+		Map<String, Object> rootMap = (Map<String, Object>) root;
+
+		Integer matches = getInt(rootMap, "matches");
+		if (matches == null) {
+			matches = getInt(rootMap, "totalResults");
+		}
+		if (matches != null) {
+			response.setMatches(matches);
+		}
+
+		if (rootMap.containsKey("error")) {
+			response.setError(String.valueOf(rootMap.get("error")));
+		}
+
+		// V1 uses "results" array
+		if (rootMap.containsKey("results")) {
+			List<Object> results = (List<Object>) rootMap.get("results");
+
+			for (Object item : results) {
+				if (item instanceof Map) {
+					Map<String, Object> map = (Map<String, Object>) item;
+					TCMotor motor = new TCMotor();
+					motor.init();
+
+					// ID is now String
+					motor.setMotor_id(getString(map, "motorId"));
+
+					motor.setManufacturer(getString(map, "manufacturer"));
+					motor.setManufacturer_abbr(getString(map, "manufacturerAbbrev"));
+					motor.setDesignation(getString(map, "designation"));
+					motor.setBrand_name(getString(map, "brandName"));
+					motor.setCommon_name(getString(map, "commonName"));
+					motor.setImpulse_class(getString(map, "impulseClass"));
+
+					motor.setDiameter(getFloat(map, "diameter"));
+					motor.setLength(getFloat(map, "length"));
+					motor.setType(getString(map, "type"));
+					motor.setCert_org(getString(map, "certOrg"));
+
+					motor.setAvg_thrust_n(getFloat(map, "avgThrustN"));
+					motor.setMax_thrust_n(getFloat(map, "maxThrustN"));
+					motor.setTot_impulse_ns(getFloat(map, "totImpulseNs"));
+					motor.setBurn_time_s(getFloat(map, "burnTimeS"));
+
+					motor.setData_files(getInt(map, "dataFiles"));
+					motor.setInfo_url(getString(map, "infoUrl"));
+
+					motor.setTot_mass_g(getDouble(map, "totalWeightG"));
+					motor.setProp_mass_g(getDouble(map, "propWeightG"));
+
+					motor.setDelays(getString(map, "delays"));
+					motor.setCase_info(getString(map, "caseInfo"));
+					motor.setProp_info(getString(map, "propInfo"));
+					motor.setAvailability(getString(map, "availability"));
+
+					parseUpdatedOn(motor, getString(map, "updatedOn"));
+					applyLegacyDefaults(motor);
+
+					response.addMotor(motor);
+				}
+			}
+
+			if (matches == null) {
+				response.setMatches(response.getResults().size());
+			}
+		}
+
+		return response;
 	}
 
-	@Override
-	public void endHandler(String element, HashMap<String, String> attributes, String content, WarningSet warnings)
-			throws SAXException {
+	private static SearchResponse parseXmlResponse(String xmlString, SearchResponse response) {
+		try {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			factory.setExpandEntityReferences(false);
+			factory.setNamespaceAware(false);
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document doc = builder.parse(new InputSource(new StringReader(xmlString)));
+
+			NodeList matchNodes = doc.getElementsByTagName("matches");
+			if (matchNodes.getLength() > 0) {
+				String matchesText = matchNodes.item(matchNodes.getLength() - 1).getTextContent();
+				Integer matches = parseInt(matchesText);
+				if (matches != null) {
+					response.setMatches(matches);
+				}
+			}
+
+			NodeList results = doc.getElementsByTagName("result");
+			for (int i = 0; i < results.getLength(); i++) {
+				Node node = results.item(i);
+				if (!(node instanceof Element)) continue;
+				Element element = (Element) node;
+
+				TCMotor motor = new TCMotor();
+				motor.init();
+
+				motor.setMotor_id(getChildText(element, "motor-id"));
+				motor.setManufacturer(getChildText(element, "manufacturer"));
+				motor.setManufacturer_abbr(getChildText(element, "manufacturer-abbrev"));
+				motor.setDesignation(getChildText(element, "designation"));
+				motor.setBrand_name(getChildText(element, "brand-name"));
+				motor.setCommon_name(getChildText(element, "common-name"));
+				motor.setImpulse_class(getChildText(element, "impulse-class"));
+
+				motor.setDiameter(parseFloat(getChildText(element, "diameter")));
+				motor.setLength(parseFloat(getChildText(element, "length")));
+				motor.setType(getChildText(element, "type"));
+				motor.setCert_org(getChildText(element, "cert-org"));
+
+				motor.setAvg_thrust_n(parseFloat(getChildText(element, "avg-thrust-n")));
+				motor.setMax_thrust_n(parseFloat(getChildText(element, "max-thrust-n")));
+				motor.setTot_impulse_ns(parseFloat(getChildText(element, "tot-impulse-ns")));
+				motor.setBurn_time_s(parseFloat(getChildText(element, "burn-time-s")));
+
+				motor.setData_files(parseInt(getChildText(element, "data-files")));
+				motor.setInfo_url(getChildText(element, "info-url"));
+
+				motor.setTot_mass_g(parseDouble(getChildText(element, "total-weight-g")));
+				motor.setProp_mass_g(parseDouble(getChildText(element, "prop-weight-g")));
+
+				motor.setDelays(getChildText(element, "delays"));
+				motor.setCase_info(getChildText(element, "case-info"));
+				motor.setProp_info(getChildText(element, "prop-info"));
+				motor.setAvailability(getChildText(element, "availability"));
+
+				parseUpdatedOn(motor, getChildText(element, "updated-on"));
+				applyLegacyDefaults(motor);
+
+				response.addMotor(motor);
+			}
+
+			if (response.getMatches() == 0 && !response.getResults().isEmpty()) {
+				response.setMatches(response.getResults().size());
+			}
+
+			return response;
+		} catch (Exception ex) {
+			response.setError("Unable to parse XML response: " + ex.getMessage());
+			return response;
+		}
 	}
 
+	private static String getChildText(Element parent, String tagName) {
+		NodeList nodes = parent.getElementsByTagName(tagName);
+		if (nodes.getLength() == 0) {
+			return null;
+		}
+		return nodes.item(0).getTextContent().trim();
+	}
+
+	// Helpers to safely extract types from the Map
+	private static String getString(Map<String, Object> map, String key) {
+		Object val = map.get(key);
+		return val != null ? String.valueOf(val) : null;
+	}
+
+	private static Float getFloat(Map<String, Object> map, String key) {
+		Object val = map.get(key);
+		if (val instanceof Number) return ((Number) val).floatValue();
+		return null;
+	}
+
+	private static Double getDouble(Map<String, Object> map, String key) {
+		Object val = map.get(key);
+		if (val instanceof Number) return ((Number) val).doubleValue();
+		return null;
+	}
+
+	private static Integer getInt(Map<String, Object> map, String key) {
+		Object val = map.get(key);
+		if (val instanceof Number) return ((Number) val).intValue();
+		return null;
+	}
+
+	private static Float parseFloat(String value) {
+		if (value == null || value.isEmpty()) return null;
+		try {
+			return Float.valueOf(value);
+		} catch (NumberFormatException ex) {
+			return null;
+		}
+	}
+
+	private static Double parseDouble(String value) {
+		if (value == null || value.isEmpty()) return null;
+		try {
+			return Double.valueOf(value);
+		} catch (NumberFormatException ex) {
+			return null;
+		}
+	}
+
+	private static Integer parseInt(String value) {
+		if (value == null || value.isEmpty()) return null;
+		try {
+			return Integer.valueOf(value);
+		} catch (NumberFormatException ex) {
+			return null;
+		}
+	}
+
+	private static void parseUpdatedOn(TCMotor motor, String dateStr) {
+		if (dateStr == null) {
+			return;
+		}
+		try {
+			SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd");
+			motor.setUpdated_on(iso.parse(dateStr));
+		} catch (ParseException e) {
+			// Ignore
+		}
+	}
+
+	private static void applyLegacyDefaults(TCMotor motor) {
+		if ("A".equalsIgnoreCase(motor.getImpulse_class()) && motor.getCommon_name() != null) {
+			if (motor.getCommon_name().startsWith("1/2A")) motor.setImpulse_class("1/2A");
+			else if (motor.getCommon_name().startsWith("1/4A")) motor.setImpulse_class("1/4A");
+			else if (motor.getCommon_name().startsWith("Micro")) motor.setImpulse_class("1/8A");
+		}
+
+		if (motor.getCase_info() == null || motor.getCase_info().equalsIgnoreCase("single use")) {
+			motor.setCase_info(motor.getType() + " " + motor.getDiameter() + "x" + motor.getLength());
+		}
+	}
+
+	private static String readStream(InputStream in) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+		byte[] buffer = new byte[1024];
+		int length;
+		while ((length = in.read(buffer)) != -1) {
+			result.write(buffer, 0, length);
+		}
+		return result.toString("UTF-8");
+	}
 }

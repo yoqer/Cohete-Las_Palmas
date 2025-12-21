@@ -1,80 +1,79 @@
 package info.openrocket.core.thrustcurve;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+public class DownloadResponseParser {
 
-import info.openrocket.core.logging.WarningSet;
-import info.openrocket.core.file.simplesax.ElementHandler;
-import info.openrocket.core.file.simplesax.SimpleSAX;
+	public static DownloadResponse parse(InputStream in) throws IOException {
+		DownloadResponse response = new DownloadResponse();
 
-public class DownloadResponseParser implements ElementHandler {
+		// 1. Read InputStream to String
+		String jsonString = readStream(in);
 
-	private static final String thrustcurveURI = "http://www.thrustcurve.org/2009/DownloadResponse";
+		// 2. Parse JSON
+		Object root = SimpleJsonParser.parse(jsonString);
 
-	private static final String root_tag = "download-response";
-	private static final String results_tag = "results";
-	private static final String result_tag = "result";
-	private static final String motor_id_tag = "motor-id";
-	private static final String simfile_id_tag = "simfile-id";
-	private static final String format_tag = "format";
-	private static final String source_tag = "source";
-	private static final String license_tag = "license";
-	private static final String data_tag = "data";
-	private static final String error_tag = "error";
-
-	private final DownloadResponse response = new DownloadResponse();
-
-	private MotorBurnFile motorBurnFile;
-
-	private DownloadResponseParser() {
-	}
-
-	public static DownloadResponse parse(InputStream in) throws IOException, SAXException {
-
-		DownloadResponseParser handler = new DownloadResponseParser();
-		WarningSet warnings = new WarningSet();
-		SimpleSAX.readXML(new InputSource(in), handler, warnings);
-
-		return handler.response;
-
-	}
-
-	@Override
-	public ElementHandler openElement(String element, HashMap<String, String> attributes, WarningSet warnings)
-			throws SAXException {
-		if (result_tag.equals(element)) {
-			motorBurnFile = new MotorBurnFile();
+		if (!(root instanceof Map)) {
+			return response; // Invalid format
 		}
-		return this;
-	}
 
-	@Override
-	public void closeElement(String element, HashMap<String, String> attributes, String content, WarningSet warnings)
-			throws SAXException {
-		if (result_tag.equals(element)) {
-			response.add(motorBurnFile);
-		} else if (motor_id_tag.equals(element)) {
-			motorBurnFile.setMotorId(Integer.parseInt(content));
-		} else if (simfile_id_tag.equals(element)) {
-			motorBurnFile.setSimfileId(Integer.parseInt(content));
-		} else if (format_tag.equals(element)) {
-			motorBurnFile.setFiletype(content);
-		} else if (data_tag.equals(element)) {
-			try {
-				motorBurnFile.decodeFile(content);
-			} catch (IOException e) {
-				throw new SAXException(e);
+		Map<String, Object> rootMap = (Map<String, Object>) root;
+
+		// 3. Extract Results
+		if (rootMap.containsKey("results")) {
+			List<Object> results = (List<Object>) rootMap.get("results");
+
+			for (Object item : results) {
+				if (item instanceof Map) {
+					Map<String, Object> resultObj = (Map<String, Object>) item;
+
+					MotorBurnFile mbf = new MotorBurnFile();
+					mbf.init();
+
+					// Parse String ID
+					if (resultObj.get("motorId") instanceof String) {
+						mbf.setMotorId((String) resultObj.get("motorId"));
+					}
+
+					if (resultObj.get("simfileId") instanceof String) {
+						mbf.setSimfileId((String) resultObj.get("simfileId"));
+					}
+
+					if (resultObj.get("format") instanceof String) {
+						mbf.setFiletype((String) resultObj.get("format"));
+					}
+
+					// Handle Data (Usually Base64 in V1 Download response)
+					if (resultObj.get("data") instanceof String dataContent) {
+						// MotorBurnFile.decodeFile expects Base64
+						mbf.decodeFile(dataContent);
+					}
+
+					response.add(mbf);
+				}
 			}
 		}
+
+		// 4. Handle Error (if any)
+		if (rootMap.containsKey("error")) {
+			response.setError(String.valueOf(rootMap.get("error")));
+		}
+
+		return response;
 	}
 
-	@Override
-	public void endHandler(String element, HashMap<String, String> attributes, String content, WarningSet warnings)
-			throws SAXException {
+	private static String readStream(InputStream in) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+		byte[] buffer = new byte[1024];
+		int length;
+		while ((length = in.read(buffer)) != -1) {
+			result.write(buffer, 0, length);
+		}
+		return result.toString(StandardCharsets.UTF_8);
 	}
-
 }

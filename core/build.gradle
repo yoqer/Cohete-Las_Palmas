@@ -118,7 +118,7 @@ tasks.register('serializeEnginesExecuteDist', JavaExec) {
     workingDir  new File(projectDir, 'build/tmp')
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('info.openrocket.core.thrustcurve.serialization.SerializeThrustcurveMotors')
-    args '../../resources-src/datafiles/thrustcurves/', '../.' + serializedEnginesPathDist
+    args '../../resources-src/datafiles/thrustcurves/', '../.' + serializedEnginesPathDist, threadUtilFraction
     standardInput = System.in
     doFirst {
         println "Starting serializeEnginesExecuteDist..."

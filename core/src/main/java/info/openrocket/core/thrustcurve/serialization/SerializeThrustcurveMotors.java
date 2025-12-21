@@ -114,14 +114,31 @@ public class SerializeThrustcurveMotors {
                 SearchRequest searchRequest = new SearchRequest();
                 searchRequest.setManufacturer(manufacturer);
                 SearchResponse res = ThrustCurveAPI.doSearch(searchRequest);
+                if (res.getError() != null) {
+                    System.out.println("\tSearch error for " + manufacturer + ": " + res.getError());
+                    continue;
+                }
+                if (res.getResults().isEmpty()) {
+                    System.out.println("\tNo motors returned for " + manufacturer + " (matches=" + res.getMatches() + ")");
+                    continue;
+                }
+                if (res.getMatches() > res.getResults().size()) {
+                    System.out.println("\tSearch returned " + res.getResults().size() + " of " + res.getMatches() +
+                            " motors; consider increasing maxResults via -Dthrustcurve.search.maxResults");
+                }
 
+                int withData = 0;
+                int withoutData = 0;
                 for (TCMotor tcMotor : res.getResults()) {
                     if (tcMotor.getData_files() == null || tcMotor.getData_files() == 0) {
+                        withoutData++;
                         continue;
                     }
+                    withData++;
                     CompletableFuture<List<Motor>> future = fetchMotorsCompletables(tcMotor, executor);
                     futureMotorLists.add(future);
                 }
+                System.out.println("\tMotors with data: " + withData + ", without data: " + withoutData);
             }
 
             for (CompletableFuture<List<Motor>> futureList : futureMotorLists) {
@@ -183,6 +200,10 @@ public class SerializeThrustcurveMotors {
         List<Motor> motors = new ArrayList<>();
         try {
             List<MotorBurnFile> motorBurnFiles = getThrustCurvesForMotorId(tcMotor.getMotor_id());
+            if (motorBurnFiles.isEmpty()) {
+                System.out.println("\tNo burn files returned for motorID=" + tcMotor.getMotor_id() +
+                        " (dataFiles=" + tcMotor.getData_files() + ")");
+            }
             for (MotorBurnFile burnFile : motorBurnFiles) {
                 try {
                     ThrustCurveMotor.Builder builder = initThrustCurveMotorBuilder(tcMotor, burnFile, type);
@@ -283,7 +304,7 @@ public class SerializeThrustcurveMotors {
      * @param motorId The ThrustCurveAPI motor id to fetch Thrust-Curves for.
      * @return The list of Thrust Curves for the specified motor id.
      */
-    private static List<MotorBurnFile> getThrustCurvesForMotorId(int motorId) {
+    private static List<MotorBurnFile> getThrustCurvesForMotorId(String motorId) {
         String[] formats = new String[]{"RASP", "RockSim"};
         List<MotorBurnFile> b = new ArrayList<>();
         for (String format : formats) {

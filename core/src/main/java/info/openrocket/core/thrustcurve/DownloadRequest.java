@@ -4,11 +4,11 @@ import java.util.ArrayList;
 
 class DownloadRequest {
 
-	private final ArrayList<Integer> motorIds = new ArrayList<>();
+	private final ArrayList<String> motorIds = new ArrayList<>();
 
 	private String format = null;
 
-	public void add(Integer motorId) {
+	public void add(String motorId) {
 		this.motorIds.add(motorId);
 	}
 
@@ -18,26 +18,24 @@ class DownloadRequest {
 
 	@Override
 	public String toString() {
-		StringBuilder w = new StringBuilder();
+		// V1 Download endpoint expects a specific JSON format
+		// Check Swagger, but usually it's just POSTing data to /download
+		StringBuilder json = new StringBuilder();
+		json.append("{");
+		json.append("\"motorIds\": [");
 
-		w.append("<?xml version=\"1.0\" encoding=\"ascii\"?>\n");
-		w.append("<download-request\n");
-		w.append(" xmlns=\"http://www.thrustcurve.org/2008/DownloadRequest\"\n");
-		w.append(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n");
-		w.append(
-				" xsi:schemaLocation=\"http://www.thrustcurve.org/2008/DownloadRequest http://www.thrustcurve.org/2008/download-request.xsd\">\n");
+		for (int i = 0; i < motorIds.size(); i++) {
+			json.append("\"").append(motorIds.get(i)).append("\"");
+			if (i < motorIds.size() - 1) json.append(",");
+		}
 
+		json.append("]");
+		// format is optional in V1, defaults to all if not specified
 		if (format != null) {
-			w.append("  <format>").append(format).append("</format>\n");
+			json.append(", \"format\": \"").append(format).append("\"");
 		}
-
-		w.append("  <motor-ids>\n");
-		for (Integer i : motorIds) {
-			w.append("      <id>").append(i).append("</id>\n");
-		}
-		w.append("  </motor-ids>\n");
-		w.append("</download-request>\n");
-		return w.toString();
+		json.append("}");
+		return json.toString();
 	}
 
 }
