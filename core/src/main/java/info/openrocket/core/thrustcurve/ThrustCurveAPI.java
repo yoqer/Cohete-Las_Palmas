@@ -18,7 +18,16 @@ import java.util.Locale;
 
 import org.xml.sax.SAXException;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 public abstract class ThrustCurveAPI {
+
+	private static final Gson GSON = new Gson();
 
 	public static SearchResponse doSearch(SearchRequest request) throws IOException, SAXException {
 
@@ -120,32 +129,32 @@ public abstract class ThrustCurveAPI {
 	 * @return Array of Motor Abbreviations.
 	 */
 	private static String[] parseManufacturerAbbreviations(String jsonString){
-		int start = jsonString.indexOf("\"manufacturers\":");
-		if (start == -1) return new String[0];
-
-		start = jsonString.indexOf("[", start);
-		int end = jsonString.indexOf("]", start);
-		if (start == -1 || end == -1) return new String[0];
-
-		String manufacturersArray = jsonString.substring(start + 1, end);
-
-		List<String> names = new ArrayList<>();
-		for (String entry : manufacturersArray.split("\\{")) {
-			int nameIndex = entry.indexOf("\"abbrev\":");
-			if (nameIndex == -1) continue;
-			// Developer Note (Jordan Senft): Added the "9" as its own declared value to avoid confusion if others_
-			// _wish to contribute to this class in the future. This could be subject to change in future versions of_
-			// _the ThrustCurveAPI.
-			int literalStringLength = 9;
-			int quoteStart = entry.indexOf("\"", nameIndex + literalStringLength);
-			int quoteEnd = entry.indexOf("\"", quoteStart + 1);
-			if (quoteStart != -1 && quoteEnd != -1) {
-				String name = entry.substring(quoteStart + 1, quoteEnd);
-				names.add(name);
+		try {
+			JsonElement root = JsonParser.parseString(jsonString);
+			if (!root.isJsonObject()) {
+				return new String[0];
 			}
+			JsonObject obj = root.getAsJsonObject();
+			JsonArray manufacturers = obj.getAsJsonArray("manufacturers");
+			if (manufacturers == null) {
+				return new String[0];
+			}
+			List<String> names = new ArrayList<>();
+			for (JsonElement element : manufacturers) {
+				if (!element.isJsonObject()) {
+					continue;
+				}
+				JsonObject entry = element.getAsJsonObject();
+				JsonElement abbrevElement = entry.get("abbrev");
+				if (abbrevElement == null || abbrevElement.isJsonNull()) {
+					continue;
+				}
+				names.add(abbrevElement.getAsString());
+			}
+			return names.toArray(new String[0]);
+		} catch (JsonParseException ex) {
+			return new String[0];
 		}
-
-		return names.toArray(new String[0]);
 	}
 
 
@@ -192,13 +201,13 @@ public abstract class ThrustCurveAPI {
 
 		// Prepare JSON Body for /api/v1/download
 		// Payload: { "motorIds": ["id"], "format": "rocksim" }
-		StringBuilder jsonBody = new StringBuilder();
-		jsonBody.append("{");
-		jsonBody.append("\"motorIds\": [\"").append(motorId).append("\"],");
+		JsonObject jsonBody = new JsonObject();
+		JsonArray motorIds = new JsonArray();
+		motorIds.add(motorId);
+		jsonBody.add("motorIds", motorIds);
 		if (format != null) {
-			jsonBody.append("\"format\": \"").append(format).append("\"");
+			jsonBody.addProperty("format", format);
 		}
-		jsonBody.append("}");
 
 		URL url = buildApiUrl(path);
 
@@ -214,7 +223,7 @@ public abstract class ThrustCurveAPI {
 		conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
 
 		try (OutputStream stream = conn.getOutputStream()) {
-			stream.write(jsonBody.toString().getBytes(StandardCharsets.UTF_8));
+			stream.write(GSON.toJson(jsonBody).getBytes(StandardCharsets.UTF_8));
 		}
 
 		int status = conn.getResponseCode();

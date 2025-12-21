@@ -4,8 +4,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 public class DownloadResponseParser {
 
@@ -16,40 +20,46 @@ public class DownloadResponseParser {
 		String jsonString = readStream(in);
 
 		// 2. Parse JSON
-		Object root = SimpleJsonParser.parse(jsonString);
-
-		if (!(root instanceof Map)) {
-			return response; // Invalid format
+		JsonObject rootObj;
+		try {
+			JsonElement root = JsonParser.parseString(jsonString);
+			if (!root.isJsonObject()) {
+				return response;
+			}
+			rootObj = root.getAsJsonObject();
+		} catch (JsonParseException ex) {
+			throw new RuntimeException("Unable to parse JSON response: " + ex.getMessage(), ex);
 		}
 
-		Map<String, Object> rootMap = (Map<String, Object>) root;
-
 		// 3. Extract Results
-		if (rootMap.containsKey("results")) {
-			List<Object> results = (List<Object>) rootMap.get("results");
-
-			for (Object item : results) {
-				if (item instanceof Map) {
-					Map<String, Object> resultObj = (Map<String, Object>) item;
+		JsonArray results = rootObj.getAsJsonArray("results");
+		if (results != null) {
+			for (JsonElement item : results) {
+				if (item.isJsonObject()) {
+					JsonObject resultObj = item.getAsJsonObject();
 
 					MotorBurnFile mbf = new MotorBurnFile();
 					mbf.init();
 
 					// Parse String ID
-					if (resultObj.get("motorId") instanceof String) {
-						mbf.setMotorId((String) resultObj.get("motorId"));
+					String motorId = getString(resultObj, "motorId");
+					if (motorId != null) {
+						mbf.setMotorId(motorId);
 					}
 
-					if (resultObj.get("simfileId") instanceof String) {
-						mbf.setSimfileId((String) resultObj.get("simfileId"));
+					String simfileId = getString(resultObj, "simfileId");
+					if (simfileId != null) {
+						mbf.setSimfileId(simfileId);
 					}
 
-					if (resultObj.get("format") instanceof String) {
-						mbf.setFiletype((String) resultObj.get("format"));
+					String fileType = getString(resultObj, "format");
+					if (fileType != null) {
+						mbf.setFiletype(fileType);
 					}
 
 					// Handle Data (Usually Base64 in V1 Download response)
-					if (resultObj.get("data") instanceof String dataContent) {
+					String dataContent = getString(resultObj, "data");
+					if (dataContent != null) {
 						// MotorBurnFile.decodeFile expects Base64
 						mbf.decodeFile(dataContent);
 					}
@@ -60,11 +70,28 @@ public class DownloadResponseParser {
 		}
 
 		// 4. Handle Error (if any)
-		if (rootMap.containsKey("error")) {
-			response.setError(String.valueOf(rootMap.get("error")));
+		String error = getString(rootObj, "error");
+		if (error != null) {
+			response.setError(error);
 		}
 
 		return response;
+	}
+
+	private static String getString(JsonObject obj, String key) {
+		JsonElement val = getElement(obj, key);
+		if (val == null) return null;
+		if (val.isJsonPrimitive()) {
+			return val.getAsString();
+		}
+		return val.toString();
+	}
+
+	private static JsonElement getElement(JsonObject obj, String key) {
+		if (obj == null || key == null) return null;
+		JsonElement val = obj.get(key);
+		if (val == null || val.isJsonNull()) return null;
+		return val;
 	}
 
 	private static String readStream(InputStream in) throws IOException {

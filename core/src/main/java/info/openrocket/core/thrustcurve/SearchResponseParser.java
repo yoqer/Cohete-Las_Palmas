@@ -6,9 +6,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -19,6 +17,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
 public class SearchResponseParser {
 
@@ -40,36 +45,37 @@ public class SearchResponseParser {
 			return parseXmlResponse(jsonString, response);
 		}
 
-		Object root;
+		JsonObject rootObj;
 		try {
-			root = SimpleJsonParser.parse(jsonString);
-		} catch (RuntimeException ex) {
+			JsonElement root = JsonParser.parseString(jsonString);
+			if (!root.isJsonObject()) {
+				return response;
+			}
+			rootObj = root.getAsJsonObject();
+		} catch (JsonParseException ex) {
 			response.setError("Unable to parse JSON response: " + ex.getMessage());
 			return response;
 		}
-		if (!(root instanceof Map)) return response;
 
-		Map<String, Object> rootMap = (Map<String, Object>) root;
-
-		Integer matches = getInt(rootMap, "matches");
+		Integer matches = getInt(rootObj, "matches");
 		if (matches == null) {
-			matches = getInt(rootMap, "totalResults");
+			matches = getInt(rootObj, "totalResults");
 		}
 		if (matches != null) {
 			response.setMatches(matches);
 		}
 
-		if (rootMap.containsKey("error")) {
-			response.setError(String.valueOf(rootMap.get("error")));
+		String error = getString(rootObj, "error");
+		if (error != null) {
+			response.setError(error);
 		}
 
 		// V1 uses "results" array
-		if (rootMap.containsKey("results")) {
-			List<Object> results = (List<Object>) rootMap.get("results");
-
-			for (Object item : results) {
-				if (item instanceof Map) {
-					Map<String, Object> map = (Map<String, Object>) item;
+		JsonArray results = rootObj.getAsJsonArray("results");
+		if (results != null) {
+			for (JsonElement item : results) {
+				if (item.isJsonObject()) {
+					JsonObject map = item.getAsJsonObject();
 					TCMotor motor = new TCMotor();
 					motor.init();
 
@@ -203,28 +209,48 @@ public class SearchResponseParser {
 		return nodes.item(0).getTextContent().trim();
 	}
 
-	// Helpers to safely extract types from the Map
-	private static String getString(Map<String, Object> map, String key) {
-		Object val = map.get(key);
-		return val != null ? String.valueOf(val) : null;
+	// Helpers to safely extract types from the JSON
+	private static String getString(JsonObject obj, String key) {
+		JsonElement val = getElement(obj, key);
+		if (val == null) return null;
+		if (val.isJsonPrimitive()) {
+			return val.getAsString();
+		}
+		return val.toString();
 	}
 
-	private static Float getFloat(Map<String, Object> map, String key) {
-		Object val = map.get(key);
-		if (val instanceof Number) return ((Number) val).floatValue();
+	private static Float getFloat(JsonObject obj, String key) {
+		JsonElement val = getElement(obj, key);
+		if (val == null || !val.isJsonPrimitive()) return null;
+		JsonPrimitive prim = val.getAsJsonPrimitive();
+		if (prim.isNumber()) return prim.getAsFloat();
+		if (prim.isString()) return parseFloat(prim.getAsString());
 		return null;
 	}
 
-	private static Double getDouble(Map<String, Object> map, String key) {
-		Object val = map.get(key);
-		if (val instanceof Number) return ((Number) val).doubleValue();
+	private static Double getDouble(JsonObject obj, String key) {
+		JsonElement val = getElement(obj, key);
+		if (val == null || !val.isJsonPrimitive()) return null;
+		JsonPrimitive prim = val.getAsJsonPrimitive();
+		if (prim.isNumber()) return prim.getAsDouble();
+		if (prim.isString()) return parseDouble(prim.getAsString());
 		return null;
 	}
 
-	private static Integer getInt(Map<String, Object> map, String key) {
-		Object val = map.get(key);
-		if (val instanceof Number) return ((Number) val).intValue();
+	private static Integer getInt(JsonObject obj, String key) {
+		JsonElement val = getElement(obj, key);
+		if (val == null || !val.isJsonPrimitive()) return null;
+		JsonPrimitive prim = val.getAsJsonPrimitive();
+		if (prim.isNumber()) return prim.getAsInt();
+		if (prim.isString()) return parseInt(prim.getAsString());
 		return null;
+	}
+
+	private static JsonElement getElement(JsonObject obj, String key) {
+		if (obj == null || key == null) return null;
+		JsonElement val = obj.get(key);
+		if (val == null || val.isJsonNull()) return null;
+		return val;
 	}
 
 	private static Float parseFloat(String value) {

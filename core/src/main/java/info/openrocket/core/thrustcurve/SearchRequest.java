@@ -1,11 +1,12 @@
 package info.openrocket.core.thrustcurve;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class SearchRequest {
 
 	private static final int MAX_RESULTS = 1000;	// Maximum motor results to return for one manufacturer search
+	private static final Gson GSON = new Gson();
 
 	private String manufacturer;
 	private String designation;
@@ -85,47 +86,29 @@ public class SearchRequest {
 
 	@Override
 	public String toString() {
-		// Manual JSON construction
-		StringBuilder json = new StringBuilder();
-		json.append("{");
-
-		List<String> fields = new ArrayList<>();
-
+		JsonObject json = new JsonObject();
 		if (manufacturer != null){
-			fields.add("\"manufacturer\": \"" + escapeJson(manufacturer) + "\"");
+			json.addProperty("manufacturer", manufacturer);
 		}
 		if (designation != null){
-			fields.add("\"designation\": \"" + escapeJson(designation) + "\"");
+			json.addProperty("designation", designation);
 		}
 		if (brand_name != null){
-			fields.add("\"brandName\": \"" + escapeJson(brand_name) + "\""); // Note: camelCase in V1
+			json.addProperty("brandName", brand_name); // Note: camelCase in V1
 		}
 		if (common_name != null){
-			fields.add("\"commonName\": \"" + escapeJson(common_name) + "\"");
+			json.addProperty("commonName", common_name);
 		}
 		if (impulse_class != null) {
-			fields.add("\"impulseClass\": \"" + escapeJson(impulse_class) + "\"");
+			json.addProperty("impulseClass", impulse_class);
 		}
 		if (diameter != null) {
-			fields.add("\"diameter\": " + diameter); // Number, no quotes
+			json.addProperty("diameter", diameter);
 		}
 		if (type != null) {
-			fields.add("\"type\": \"" + escapeJson(type) + "\"");
+			json.addProperty("type", type);
 		}
-
-		// Add required V1 fields
-		fields.add("\"maxResults\": " + MAX_RESULTS);
-
-		json.append(String.join(",", fields));
-		json.append("}");
-
-		return json.toString();
-	}
-
-	private static String escapeJson(String raw) {
-		if (raw == null) {
-			return "";
-		}
-		return raw.replace("\"", "\\\"");
+		json.addProperty("maxResults", MAX_RESULTS);
+		return GSON.toJson(json);
 	}
 }

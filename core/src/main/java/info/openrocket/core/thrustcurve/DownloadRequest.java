@@ -2,8 +2,13 @@ package info.openrocket.core.thrustcurve;
 
 import java.util.ArrayList;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 class DownloadRequest {
 
+	private static final Gson GSON = new Gson();
 	private final ArrayList<String> motorIds = new ArrayList<>();
 
 	private String format = null;
@@ -18,24 +23,16 @@ class DownloadRequest {
 
 	@Override
 	public String toString() {
-		// V1 Download endpoint expects a specific JSON format
-		// Check Swagger, but usually it's just POSTing data to /download
-		StringBuilder json = new StringBuilder();
-		json.append("{");
-		json.append("\"motorIds\": [");
-
-		for (int i = 0; i < motorIds.size(); i++) {
-			json.append("\"").append(motorIds.get(i)).append("\"");
-			if (i < motorIds.size() - 1) json.append(",");
+		JsonObject json = new JsonObject();
+		JsonArray ids = new JsonArray();
+		for (String motorId : motorIds) {
+			ids.add(motorId);
 		}
-
-		json.append("]");
-		// format is optional in V1, defaults to all if not specified
+		json.add("motorIds", ids);
 		if (format != null) {
-			json.append(", \"format\": \"").append(format).append("\"");
+			json.addProperty("format", format);
 		}
-		json.append("}");
-		return json.toString();
+		return GSON.toJson(json);
 	}
 
 }
