@@ -72,6 +72,7 @@ public class AboutDialog extends JDialog {
 		"JOGL" + href("http://jogamp.org/jogl/www", true, true) + "<br>" +
 		"Guava" + href("https://github.com/google/guava", true, true) + "<br>" +
 		"Gson" + href("https://github.com/google/gson", true, true) + "<br>" +
+		"SQLite JDBC" + href("https://github.com/xerial/sqlite-jdbc", true, true) + "<br>" +
 		"Opencsv" + href("http://opencsv.sourceforge.net", true, true) + "<br>" +
 		"Simple Logging Facade for Java" + href("http://www.slf4j.org", true, true) + "<br>" +
 		"Java library for parsing and rendering CommonMark" + href("https://github.com/commonmark/commonmark-java", true, true) + "<br>" +
