@@ -73,17 +73,28 @@ public class Icons {
 
 	// Note: most of these icons are from famfamicons Silk set
 	
-	public static final Icon FILE_NEW = loadImageIcon("pix/icons/document-new.png", "New document");
-	public static final Icon FILE_OPEN = loadImageIcon("pix/icons/document-open.png", "Open document");
+	public static final Icon FILE_NEW = loadIcon(
+			"pix/icons/lucide/file-plus-corner.svg",
+			"pix/icons/document-new.png",
+			"New document");
+	public static final Icon FILE_OPEN = loadIcon(
+			"pix/icons/lucide/file.svg",
+			"pix/icons/document-open.png",
+			"Open document");
+	public static final Icon FILE_OPEN_RECENT = loadSvgIcon("pix/icons/lucide/file-clock.svg", "Open recent document");
 	public static final Icon FILE_OPEN_EXAMPLE = loadImageIcon("pix/icons/document-open-example.png", "Open example document");
 	public static final Icon FILE_SAVE = loadImageIcon("pix/icons/document-save.png", "Save document");
 	public static final Icon FILE_SAVE_AS = loadImageIcon("pix/icons/document-save-as.png", "Save document as");
 	public static final Icon SAVE_DECAL = loadImageIcon("pix/icons/Painting-Transparent-PNG_16.png", "Save decal image");
 	public static final Icon FILE_PRINT = loadImageIcon("pix/icons/print-design.specs.png", "Print specifications");
-	public static final Icon FILE_IMPORT = loadImageIcon("pix/icons/model_import.png", "Import");
-	public static final Icon IMPORT = loadImageIcon("pix/icons/import.png", "Import");
-	public static final Icon EXPORT = loadImageIcon("pix/icons/export.png", "Export");
-	public static final Icon FILE_EXPORT = loadImageIcon("pix/icons/model_export.png", "Export");
+	public static final Icon FILE_IMPORT = loadIcon(
+			"pix/icons/lucide/import.svg",
+			"pix/icons/import.png",
+			"Import");
+	public static final Icon FILE_EXPORT = loadIcon(
+			"pix/icons/lucide/export.svg",
+			"pix/icons/export.png",
+			"Export");
 	public static final Icon SIM_TABLE_EXPORT = loadImageIcon("pix/icons/sim_table_export.png", "Export simulation table");
 	public static final Icon EXPORT_3D = loadImageIcon("pix/icons/model_export3d.png", "Export 3D");
 	public static final Icon EXPORT_SVG = loadImageIcon("pix/icons/svg-logo.png", "Export SVG");
@@ -225,6 +236,10 @@ public class Icons {
 			return loadSvgIcon(svgFile, name, colorKey);
 		}
 		return loadImageIcon(rasterFile, name);
+	}
+
+	public static Icon loadIcon(String svgFile, String rasterFile, String name) {
+		return loadIcon(svgFile, rasterFile, name, SVG_DEFAULT_COLOR_KEY);
 	}
 
 	/**

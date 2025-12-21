@@ -963,7 +963,7 @@ private static final Translator trans = Application.getTranslator();
 		//// 	Open Recent
 		item = new MRUDesignFileAction(trans.get("main.menu.file.openRecent"), parent);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.openRecent.desc"));
-		item.setIcon(Icons.FILE_OPEN);
+		item.setIcon(Icons.FILE_OPEN_RECENT);
 		fileMenu.add(item);
 
 		//// 	Open example
