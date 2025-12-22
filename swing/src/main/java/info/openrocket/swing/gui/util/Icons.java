@@ -89,8 +89,7 @@ public class Icons {
 			// Black in SVG -> Black in light theme, White in dark theme
 			// White in SVG -> White in light theme, Black in dark theme (inverted)
 			MACOS_MENU_COLOR_FILTER = new FlatSVGIcon.ColorFilter();
-			MACOS_MENU_COLOR_FILTER.add(Color.WHITE, isDark ? Color.WHITE : Color.BLACK)
-					.add(Color.BLACK, isDark ? Color.WHITE : Color.BLACK);
+			MACOS_MENU_COLOR_FILTER.add(Color.BLACK, isDark ? Color.WHITE : Color.BLACK);
 		}
 	}
 
