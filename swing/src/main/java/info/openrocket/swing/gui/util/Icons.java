@@ -310,10 +310,6 @@ public class Icons {
 	 * @return the loaded Icon, or null if the SVG file could not be found
 	 */
 	private static Icon loadSvgIcon(String file, String name, Map<Integer, String> colorKeys) {
-		if (System.getProperty("openrocket.unittest") != null) {
-			return new ImageIcon();
-		}
-
 		if (!hasResource(file)) {
 			Application.getExceptionHandler().handleErrorCondition("Image file " + file + " not found, ignoring.");
 			return null;
@@ -323,18 +319,18 @@ public class Icons {
 		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER);
 		
 		// First, create a temporary icon to get the original aspect ratio
-		FlatSVGIcon tempIcon = new FlatSVGIcon(file, Icons.class.getClassLoader());
-		int originalWidth = tempIcon.getIconWidth();
-		int originalHeight = tempIcon.getIconHeight();
-		
-		// If dimensions are invalid, return a basic icon
-		if (originalWidth <= 0 || originalHeight <= 0) {
 		FlatSVGIcon icon = new FlatSVGIcon(file, Icons.class.getClassLoader());
-			icon.setDescription(name);
-			FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
-			if (colorFilter != null) {
-				icon.setColorFilter(colorFilter);
-			}
+		icon.setDescription(name);
+		int originalWidth = icon.getIconWidth();
+		int originalHeight = icon.getIconHeight();
+
+		FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
+		if (colorFilter != null) {
+			icon.setColorFilter(colorFilter);
+		}
+		
+		// If dimensions are invalid, return the icon as is
+		if (originalWidth <= 0 || originalHeight <= 0) {
 			return icon;
 		}
 		
@@ -342,14 +338,8 @@ public class Icons {
 		double scale = (double) targetHeight / originalHeight;
 		int targetWidth = Math.max(1, (int) Math.round(originalWidth * scale));
 		
-		// Create the icon with the target dimensions directly
-		FlatSVGIcon icon = new FlatSVGIcon(file, targetWidth, targetHeight);
-		icon.setDescription(name);
-
-		FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
-		if (colorFilter != null) {
-			icon.setColorFilter(colorFilter);
-		}
+		// Create the icon with the target dimensions
+		icon = icon.derive(targetWidth, targetHeight);
 		
 		return icon;
 	}
