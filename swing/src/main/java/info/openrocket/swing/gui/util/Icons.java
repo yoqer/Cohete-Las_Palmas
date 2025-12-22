@@ -297,7 +297,31 @@ public class Icons {
 			return null;
 		}
 
-		FlatSVGIcon icon = new FlatSVGIcon(file, Icons.class.getClassLoader());
+		// Get the target height based on font size
+		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER);
+		
+		// First, create a temporary icon to get the original aspect ratio
+		FlatSVGIcon tempIcon = new FlatSVGIcon(file, Icons.class.getClassLoader());
+		int originalWidth = tempIcon.getIconWidth();
+		int originalHeight = tempIcon.getIconHeight();
+		
+		// If dimensions are invalid, return a basic icon
+		if (originalWidth <= 0 || originalHeight <= 0) {
+			FlatSVGIcon icon = new FlatSVGIcon(file, Icons.class.getClassLoader());
+			icon.setDescription(name);
+			FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
+			if (colorFilter != null) {
+				icon.setColorFilter(colorFilter);
+			}
+			return icon;
+		}
+		
+		// Calculate target width maintaining aspect ratio
+		double scale = (double) targetHeight / originalHeight;
+		int targetWidth = Math.max(1, (int) Math.round(originalWidth * scale));
+		
+		// Create the icon with the target dimensions directly
+		FlatSVGIcon icon = new FlatSVGIcon(file, targetWidth, targetHeight);
 		icon.setDescription(name);
 
 		FlatSVGIcon.ColorFilter colorFilter = createSvgColorFilter(colorKeys);
@@ -305,8 +329,7 @@ public class Icons {
 			icon.setColorFilter(colorFilter);
 		}
 		
-		// Scale SVG icon to match font height, maintaining aspect ratio
-		return scaleSvgIconToFontHeight(icon);
+		return icon;
 	}
 
 	/**
@@ -364,45 +387,6 @@ public class Icons {
 		return new Color((target.getRGB() & 0x00ffffff) | (source.getRGB() & 0xff000000), true);
 	}
 
-	/**
-	 * Scales an SVG icon to match the font height, maintaining the original aspect ratio.
-	 * The width will be scaled proportionally based on the original icon's aspect ratio.
-	 * Icons are scaled to be slightly larger than the font height for better visual balance.
-	 * @param icon the SVG icon to scale
-	 * @return a scaled icon that matches the font height, or the original icon if scaling fails
-	 */
-	private static Icon scaleSvgIconToFontHeight(Icon icon) {
-		if (icon == null) {
-			return null;
-		}
-		
-		// Get the font size (already includes UI scale) and apply multiplier
-		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER);
-		
-		// Get the original icon dimensions
-		int originalWidth = icon.getIconWidth();
-		int originalHeight = icon.getIconHeight();
-		
-		// If dimensions are invalid, return original icon
-		if (originalWidth <= 0 || originalHeight <= 0) {
-			return icon;
-		}
-		
-		// If already at target height, return original
-		if (originalHeight == targetHeight) {
-			return icon;
-		}
-		
-		// Calculate scale factor to match target height
-		double scale = (double) targetHeight / originalHeight;
-		
-		// Calculate new width maintaining aspect ratio
-		int newWidth = Math.max(1, (int) Math.round(originalWidth * scale));
-		int newHeight = targetHeight;
-		
-		// Return a wrapper icon that scales the original
-		return new ScaledIcon(icon, newWidth, newHeight);
-	}
 
 	/**
 	 * Apply macOS menu icon theming to all menu items in the menu bar.
@@ -473,20 +457,9 @@ public class Icons {
 		if (icon instanceof MacMenuIcon) {
 			return icon;
 		}
-		
-		// Unwrap ScaledIcon to check the underlying icon
-		Icon underlyingIcon = icon;
-		if (icon instanceof ScaledIcon) {
-			underlyingIcon = ((ScaledIcon) icon).getDelegate();
-		}
-		
-		// Only apply macOS theming to FlatSVGIcon
-		if (!(underlyingIcon instanceof FlatSVGIcon)) {
+		if (!(icon instanceof FlatSVGIcon)) {
 			return icon;
 		}
-		
-		// Wrap the original icon (which may be a ScaledIcon) in MacMenuIcon
-		// This preserves scaling while applying color theming
 		return new MacMenuIcon(icon, false);
 	}
 
@@ -537,74 +510,6 @@ public class Icons {
 		return new ImageIcon(GrayFilter.createDisabledImage(((ImageIcon) icon).getImage()));
 	}
 
-	/**
-	 * An icon wrapper that scales an icon to specific dimensions.
-	 */
-	private static final class ScaledIcon implements Icon {
-		private final Icon delegate;
-		private final int width;
-		private final int height;
-		private Image cachedImage;
-
-		private ScaledIcon(Icon delegate, int width, int height) {
-			this.delegate = delegate;
-			this.width = width;
-			this.height = height;
-		}
-
-		/**
-		 * Get the underlying delegate icon.
-		 * @return the delegate icon
-		 */
-		Icon getDelegate() {
-			return delegate;
-		}
-
-		@Override
-		public int getIconWidth() {
-			return width;
-		}
-
-		@Override
-		public int getIconHeight() {
-			return height;
-		}
-
-		@Override
-		public void paintIcon(Component c, Graphics g, int x, int y) {
-			if (cachedImage == null) {
-				// First, paint the delegate icon to a temporary image at its original size
-				int origWidth = delegate.getIconWidth();
-				int origHeight = delegate.getIconHeight();
-				BufferedImage tempImage = new BufferedImage(origWidth, origHeight, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D tempG2 = tempImage.createGraphics();
-				try {
-					tempG2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, 
-							java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-					delegate.paintIcon(c, tempG2, 0, 0);
-				} finally {
-					tempG2.dispose();
-				}
-				
-				// Then scale it to the target size
-				Image scaled = tempImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-				cachedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g2 = ((BufferedImage) cachedImage).createGraphics();
-				try {
-					g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, 
-							java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-					g2.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, 
-							java.awt.RenderingHints.VALUE_RENDER_QUALITY);
-					g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, 
-							java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.drawImage(scaled, 0, 0, null);
-				} finally {
-					g2.dispose();
-				}
-			}
-			g.drawImage(cachedImage, x, y, null);
-		}
-	}
 
 	/**
 	 * An icon wrapper that tints the icon to match macOS menu text colors.
