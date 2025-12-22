@@ -582,7 +582,7 @@ private static final Translator trans = Application.getTranslator();
 
 		//  export sim table...
 		AbstractAction simTableExportAction = simulationPanel.getExportSimulationTableAsCSVAction();
-		JMenuItem exportSimTableToCSVMenuItem = new JMenuItem(simTableExportAction);
+		JMenuItem exportSimTableToCSVMenuItem = createMenuItemFromAction(simTableExportAction);
 		fileMenu.add(exportSimTableToCSVMenuItem);
 
 		fileMenu.addSeparator();

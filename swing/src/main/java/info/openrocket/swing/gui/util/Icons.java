@@ -105,14 +105,26 @@ public class Icons {
 			"pix/icons/document-open.png",
 			"Open document");
 	public static final Icon FILE_OPEN_RECENT = loadSvgIcon("pix/icons/lucide/file-clock.svg", "Open recent document");
-	public static final Icon FILE_OPEN_EXAMPLE = loadImageIcon("pix/icons/document-open-example.png", "Open example document");
+	public static final Icon FILE_OPEN_EXAMPLE = loadIcon(
+			"pix/icons/lucide/file-info.svg",
+			"pix/icons/document-open-example.png",
+			"Open example document");
 	public static final Icon FILE_SAVE = loadIcon(
 			"pix/icons/lucide/save.svg",
 			"pix/icons/document-save.png",
 			"Save document");
-	public static final Icon FILE_SAVE_AS = loadImageIcon("pix/icons/document-save-as.png", "Save document as");
-	public static final Icon SAVE_DECAL = loadImageIcon("pix/icons/Painting-Transparent-PNG_16.png", "Save decal image");
-	public static final Icon FILE_PRINT = loadImageIcon("pix/icons/print-design.specs.png", "Print specifications");
+	public static final Icon FILE_SAVE_AS = loadIcon(
+			"pix/icons/lucide/save-as.svg",
+			"pix/icons/document-save-as.png",
+			"Save document as");
+	public static final Icon SAVE_DECAL = loadIcon(
+			"pix/icons/lucide/file-image.svg",
+			"pix/icons/Painting-Transparent-PNG_16.png",
+			"Save decal image");
+	public static final Icon FILE_PRINT = loadIcon(
+			"pix/icons/lucide/printer.svg",
+			"pix/icons/print-design.specs.png",
+			"Print specifications");
 	public static final Icon FILE_IMPORT = loadIcon(
 			"pix/icons/lucide/import.svg",
 			"pix/icons/import.png",
@@ -121,11 +133,20 @@ public class Icons {
 			"pix/icons/lucide/export.svg",
 			"pix/icons/export.png",
 			"Export");
-	public static final Icon SIM_TABLE_EXPORT = loadImageIcon("pix/icons/sim_table_export.png", "Export simulation table");
+	public static final Icon SIM_TABLE_EXPORT = loadIcon(
+			"pix/icons/lucide/sheet.svg",
+			"pix/icons/sim_table_export.png",
+			"Export simulation table");
 	public static final Icon EXPORT_3D = loadImageIcon("pix/icons/model_export3d.png", "Export 3D");
 	public static final Icon EXPORT_SVG = loadImageIcon("pix/icons/svg-logo.png", "Export SVG");
-	public static final Icon FILE_CLOSE = loadImageIcon("pix/icons/document-close.png", "Close document");
-	public static final Icon FILE_QUIT = loadImageIcon("pix/icons/application-exit.png", "Quit OpenRocket");
+	public static final Icon FILE_CLOSE = loadIcon(
+			"pix/icons/lucide/circle-x.svg",
+			"pix/icons/document-close.png",
+			"Close document");
+	public static final Icon FILE_QUIT = loadIcon(
+			"pix/icons/lucide/power.svg",
+			"pix/icons/application-exit.png",
+			"Quit OpenRocket");
 	public static final Icon EDIT_UNDO = loadIcon(
 			"pix/icons/lucide/undo.svg",
 			"pix/icons/edit-undo.png",
@@ -138,7 +159,10 @@ public class Icons {
 			"pix/icons/lucide/square-pen.svg",
 			"pix/icons/edit-edit.png",
 			"Edit");
-	public static final Icon EDIT_RENAME = loadImageIcon("pix/icons/edit-rename.png", "Rename");
+	public static final Icon EDIT_RENAME = loadIcon(
+			"pix/icons/lucide/rename.svg",
+			"pix/icons/edit-rename.png",
+			"Rename");
 	public static final Icon EDIT_CUT = loadIcon(
 			"pix/icons/lucide/scissors.svg",
 			"pix/icons/edit-cut.png",
@@ -164,25 +188,70 @@ public class Icons {
 			"pix/icons/edit-scale.png",
 			"Scale");
 
-	public static final Icon SIM_RUN = loadImageIcon("pix/icons/sim-run.png", "Run");
-	public static final Icon SIM_PLOT = loadImageIcon("pix/icons/sim-plot.png", "Plot");
+	public static final Icon SIM_RUN = loadIcon(
+			"pix/icons/lucide/play-filled.svg",
+			"pix/icons/sim-run.png",
+			"Run");	// TODO: make green
+	public static final Icon SIM_PLOT = loadIcon(
+			"pix/icons/lucide/chart-spline.svg",
+			"pix/icons/sim-plot.png",
+			"Plot");
 	
-	public static final Icon HELP_ABOUT = loadImageIcon("pix/icons/help-about.png", "About");
-	public static final Icon HELP_CHECK_FOR_UPDATES = loadImageIcon("pix/icons/help-check-for-updates.png", "Check For Updates");
-	public static final Icon HELP_LICENSE = loadImageIcon("pix/icons/help-license.png", "License");
-	public static final Icon HELP_BUG_REPORT = loadImageIcon("pix/icons/help-bug.png", "Bug report");
-	public static final Icon HELP_DEBUG_LOG = loadImageIcon("pix/icons/help-log.png", "Debug log");
-	public static final Icon HELP_TOURS = loadImageIcon("pix/icons/help-tours.png", "Guided tours");
-	public static final Icon DOCUMENTATION = loadImageIcon("pix/icons/documentation.png", "Documentation");
+	public static final Icon HELP_ABOUT = loadIcon(
+			"pix/icons/lucide/info.svg",
+			"pix/icons/help-about.png",
+			"About");
+	public static final Icon HELP_CHECK_FOR_UPDATES = loadIcon(
+			"pix/icons/lucide/refresh-cw.svg",
+			"pix/icons/help-check-for-updates.png",
+			"Check For Updates");
+	public static final Icon HELP_LICENSE = loadIcon(
+			"pix/icons/lucide/scroll.svg",
+			"pix/icons/help-license.png",
+			"License");
+	public static final Icon HELP_BUG_REPORT = loadIcon(
+			"pix/icons/lucide/bug.svg",
+			"pix/icons/help-bug.png",
+			"Bug report");
+	public static final Icon HELP_DEBUG_LOG = loadIcon(
+			"pix/icons/lucide/notepad-text.svg",
+			"pix/icons/help-log.png",
+			"Debug log");
+	public static final Icon HELP_TOURS = loadIcon(
+			"pix/icons/lucide/life-buoy.svg",
+			"pix/icons/help-tours.png",
+			"Guided tours");
+	public static final Icon DOCUMENTATION = loadIcon(
+			"pix/icons/lucide/book-open-text.svg",
+			"pix/icons/documentation.png",
+			"Documentation");
 
-	public static final Icon ZOOM_IN = loadImageIcon("pix/icons/zoom-in.png", "Zoom in");
-	public static final Icon ZOOM_OUT = loadImageIcon("pix/icons/zoom-out.png", "Zoom out");
-	public static final Icon ZOOM_RESET = loadImageIcon("pix/icons/zoom-reset.png", "Reset Zoom & Pan");
+	public static final Icon ZOOM_IN = loadIcon(
+			"pix/icons/lucide/zoom-in.svg",
+			"pix/icons/zoom-in.png",
+			"Zoom in");
+	public static final Icon ZOOM_OUT = loadIcon(
+			"pix/icons/lucide/zoom-out.svg",
+			"pix/icons/zoom-out.png",
+			"Zoom out");
+	public static final Icon ZOOM_RESET = loadIcon(
+			"pix/icons/lucide/zoom-fit.svg",
+			"pix/icons/zoom-reset.png",
+			"Reset Zoom & Pan");
 	
-	public static final Icon PREFERENCES = loadImageIcon("pix/icons/preferences.png", "Preferences");
+	public static final Icon PREFERENCES = loadIcon(
+			"pix/icons/lucide/cog.svg",
+			"pix/icons/preferences.png",
+			"Preferences");
 	
-	public static final Icon CONFIGURE = loadImageIcon("pix/icons/configure.png", "Configure");
-	public static final Icon HELP = loadImageIcon("pix/icons/help-about.png", "Help");
+	public static final Icon CONFIGURE = loadIcon(
+			"pix/icons/lucide/file-cog.svg",
+			"pix/icons/configure.png",
+			"Configure");
+	public static final Icon HELP = loadIcon(
+			"pix/icons/lucide/info.svg",
+			"pix/icons/help-about.png",
+			"Help");
 	public static final Icon UP = loadIcon(
 			"pix/icons/lucide/arrow-big-up-dash.svg",
 			"pix/icons/up.png",
@@ -191,39 +260,79 @@ public class Icons {
 			"pix/icons/lucide/arrow-big-down-dash.svg",
 			"pix/icons/down.png",
 			"Down");
-	public static final Icon REFRESH = loadImageIcon("pix/icons/refresh.png", "Refresh");
+	public static final Icon REFRESH = loadIcon(
+			"pix/icons/lucide/refresh-ccw.svg",
+			"pix/icons/refresh.png",
+			"Refresh");
 	
-	public static final Icon NOT_FAVORITE = loadImageIcon("pix/icons/star_silver.png", "Not favorite");
-	public static final Icon FAVORITE = loadImageIcon("pix/icons/star_gold.png", "Favorite");
+	public static final Icon NOT_FAVORITE = loadIcon(
+			"pix/icons/lucide/star-off.svg",
+			"pix/icons/star_silver.png",
+			"Not favorite");
+	public static final Icon FAVORITE = loadIcon(
+			"pix/icons/lucide/star.svg",
+			"pix/icons/star_gold.png",
+			"Favorite");
 
-	public static final Icon WARNING_LOW = loadImageIcon("pix/icons/warning_low.png", "Informational");
-	public static final Icon WARNING_NORMAL = loadImageIcon("pix/icons/warning_normal.png", "Warning");
-	public static final Icon WARNING_HIGH = loadImageIcon("pix/icons/warning_high.png", "Critical");
+	public static final Icon WARNING_LOW = loadIcon(
+			"pix/icons/lucide/info.svg",
+			"pix/icons/warning_low.png",
+			"Informational");		// TODO: blue
+	public static final Icon WARNING_NORMAL = loadIcon(
+			"pix/icons/lucide/triangle-alert.svg",
+			"pix/icons/warning_normal.png",
+			"Warning");		// TODO: orange
+	public static final Icon WARNING_HIGH = loadIcon(
+			"pix/icons/lucide/circle-alert.svg",
+			"pix/icons/warning_high.png",
+			"Critical");		// TODO: red
 
-	public static final Icon MASS_OVERRIDE_LIGHT = loadImageIcon("pix/icons/mass-override_light.png", "Mass Override");
-	public static final Icon MASS_OVERRIDE_DARK = loadImageIcon("pix/icons/mass-override_dark.png", "Mass Override");
-	public static final Icon MASS_OVERRIDE_SUBCOMPONENT_LIGHT = loadImageIcon("pix/icons/mass-override-subcomponent_light.png", "Mass Override Subcomponent");
-	public static final Icon MASS_OVERRIDE_SUBCOMPONENT_DARK = loadImageIcon("pix/icons/mass-override-subcomponent_dark.png", "Mass Override Subcomponent");
-	public static final Icon CG_OVERRIDE_LIGHT = loadImageIcon("pix/icons/cg-override_light.png", "CG Override");
-	public static final Icon CG_OVERRIDE_DARK = loadImageIcon("pix/icons/cg-override_dark.png", "CG Override");
-	public static final Icon CG_OVERRIDE_SUBCOMPONENT_LIGHT = loadImageIcon("pix/icons/cg-override-subcomponent_light.png", "CG Override Subcomponent");
-	public static final Icon CG_OVERRIDE_SUBCOMPONENT_DARK = loadImageIcon("pix/icons/cg-override-subcomponent_dark.png", "CG Override Subcomponent");
-	public static final Icon CD_OVERRIDE_LIGHT = loadImageIcon("pix/icons/cd-override_light.png", "CD Override");
-	public static final Icon CD_OVERRIDE_DARK = loadImageIcon("pix/icons/cd-override_dark.png", "CD Override");
-	public static final Icon CD_OVERRIDE_SUBCOMPONENT_LIGHT = loadImageIcon("pix/icons/cd-override-subcomponent_light.png", "CD Override Subcomponent");
-	public static final Icon CD_OVERRIDE_SUBCOMPONENT_DARK = loadImageIcon("pix/icons/cd-override-subcomponent_dark.png", "CD Override Subcomponent");
+	public static final Icon MASS_OVERRIDE = loadIcon(
+			"pix/icons/lucide/weight.svg",
+			"pix/icons/mass-override_light.png",
+			"Mass Override");	// TODO: blue
+	public static final Icon MASS_OVERRIDE_SUBCOMPONENT = loadIcon(
+			"pix/icons/lucide/weight.svg",
+			"pix/icons/mass-override-subcomponent_light.png",
+			"Mass Override Subcomponent");	// TODO: grey and smaller scale
+	public static final Icon CG_OVERRIDE = loadIcon(
+			"pix/icons/lucide/cg-override.svg",
+			"pix/icons/cg-override_light.png",
+			"CG Override");	// TODO: blue
+	public static final Icon CG_OVERRIDE_SUBCOMPONENT = loadIcon(
+			"pix/icons/lucide/cg-override.svg",
+			"pix/icons/cg-override-subcomponent_light.png",
+			"CG Override Subcomponent");	// TODO: grey and smaller scale
+	public static final Icon CD_OVERRIDE = loadIcon(
+			"pix/icons/lucide/cd-override.svg",
+			"pix/icons/cd-override_light.png",
+			"CD Override");	// TODO: blue
+	public static final Icon CD_OVERRIDE_SUBCOMPONENT = loadIcon(
+			"pix/icons/lucide/cd-override.svg",
+			"pix/icons/cd-override-subcomponent_light.png",
+			"CD Override Subcomponent");	// TODO: grey and smaller scale
 
-	public static final Icon COMPONENT_HIDDEN = loadImageIcon("pix/icons/component-hidden.png", "Component Hidden");
-	public static final Icon COMPONENT_HIDDEN_DARK = loadImageIcon("pix/icons/component-hidden_dark.png", "Component Hidden");
-	public static final Icon COMPONENT_HIDDEN_LIGHT = loadImageIcon("pix/icons/component-hidden_light.png", "Component Hidden");
-	public static final Icon COMPONENT_SHOWING_DARK = loadImageIcon("pix/icons/component-showing_dark.png", "Component Showing");
-	public static final Icon COMPONENT_SHOWING_LIGHT = loadImageIcon("pix/icons/component-showing_light.png", "Component Showing");
+	public static final Icon COMPONENT_HIDDEN = loadIcon(
+			"pix/icons/lucide/eye-off.svg",
+			"pix/icons/component-hidden.png",
+			"Component Hidden");
+	public static final Icon COMPONENT_SHOWING = loadIcon(
+			"pix/icons/lucide/eye.svg",
+			"pix/icons/component-showing_light.png",
+			"Component Showing");
+	public static final Icon COMPONENT_DISABLED = loadIcon(
+			"pix/icons/lucide/ban.svg",
+			"pix/icons/component-disabled_light.png",
+			"Component Disabled");
 
-	public static final Icon COMPONENT_DISABLED_DARK = loadImageIcon("pix/icons/component-disabled_dark.png", "Component Disabled");
-	public static final Icon COMPONENT_DISABLED_LIGHT = loadImageIcon("pix/icons/component-disabled_light.png", "Component Disabled");
-
-	public static final Icon LOCKED = loadImageIcon("pix/icons/locked.png", "Locked");
-	public static final Icon UNLOCKED = loadImageIcon("pix/icons/unlocked.png", "Unlocked");
+	public static final Icon LOCKED = loadIcon(
+			"pix/icons/lucide/lock.svg",
+			"pix/icons/locked.png",
+			"Locked");
+	public static final Icon UNLOCKED = loadIcon(
+			"pix/icons/lucide/lock-open.svg",
+			"pix/icons/unlocked.png",
+			"Unlocked");
 
 	// MANUFACTURERS ICONS
 	public static final Icon RASAERO = loadImageIcon("pix/icons/RASAero_16.png", "RASAero Icon");
