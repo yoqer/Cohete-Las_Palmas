@@ -325,7 +325,6 @@ public class PhotoFrame extends JFrame {
 		sizeMenu.add(new JMenuItem(new SizeAction(1280, 720, "720p")));
 		sizeMenu.add(new JMenuItem(new SizeAction(1920, 1080, "1080p")));
 
-		Icons.applyMenuBarIconTheme(menubar);
 		return menubar;
 	}
 

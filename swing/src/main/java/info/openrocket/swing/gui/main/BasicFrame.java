@@ -10,6 +10,7 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -125,9 +126,6 @@ import info.openrocket.swing.utils.ComponentPresetEditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
-
-
 public class BasicFrame extends JFrame {
 	private static final long serialVersionUID = 948877655223365313L;
 
@@ -140,11 +138,6 @@ private static final int PREVIEW_MAX_HEIGHT = 800;
 
 private static final Translator trans = Application.getTranslator();
 	private static final ApplicationPreferences prefs = Application.getPreferences();
-
-	public static final int SHORTCUT_KEY = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
-
-	public static final int SHIFT_SHORTCUT_KEY = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() |
-			SHIFT_DOWN_MASK;
 
 	public static final int DESIGN_TAB = 0;
 	public static final int FLIGHT_CONFIGURATION_TAB = 1;
@@ -458,10 +451,10 @@ private static final Translator trans = Application.getTranslator();
 
 		//// 	Save
 		item = new JMenuItem(trans.get("main.menu.file.save"), KeyEvent.VK_S);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.META_DOWN_MASK));
 		//// Save the current rocket design
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.save.desc"));
-		item.setIcon(Icons.FILE_SAVE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_SAVE));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -474,10 +467,10 @@ private static final Translator trans = Application.getTranslator();
 		//// 	Save as...
 		item = new JMenuItem(trans.get("main.menu.file.saveAs"), KeyEvent.VK_A);
 		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-				SHORTCUT_KEY | ActionEvent.SHIFT_MASK));
+				InputEvent.SHIFT_DOWN_MASK | InputEvent.META_DOWN_MASK));
 		//// Save the current rocket design to a new file
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.saveAs.desc"));
-		item.setIcon(Icons.FILE_SAVE_AS);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_SAVE_AS));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -491,11 +484,11 @@ private static final Translator trans = Application.getTranslator();
 		//// 	Export as
 		JMenu exportSubMenu = new JMenu(trans.get("main.menu.file.exportAs"));
 		exportSubMenu.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.desc"));
-		exportSubMenu.setIcon(Icons.FILE_EXPORT);
+		exportSubMenu.setIcon(Icons.deriveMenuIcon(Icons.FILE_EXPORT));
 
 		////// 		Export RASAero
 		JMenuItem exportRASAero = new JMenuItem(trans.get("main.menu.file.exportAs.RASAero"));
-		exportRASAero.setIcon(Icons.RASAERO);
+		exportRASAero.setIcon(Icons.deriveMenuIcon(Icons.RASAERO));
 		exportRASAero.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.RASAero.desc"));
 		exportRASAero.addActionListener(new ActionListener() {
 			@Override
@@ -506,7 +499,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////// 		Export RockSim
 		JMenuItem exportRockSim = new JMenuItem(trans.get("main.menu.file.exportAs.RockSim"));
-		exportRockSim.setIcon(Icons.ROCKSIM);
+		exportRockSim.setIcon(Icons.deriveMenuIcon(Icons.ROCKSIM));
 		exportRockSim.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.RockSim.desc"));
 		exportRockSim.addActionListener(new ActionListener() {
 			@Override
@@ -519,7 +512,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////// 		Export Wavefront OBJ
 		JMenuItem exportOBJ = new JMenuItem(trans.get("main.menu.file.exportAs.WavefrontOBJ"));
-		exportOBJ.setIcon(Icons.EXPORT_3D);
+		exportOBJ.setIcon(Icons.deriveMenuIcon(Icons.EXPORT_3D));
 		exportOBJ.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.WavefrontOBJ.desc"));
 		exportOBJ.addActionListener(new ActionListener() {
 			@Override
@@ -536,7 +529,7 @@ private static final Translator trans = Application.getTranslator();
 
 		//////		Export SVG profiles
 		JMenuItem exportSvgProfiles = new JMenuItem(trans.get("main.menu.file.exportAs.SVGProfiles"));
-		exportSvgProfiles.setIcon(Icons.EXPORT_SVG);
+		exportSvgProfiles.setIcon(Icons.deriveMenuIcon(Icons.EXPORT_SVG));
 		exportSvgProfiles.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGProfiles.desc"));
 		exportSvgProfiles.addActionListener(new ActionListener() {
 			@Override
@@ -553,7 +546,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Save decal image...
 		item = new JMenuItem(trans.get("main.menu.file.exportDecal"));
-		item.setIcon(Icons.SAVE_DECAL);
+		item.setIcon(Icons.deriveMenuIcon(Icons.SAVE_DECAL));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportDecal.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -575,9 +568,9 @@ private static final Translator trans = Application.getTranslator();
 
 		//// 	Print design info...
 		item = new JMenuItem(trans.get("main.menu.file.print"), KeyEvent.VK_P);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.META_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.print.desc"));
-		item.setIcon(Icons.FILE_PRINT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_PRINT));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -600,8 +593,8 @@ private static final Translator trans = Application.getTranslator();
 		//// Properties
 		item = new JMenuItem(trans.get("main.menu.file.properties"), KeyEvent.VK_I);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.properties.desc"));
-		item.setIcon(Icons.CONFIGURE);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, SHORTCUT_KEY));
+		item.setIcon(Icons.deriveMenuIcon(Icons.CONFIGURE));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.META_DOWN_MASK));
 		item.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -613,10 +606,10 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Close
 		item = new JMenuItem(trans.get("main.menu.file.close"), KeyEvent.VK_C);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK));
 		//// Close the current rocket design
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.close.desc"));
-		item.setIcon(Icons.FILE_CLOSE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_CLOSE));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -631,10 +624,10 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Quit
 		item = new JMenuItem(trans.get("main.menu.file.quit"), KeyEvent.VK_Q);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.META_DOWN_MASK));
 		//// Quit the program
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.quit.desc"));
-		item.setIcon(Icons.FILE_QUIT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_QUIT));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -653,8 +646,8 @@ private static final Translator trans = Application.getTranslator();
 		menubar.add(editMenu);
 
 		Action action = UndoRedoAction.newUndoAction(document);
-		item = new JMenuItem(action);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, SHORTCUT_KEY));
+		item = createMenuItemFromAction(action);
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_U);
 
 		////	Undo the previous operation
@@ -663,8 +656,8 @@ private static final Translator trans = Application.getTranslator();
 		editMenu.add(item);
 
 		action = UndoRedoAction.newRedoAction(document);
-		item = new JMenuItem(action);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, SHORTCUT_KEY));
+		item = createMenuItemFromAction(action);
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_R);
 
 		////	Redo the previously undone operation
@@ -674,51 +667,51 @@ private static final Translator trans = Application.getTranslator();
 		editMenu.addSeparator();
 
 
-		item = new JMenuItem(actions.getEditAction());
+		item = createMenuItemFromAction(actions.getEditAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getCutAction());
+		item = createMenuItemFromAction(actions.getCutAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getCopyAction());
+		item = createMenuItemFromAction(actions.getCopyAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getPasteAction());
+		item = createMenuItemFromAction(actions.getPasteAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getDuplicateAction());
+		item = createMenuItemFromAction(actions.getDuplicateAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getDeleteAction());
+		item = createMenuItemFromAction(actions.getDeleteAction());
 		editMenu.add(item);
 
 		editMenu.addSeparator();
 
 		JMenu selectSubMenu = new JMenu(trans.get("RocketActions.Select"));
 		editMenu.add(selectSubMenu);
-		item = new JMenuItem(actions.getSelectSameColorAction());
+		item = createMenuItemFromAction(actions.getSelectSameColorAction());
 		selectSubMenu.add(item);
-		item = new JMenuItem(actions.getDeselectAllAction());
+		item = createMenuItemFromAction(actions.getDeselectAllAction());
 		selectSubMenu.add(item);
 
 		editMenu.addSeparator();
 
-		item = new JMenuItem(actions.getScaleAction());
+		item = createMenuItemFromAction(actions.getScaleAction());
 		editMenu.add(item);
 
 		////	Visibility
 		JMenu visibilitySubMenu = new JMenu(trans.get("RocketActions.Visibility"));
 		editMenu.add(visibilitySubMenu);
-		item = new JMenuItem(actions.getToggleVisibilityAction());
+		item = createMenuItemFromAction(actions.getToggleVisibilityAction());
 		visibilitySubMenu.add(item);
-		item = new JMenuItem(actions.getShowAllComponentsAction());
+		item = createMenuItemFromAction(actions.getShowAllComponentsAction());
 		visibilitySubMenu.add(item);
 
 		editMenu.addSeparator();
 
 		////	Preferences
 		item = new JMenuItem(trans.get("main.menu.edit.preferences"));
-		item.setIcon(Icons.PREFERENCES);
+		item.setIcon(Icons.deriveMenuIcon(Icons.PREFERENCES));
 
 		////	Setup the application preferences
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.edit.preferences.desc"));
@@ -815,8 +808,18 @@ private static final Translator trans = Application.getTranslator();
 		////	Help
 		generateHelpMenu(menubar, this);
 
-		Icons.applyMenuBarIconTheme(menubar);
 		this.setJMenuBar(menubar);
+	}
+
+	/**
+	 * Create a JMenuItem from an Action. It styles the icon appropriately.
+	 * @param action the action
+	 * @return the menu item
+	 */
+	private static JMenuItem createMenuItemFromAction(Action action) {
+		JMenuItem item = new JMenuItem(action);
+		item.setIcon(Icons.deriveMenuIcon(item.getIcon()));
+		return item;
 	}
 
 	public static void generateHelpMenu(JMenuBar menubar, JFrame parent) {
@@ -830,7 +833,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Guided tours
 		item = new JMenuItem(trans.get("main.menu.help.tours"), KeyEvent.VK_L);
-		item.setIcon(Icons.HELP_TOURS);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_TOURS));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.tours.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -843,7 +846,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Online Documentation
 		item = new JMenuItem(trans.get("main.menu.help.documentation"));
-		item.setIcon(Icons.DOCUMENTATION);
+		item.setIcon(Icons.deriveMenuIcon(Icons.DOCUMENTATION));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.documentation.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -858,7 +861,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Bug report
 		item = new JMenuItem(trans.get("main.menu.help.bugReport"), KeyEvent.VK_B);
-		item.setIcon(Icons.HELP_BUG_REPORT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_BUG_REPORT));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.bugReport.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -871,8 +874,8 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Debug log
 		item = new JMenuItem(trans.get("main.menu.help.debugLog"), KeyEvent.VK_D);
-		item.setIcon(Icons.HELP_DEBUG_LOG);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, SHIFT_SHORTCUT_KEY));
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_DEBUG_LOG));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.SHIFT_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.debugLog.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -887,7 +890,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	License
 		item = new JMenuItem(trans.get("main.menu.help.license"), KeyEvent.VK_L);
-		item.setIcon(Icons.HELP_LICENSE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_LICENSE));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.license.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -900,7 +903,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	Check for updates
 		item = new JMenuItem(trans.get("main.menu.help.checkForUpdates"), KeyEvent.VK_U);
-		item.setIcon(Icons.HELP_CHECK_FOR_UPDATES);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_CHECK_FOR_UPDATES));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.checkForUpdates.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -913,7 +916,7 @@ private static final Translator trans = Application.getTranslator();
 
 		////	About
 		item = new JMenuItem(trans.get("main.menu.help.about"), KeyEvent.VK_A);
-		item.setIcon(Icons.HELP_ABOUT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_ABOUT));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.about.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -930,10 +933,10 @@ private static final Translator trans = Application.getTranslator();
 
 		//// New
 		item = new JMenuItem(trans.get("main.menu.file.new"), KeyEvent.VK_N);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_N);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.new.desc"));
-		item.setIcon(Icons.FILE_NEW);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_NEW));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -948,9 +951,9 @@ private static final Translator trans = Application.getTranslator();
 
 		//// 	Open...
 		item = new JMenuItem(trans.get("main.menu.file.open"), KeyEvent.VK_O);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.META_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.open.desc"));
-		item.setIcon(Icons.FILE_OPEN);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -963,26 +966,26 @@ private static final Translator trans = Application.getTranslator();
 		//// 	Open Recent
 		item = new MRUDesignFileAction(trans.get("main.menu.file.openRecent"), parent);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.openRecent.desc"));
-		item.setIcon(Icons.FILE_OPEN_RECENT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN_RECENT));
 		fileMenu.add(item);
 
 		//// 	Open example
 		BasicFrame basicFrame = parent instanceof BasicFrame ? (BasicFrame) parent : null;
 		item = new ExampleDesignFileAction(trans.get("main.menu.file.openExample"), basicFrame);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.openExample.desc"));
-		item.setIcon(Icons.FILE_OPEN_EXAMPLE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN_EXAMPLE));
 		fileMenu.add(item);
 
 		//// 	Import
 		JMenu importSubMenu = new JMenu(trans.get("main.menu.file.import"));
 		importSubMenu.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.desc"));
-		importSubMenu.setIcon(Icons.FILE_IMPORT);
+		importSubMenu.setIcon(Icons.deriveMenuIcon(Icons.FILE_IMPORT));
 		fileMenu.add(importSubMenu);
 
 		////// 		Import RASAero
 		JMenuItem importRASAero = new JMenuItem(trans.get("main.menu.file.import.RASAero"));
 		importRASAero.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.RASAero.desc"));
-		importRASAero.setIcon(Icons.RASAERO);
+		importRASAero.setIcon(Icons.deriveMenuIcon(Icons.RASAERO));
 		importRASAero.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -994,7 +997,7 @@ private static final Translator trans = Application.getTranslator();
 		////// 		Import RockSim
 		JMenuItem importRockSim = new JMenuItem(trans.get("main.menu.file.import.RockSim"));
 		importRockSim.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.RockSim.desc"));
-		importRockSim.setIcon(Icons.ROCKSIM);
+		importRockSim.setIcon(Icons.deriveMenuIcon(Icons.ROCKSIM));
 		importRockSim.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
