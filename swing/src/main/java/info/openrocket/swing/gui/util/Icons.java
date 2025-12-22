@@ -38,6 +38,8 @@ public class Icons {
 	// SVGs can opt into theme coloring by using this placeholder RGB.
 	private static final int SVG_THEME_COLOR_RGB = 0xFF00FF;
 	private static final String SVG_DEFAULT_COLOR_KEY = "OR.icons.default";
+	// Multiplier to scale icons relative to font height (icons are typically slightly larger than text)
+	private static final double ICON_FONT_SIZE_MULTIPLIER = 1.25;
 	
 	static {
 		log.debug("Starting to load icons");
@@ -365,6 +367,7 @@ public class Icons {
 	/**
 	 * Scales an SVG icon to match the font height, maintaining the original aspect ratio.
 	 * The width will be scaled proportionally based on the original icon's aspect ratio.
+	 * Icons are scaled to be slightly larger than the font height for better visual balance.
 	 * @param icon the SVG icon to scale
 	 * @return a scaled icon that matches the font height, or the original icon if scaling fails
 	 */
@@ -373,8 +376,8 @@ public class Icons {
 			return null;
 		}
 		
-		// Get the font size (already includes UI scale)
-		int targetHeight = prefs.getUIFontSize();
+		// Get the font size (already includes UI scale) and apply multiplier
+		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER);
 		
 		// Get the original icon dimensions
 		int originalWidth = icon.getIconWidth();
@@ -390,7 +393,7 @@ public class Icons {
 			return icon;
 		}
 		
-		// Calculate scale factor to match font height
+		// Calculate scale factor to match target height
 		double scale = (double) targetHeight / originalHeight;
 		
 		// Calculate new width maintaining aspect ratio
