@@ -296,7 +296,6 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		// Component info toggle button
 		infoBtn = new IconToggleButton();
 		infoBtn.setToolTipText(trans.get("RocketCompCfg.btn.ComponentInfo.ttip"));
-		infoBtn.setIconScale(1.2f);
 		infoBtn.setSelectedIcon(Icons.HELP_ABOUT);
 		buttonPanel.add(infoBtn, "split 3, gapright para");
 

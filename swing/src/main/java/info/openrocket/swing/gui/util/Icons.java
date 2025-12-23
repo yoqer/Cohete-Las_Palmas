@@ -192,7 +192,7 @@ public class Icons {
 			"pix/icons/lucide/play-filled.svg",
 			"pix/icons/sim-run.png",
 			"Run",
-			"OR.icons.play");	// TODO: make green
+			"OR.icons.play");
 	public static final Icon SIM_PLOT = loadIcon(
 			"pix/icons/lucide/chart-spline.svg",
 			"pix/icons/sim-plot.png",
@@ -278,40 +278,52 @@ public class Icons {
 	public static final Icon WARNING_LOW = loadIcon(
 			"pix/icons/lucide/info.svg",
 			"pix/icons/warning_low.png",
-			"Informational");		// TODO: blue
+			"Informational",
+			"OR.icons.warning.low");
 	public static final Icon WARNING_NORMAL = loadIcon(
 			"pix/icons/lucide/triangle-alert.svg",
 			"pix/icons/warning_normal.png",
-			"Warning");		// TODO: orange
+			"Warning",
+			"OR.icons.warning.normal");
 	public static final Icon WARNING_HIGH = loadIcon(
 			"pix/icons/lucide/circle-alert.svg",
 			"pix/icons/warning_high.png",
-			"Critical");		// TODO: red
+			"Critical",
+			"OR.icons.warning.high");
 
 	public static final Icon MASS_OVERRIDE = loadIcon(
 			"pix/icons/lucide/weight.svg",
 			"pix/icons/mass-override_light.png",
-			"Mass Override");	// TODO: blue
+			"Mass Override",
+			"OR.icons.override");
 	public static final Icon MASS_OVERRIDE_SUBCOMPONENT = loadIcon(
 			"pix/icons/lucide/weight.svg",
 			"pix/icons/mass-override-subcomponent_light.png",
-			"Mass Override Subcomponent");	// TODO: grey and smaller scale
+			"Mass Override Subcomponent",
+			"OR.icons.override.subcomponent",
+			0.75);
 	public static final Icon CG_OVERRIDE = loadIcon(
 			"pix/icons/lucide/cg-override.svg",
 			"pix/icons/cg-override_light.png",
-			"CG Override");	// TODO: blue
+			"CG Override",
+			"OR.icons.override");
 	public static final Icon CG_OVERRIDE_SUBCOMPONENT = loadIcon(
 			"pix/icons/lucide/cg-override.svg",
 			"pix/icons/cg-override-subcomponent_light.png",
-			"CG Override Subcomponent");	// TODO: grey and smaller scale
+			"CG Override Subcomponent",
+			"OR.icons.override.subcomponent",
+			0.75);
 	public static final Icon CD_OVERRIDE = loadIcon(
 			"pix/icons/lucide/cd-override.svg",
 			"pix/icons/cd-override_light.png",
-			"CD Override");	// TODO: blue
+			"CD Override",
+			"OR.icons.override");
 	public static final Icon CD_OVERRIDE_SUBCOMPONENT = loadIcon(
 			"pix/icons/lucide/cd-override.svg",
 			"pix/icons/cd-override-subcomponent_light.png",
-			"CD Override Subcomponent");	// TODO: grey and smaller scale
+			"CD Override Subcomponent",
+			"OR.icons.override.subcomponent",
+			0.75);
 
 	public static final Icon COMPONENT_HIDDEN = loadIcon(
 			"pix/icons/lucide/eye-off.svg",
@@ -401,10 +413,30 @@ public class Icons {
 	 * @return the loaded Icon, or null if neither file could be found
 	 */
 	public static Icon loadIcon(String svgFile, String rasterFile, String name, String colorKey) {
+		return loadIcon(svgFile, rasterFile, name, colorKey, 1.0);
+	}
+
+	/**
+	 * Loads an icon, preferring SVG format if available, otherwise falling back to a raster image.
+	 * @param svgFile the SVG file path
+	 * @param rasterFile the raster image file path
+	 * @param name the description of the icon
+	 * @param colorKey the UIManager color key for theming (can be null)
+	 * @param scaleMultiplier multiplier for icon size (1.0 = normal, < 1.0 = smaller, > 1.0 = larger)
+	 * @return the loaded Icon, or null if neither file could be found
+	 */
+	public static Icon loadIcon(String svgFile, String rasterFile, String name, String colorKey, double scaleMultiplier) {
 		if (hasResource(svgFile)) {
-			return loadSvgIcon(svgFile, name, colorKey);
+			if (colorKey == null) {
+				return loadSvgIcon(svgFile, name, Collections.emptyMap(), scaleMultiplier);
+			}
+			return loadSvgIcon(svgFile, name, Collections.singletonMap(SVG_THEME_COLOR_RGB, colorKey), scaleMultiplier);
 		}
-		return loadImageIcon(rasterFile, name);
+		Icon icon = loadImageIcon(rasterFile, name);
+		if (icon != null && scaleMultiplier != 1.0) {
+			return getScaledIcon(icon, scaleMultiplier);
+		}
+		return icon;
 	}
 
 	public static Icon loadIcon(String svgFile, String rasterFile, String name) {
@@ -419,13 +451,25 @@ public class Icons {
 	 * @return the loaded Icon, or null if the SVG file could not be found
 	 */
 	private static Icon loadSvgIcon(String file, String name, Map<Integer, String> colorKeys) {
+		return loadSvgIcon(file, name, colorKeys, 1.0);
+	}
+
+	/**
+	 * Loads an SVG icon from the specified file with optional color theming and scale multiplier.
+	 * @param file the SVG file path
+	 * @param name the description of the icon
+	 * @param colorKeys map of RGB integer values to UIManager color keys for theming
+	 * @param scaleMultiplier multiplier for icon size (1.0 = normal, < 1.0 = smaller, > 1.0 = larger)
+	 * @return the loaded Icon, or null if the SVG file could not be found
+	 */
+	private static Icon loadSvgIcon(String file, String name, Map<Integer, String> colorKeys, double scaleMultiplier) {
 		if (!hasResource(file)) {
 			Application.getExceptionHandler().handleErrorCondition("Image file " + file + " not found, ignoring.");
 			return null;
 		}
 
 		// Get the target height based on font size
-		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER);
+		int targetHeight = (int) Math.round(prefs.getUIFontSize() * ICON_FONT_SIZE_MULTIPLIER * scaleMultiplier);
 		
 		// First, create a temporary icon to get the original aspect ratio
 		FlatSVGIcon icon = new FlatSVGIcon(file, Icons.class.getClassLoader());
