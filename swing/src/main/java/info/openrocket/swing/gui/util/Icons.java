@@ -208,7 +208,7 @@ public class Icons {
 			"pix/icons/help-check-for-updates.png",
 			"Check For Updates");
 	public static final Icon HELP_LICENSE = loadIcon(
-			"pix/icons/lucide/scroll.svg",
+			"pix/icons/lucide/scale.svg",
 			"pix/icons/help-license.png",
 			"License");
 	public static final Icon HELP_BUG_REPORT = loadIcon(
@@ -220,11 +220,11 @@ public class Icons {
 			"pix/icons/help-log.png",
 			"Debug log");
 	public static final Icon HELP_TOURS = loadIcon(
-			"pix/icons/lucide/life-buoy.svg",
+			"pix/icons/lucide/bus.svg",
 			"pix/icons/help-tours.png",
 			"Guided tours");
 	public static final Icon DOCUMENTATION = loadIcon(
-			"pix/icons/lucide/book-open-text.svg",
+			"pix/icons/lucide/book-open.svg",
 			"pix/icons/documentation.png",
 			"Documentation");
 
