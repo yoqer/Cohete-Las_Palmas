@@ -191,6 +191,17 @@ public class Icons {
 			"pix/icons/lucide/ellipsis-vertical.svg",
 			"More options");
 
+	public static final Icon IMAGE_OPEN = loadSvgIcon(
+			"pix/icons/lucide/file-image.svg",
+			"Open image");
+	public static final Icon IMAGE_EDIT = loadIcon(
+			"pix/icons/lucide/square-pen.svg",
+			"pix/icons/edit-edit.png",
+			"Edit image");
+	public static final Icon IMAGE_NEW = loadSvgIcon(
+			"pix/icons/lucide/image-plus.svg",
+			"New image");
+
 	public static final Icon SIM_RUN = loadIcon(
 			"pix/icons/lucide/play-filled.svg",
 			"pix/icons/sim-run.png",
