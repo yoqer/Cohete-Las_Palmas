@@ -30,7 +30,7 @@ public class Icons {
 	private static final Translator trans = Application.getTranslator();
 	private static final SwingPreferences prefs = (SwingPreferences) Application.getPreferences();
 	// SVGs can opt into theme coloring by using this placeholder RGB.
-	private static final int SVG_THEME_COLOR_RGB = 0xFF00FF;
+	private static final int SVG_THEME_COLOR_RGB = 0x000000;	// All icons should be black by default
 	private static final String SVG_DEFAULT_COLOR_KEY = "OR.icons.default";
 	// Multiplier to scale icons relative to font height (icons are typically slightly larger than text)
 	private static final double ICON_FONT_SIZE_MULTIPLIER = 1.25;
@@ -191,7 +191,8 @@ public class Icons {
 	public static final Icon SIM_RUN = loadIcon(
 			"pix/icons/lucide/play-filled.svg",
 			"pix/icons/sim-run.png",
-			"Run");	// TODO: make green
+			"Run",
+			"OR.icons.play");	// TODO: make green
 	public static final Icon SIM_PLOT = loadIcon(
 			"pix/icons/lucide/chart-spline.svg",
 			"pix/icons/sim-plot.png",
@@ -474,24 +475,34 @@ public class Icons {
 			return null;
 		}
 
-		return new FlatSVGIcon.ColorFilter((component, color) -> {
-			String key = colorKeys.get(color.getRGB() & 0x00ffffff);
-			if (key == null) {
-				return color;
+		FlatSVGIcon.ColorFilter filter = new FlatSVGIcon.ColorFilter();
+
+		// Iterate over all color mappings
+		for (Map.Entry<Integer, String> entry : colorKeys.entrySet()) {
+			int placeholderRGB = entry.getKey() & 0x00ffffff; // Mask out alpha channel
+			String colorKey = entry.getValue();
+
+			// Create Color from placeholder RGB (opaque)
+			Color placeholderColor = new Color(placeholderRGB, false);
+
+			// Get themed color from UIManager with fallbacks
+			Color themedColor = UIManager.getColor(colorKey);
+			if (themedColor == null) {
+				themedColor = UIManager.getColor(SVG_DEFAULT_COLOR_KEY);
+			}
+			if (themedColor == null) {
+				themedColor = UIManager.getColor("Label.foreground");
+			}
+			if (themedColor == null) {
+				// Final fallback: use the placeholder color itself
+				continue;
 			}
 
-			Color themed = UIManager.getColor(key);
-			if (themed == null) {
-				themed = UIManager.getColor(SVG_DEFAULT_COLOR_KEY);
-			}
-			if (themed == null) {
-				themed = UIManager.getColor("Label.foreground");
-			}
-			if (themed == null) {
-				return color;
-			}
-			return preserveAlpha(themed, color);
-		});
+			// Add color mapping: placeholder color -> themed color
+			filter.add(placeholderColor, themedColor);
+		}
+
+		return filter;
 	}
 
 	/**
