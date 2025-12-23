@@ -342,7 +342,11 @@ public class Icons {
 	public static final Icon LOCKED = loadIcon(
 			"pix/icons/lucide/lock.svg",
 			"pix/icons/locked.png",
-			"Locked");
+			"Locked",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xf1c066, "OR.icons.locked"
+			));
 	public static final Icon UNLOCKED = loadIcon(
 			"pix/icons/lucide/lock-open.svg",
 			"pix/icons/unlocked.png",
@@ -442,6 +446,38 @@ public class Icons {
 
 	public static Icon loadIcon(String svgFile, String rasterFile, String name) {
 		return loadIcon(svgFile, rasterFile, name, SVG_DEFAULT_COLOR_KEY);
+	}
+
+	/**
+	 * Loads an icon, preferring SVG format if available, otherwise falling back to a raster image.
+	 * @param svgFile the SVG file path
+	 * @param rasterFile the raster image file path
+	 * @param name the description of the icon
+	 * @param colorKeys map of RGB integer values to UIManager color keys for theming
+	 * @return the loaded Icon, or null if neither file could be found
+	 */
+	public static Icon loadIcon(String svgFile, String rasterFile, String name, Map<Integer, String> colorKeys) {
+		return loadIcon(svgFile, rasterFile, name, colorKeys, 1.0);
+	}
+
+	/**
+	 * Loads an icon, preferring SVG format if available, otherwise falling back to a raster image.
+	 * @param svgFile the SVG file path
+	 * @param rasterFile the raster image file path
+	 * @param name the description of the icon
+	 * @param colorKeys map of RGB integer values to UIManager color keys for theming
+	 * @param scaleMultiplier multiplier for icon size (1.0 = normal, < 1.0 = smaller, > 1.0 = larger)
+	 * @return the loaded Icon, or null if neither file could be found
+	 */
+	public static Icon loadIcon(String svgFile, String rasterFile, String name, Map<Integer, String> colorKeys, double scaleMultiplier) {
+		if (hasResource(svgFile)) {
+			return loadSvgIcon(svgFile, name, colorKeys != null ? colorKeys : Collections.emptyMap(), scaleMultiplier);
+		}
+		Icon icon = loadImageIcon(rasterFile, name);
+		if (icon != null && scaleMultiplier != 1.0) {
+			return getScaledIcon(icon, scaleMultiplier);
+		}
+		return icon;
 	}
 
 	/**
