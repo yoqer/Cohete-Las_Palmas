@@ -187,6 +187,9 @@ public class Icons {
 			"pix/icons/lucide/scaling.svg",
 			"pix/icons/edit-scale.png",
 			"Scale");
+	public static final Icon MORE_OPTIONS = loadSvgIcon(
+			"pix/icons/lucide/ellipsis-vertical.svg",
+			"More options");
 
 	public static final Icon SIM_RUN = loadIcon(
 			"pix/icons/lucide/play-filled.svg",
@@ -392,7 +395,7 @@ public class Icons {
 	 * @return the SVG icon or null if not found
 	 */
 	public static Icon loadSvgIcon(String file, String name) {
-		return loadSvgIcon(file, name, Collections.emptyMap());
+		return loadSvgIcon(file, name, Collections.singletonMap(SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY));
 	}
 
 	/**
