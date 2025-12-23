@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 
 public class Icons {
@@ -563,6 +564,7 @@ public class Icons {
 
 	/**
 	 * Creates a color filter for SVG icons that maps specific RGB colors to UIManager color keys.
+	 * Uses dynamic color resolution to support theme changes at runtime.
 	 * @param colorKeys map of RGB integer values to UIManager color keys
 	 * @return a FlatSVGIcon.ColorFilter that applies the color mapping, or null if no mapping is provided
 	 */
@@ -571,17 +573,22 @@ public class Icons {
 			return null;
 		}
 
-		FlatSVGIcon.ColorFilter filter = new FlatSVGIcon.ColorFilter();
-
-		// Iterate over all color mappings
+		// Create a copy of the colorKeys map for use in the mapper function
+		Map<Integer, String> rgbToKeyMap = new HashMap<>();
 		for (Map.Entry<Integer, String> entry : colorKeys.entrySet()) {
 			int placeholderRGB = entry.getKey() & 0x00ffffff; // Mask out alpha channel
-			String colorKey = entry.getValue();
+			rgbToKeyMap.put(placeholderRGB, entry.getValue());
+		}
 
-			// Create Color from placeholder RGB (opaque)
-			Color placeholderColor = new Color(placeholderRGB, false);
+		// Use the mapper constructor for dynamic color resolution at paint time.
+		// This allows colors to update when the theme changes without needing to recreate the icons.
+		Function<Color, Color> colorMapper = originalColor -> {
+			int rgb = originalColor.getRGB() & 0x00ffffff;
+			String colorKey = rgbToKeyMap.get(rgb);
+			if (colorKey == null) {
+				return originalColor;
+			}
 
-			// Get themed color from UIManager with fallbacks
 			Color themedColor = UIManager.getColor(colorKey);
 			if (themedColor == null) {
 				themedColor = UIManager.getColor(SVG_DEFAULT_COLOR_KEY);
@@ -590,15 +597,17 @@ public class Icons {
 				themedColor = UIManager.getColor("Label.foreground");
 			}
 			if (themedColor == null) {
-				// Final fallback: use the placeholder color itself
-				continue;
+				return originalColor;
 			}
 
-			// Add color mapping: placeholder color -> themed color
-			filter.add(placeholderColor, themedColor);
-		}
+			// Preserve alpha of original color
+			if (themedColor.getAlpha() != originalColor.getAlpha()) {
+				return new Color((themedColor.getRGB() & 0x00ffffff) | (originalColor.getRGB() & 0xff000000), true);
+			}
+			return themedColor;
+		};
 
-		return filter;
+		return new FlatSVGIcon.ColorFilter(colorMapper);
 	}
 
 	/**
