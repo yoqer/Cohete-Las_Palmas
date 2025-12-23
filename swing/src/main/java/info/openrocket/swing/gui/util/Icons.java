@@ -180,9 +180,10 @@ public class Icons {
 			"pix/icons/edit-duplicate.png",
 			"Duplicate");
 	public static final Icon EDIT_DELETE = loadIcon(
-			"pix/icons/lucide/trash-2.svg",
+			"pix/icons/lucide/trash.svg",
 			"pix/icons/edit-delete.png",
-			"Delete");
+			"Delete",
+			"OR.icons.delete");
 	public static final Icon EDIT_SCALE = loadIcon(
 			"pix/icons/lucide/scaling.svg",
 			"pix/icons/edit-scale.png",
