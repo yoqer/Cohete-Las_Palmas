@@ -520,6 +520,7 @@ public class Icons {
 			return icon;
 		}
 
+		svgIcon = new FlatSVGIcon(svgIcon);
 		applyMacMenuColorFilter(svgIcon);
 		return svgIcon;
 	}
