@@ -201,7 +201,8 @@ public class Icons {
 	public static final Icon HELP_ABOUT = loadIcon(
 			"pix/icons/lucide/info.svg",
 			"pix/icons/help-about.png",
-			"About");
+			"About",
+			"OR.icons.help");
 	public static final Icon HELP_CHECK_FOR_UPDATES = loadIcon(
 			"pix/icons/lucide/refresh-cw.svg",
 			"pix/icons/help-check-for-updates.png",
@@ -592,6 +593,28 @@ public class Icons {
 			return;
 		}
 		icon.setColorFilter(MACOS_MENU_COLOR_FILTER);
+	}
+
+	/**
+	 * Derives a new icon with the specified scale from an existing icon.
+	 * For SVG icons, uses FlatSVGIcon.derive(float scale) which preserves color filters.
+	 * For other icon types, falls back to getScaledIcon.
+	 *
+	 * @param icon the source icon to derive from
+	 * @param scale the scaling factor (1.0 = no change, < 1.0 = smaller, > 1.0 = larger)
+	 * @return a new scaled icon, or the original icon if scale is 1.0 or icon type is not supported
+	 */
+	public static Icon deriveScaledIcon(Icon icon, float scale) {
+		if (icon == null || scale == 1.0f) {
+			return icon;
+		}
+
+		if (icon instanceof FlatSVGIcon svgIcon) {
+			return svgIcon.derive(scale);
+		}
+
+		// For ImageIcon and other types, use the existing scaling method
+		return getScaledIcon(icon, scale);
 	}
 
 	/**
