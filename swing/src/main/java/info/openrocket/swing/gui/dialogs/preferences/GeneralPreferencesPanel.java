@@ -133,7 +133,7 @@ public class GeneralPreferencesPanel extends PreferencesPanel {
 						new SimpleFileFilter(
 								//// All thrust curve files (*.eng; *.rse; *.zip; directories)
 								trans.get("pref.dlg.Allthrustcurvefiles"),
-								true, "eng", "rse", "zip");
+								true, "eng", "rse", "zip", "db");
 				chooser.addChoosableFileFilter(filter);
 				//// RASP motor files (*.eng)
 				chooser.addChoosableFileFilter(new SimpleFileFilter(trans.get("pref.dlg.RASPfiles"),
