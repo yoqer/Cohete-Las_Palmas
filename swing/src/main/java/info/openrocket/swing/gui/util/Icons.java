@@ -100,16 +100,30 @@ public class Icons {
 	public static final Icon FILE_NEW = loadIcon(
 			"pix/icons/lucide/file-plus-corner.svg",
 			"pix/icons/document-new.png",
-			"New document");
+			"New document",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x499C54, "OR.icons.plus"
+			));
 	public static final Icon FILE_OPEN = loadIcon(
 			"pix/icons/lucide/file.svg",
 			"pix/icons/document-open.png",
 			"Open document");
-	public static final Icon FILE_OPEN_RECENT = loadSvgIcon("pix/icons/lucide/file-clock.svg", "Open recent document");
+	public static final Icon FILE_OPEN_RECENT = loadSvgIcon(
+			"pix/icons/lucide/file-clock.svg",
+			"Open recent document",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 	public static final Icon FILE_OPEN_EXAMPLE = loadIcon(
 			"pix/icons/lucide/file-info.svg",
 			"pix/icons/document-open-example.png",
-			"Open example document");
+			"Open example document",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 	public static final Icon FILE_SAVE = loadIcon(
 			"pix/icons/lucide/save.svg",
 			"pix/icons/document-save.png",
@@ -117,7 +131,11 @@ public class Icons {
 	public static final Icon FILE_SAVE_AS = loadIcon(
 			"pix/icons/lucide/save-as.svg",
 			"pix/icons/document-save-as.png",
-			"Save document as");
+			"Save document as",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xFAC132, "OR.icons.pencil"
+			));
 	public static final Icon SAVE_DECAL = loadIcon(
 			"pix/icons/lucide/file-image.svg",
 			"pix/icons/Painting-Transparent-PNG_16.png",
@@ -129,11 +147,19 @@ public class Icons {
 	public static final Icon FILE_IMPORT = loadIcon(
 			"pix/icons/lucide/import.svg",
 			"pix/icons/import.png",
-			"Import");
+			"Import",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xc80000, "OR.icons.import"
+			));
 	public static final Icon FILE_EXPORT = loadIcon(
 			"pix/icons/lucide/export.svg",
 			"pix/icons/export.png",
-			"Export");
+			"Export",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x499C54, "OR.icons.export"
+			));
 	public static final Icon SIM_TABLE_EXPORT = loadIcon(
 			"pix/icons/lucide/sheet.svg",
 			"pix/icons/sim_table_export.png",
@@ -151,19 +177,33 @@ public class Icons {
 	public static final Icon EDIT_UNDO = loadIcon(
 			"pix/icons/lucide/undo.svg",
 			"pix/icons/edit-undo.png",
-			trans.get("Icons.Undo"));
+			trans.get("Icons.Undo"),
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.undo"
+			));
 	public static final Icon EDIT_REDO = loadIcon(
 			"pix/icons/lucide/redo.svg",
 			"pix/icons/edit-redo.png",
-			trans.get("Icons.Redo"));
+			trans.get("Icons.Redo"),
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.redo"
+			));
 	public static final Icon EDIT_EDIT = loadIcon(
 			"pix/icons/lucide/square-pen.svg",
 			"pix/icons/edit-edit.png",
-			"Edit");
+			"Edit",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xFAC132, "OR.icons.pencil"
+			));
 	public static final Icon EDIT_RENAME = loadIcon(
 			"pix/icons/lucide/rename.svg",
 			"pix/icons/edit-rename.png",
-			"Rename");
+			"Rename",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 	public static final Icon EDIT_CUT = loadIcon(
 			"pix/icons/lucide/scissors.svg",
 			"pix/icons/edit-cut.png",
@@ -179,7 +219,11 @@ public class Icons {
 	public static final Icon EDIT_DUPLICATE = loadIcon(
 			"pix/icons/lucide/copy-plus.svg",
 			"pix/icons/edit-duplicate.png",
-			"Duplicate");
+			"Duplicate",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2d2dbd, "OR.icons.duplicate"
+			));
 	public static final Icon EDIT_DELETE = loadIcon(
 			"pix/icons/lucide/trash.svg",
 			"pix/icons/edit-delete.png",
@@ -199,10 +243,18 @@ public class Icons {
 	public static final Icon IMAGE_EDIT = loadIcon(
 			"pix/icons/lucide/square-pen.svg",
 			"pix/icons/edit-edit.png",
-			"Edit image");
+			"Edit image",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xFAC132, "OR.icons.pencil"
+			));
 	public static final Icon IMAGE_NEW = loadSvgIcon(
 			"pix/icons/lucide/image-plus.svg",
-			"New image");
+			"New image",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x499C54, "OR.icons.plus"
+			));
 
 	public static final Icon SIM_RUN = loadIcon(
 			"pix/icons/lucide/play-filled.svg",
@@ -212,7 +264,11 @@ public class Icons {
 	public static final Icon SIM_PLOT = loadIcon(
 			"pix/icons/lucide/chart-spline.svg",
 			"pix/icons/sim-plot.png",
-			"Plot");
+			"Plot",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x006cb6, "OR.icons.plot"
+			));
 	
 	public static final Icon HELP_ABOUT = loadIcon(
 			"pix/icons/lucide/info.svg",
@@ -247,15 +303,27 @@ public class Icons {
 	public static final Icon ZOOM_IN = loadIcon(
 			"pix/icons/lucide/zoom-in.svg",
 			"pix/icons/zoom-in.png",
-			"Zoom in");
+			"Zoom in",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x499C54, "OR.icons.zoomIn"
+			));
 	public static final Icon ZOOM_OUT = loadIcon(
 			"pix/icons/lucide/zoom-out.svg",
 			"pix/icons/zoom-out.png",
-			"Zoom out");
+			"Zoom out",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xC80000, "OR.icons.zoomOut"
+			));
 	public static final Icon ZOOM_RESET = loadIcon(
 			"pix/icons/lucide/zoom-fit.svg",
 			"pix/icons/zoom-reset.png",
-			"Reset Zoom & Pan");
+			"Reset Zoom & Pan",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2d2dbd, "OR.icons.zoomFit"
+			));
 	
 	public static final Icon PREFERENCES = loadIcon(
 			"pix/icons/lucide/cog.svg",
@@ -265,7 +333,11 @@ public class Icons {
 	public static final Icon CONFIGURE = loadIcon(
 			"pix/icons/lucide/file-cog.svg",
 			"pix/icons/configure.png",
-			"Configure");
+			"Configure",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 	public static final Icon HELP = loadIcon(
 			"pix/icons/lucide/info.svg",
 			"pix/icons/help-about.png",
@@ -273,11 +345,17 @@ public class Icons {
 	public static final Icon UP = loadIcon(
 			"pix/icons/lucide/arrow-big-up-dash.svg",
 			"pix/icons/up.png",
-			"Up");
+			"Up",
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.moveUp"
+			));
 	public static final Icon DOWN = loadIcon(
 			"pix/icons/lucide/arrow-big-down-dash.svg",
 			"pix/icons/down.png",
-			"Down");
+			"Down",
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.moveDown"
+			));
 	public static final Icon REFRESH = loadIcon(
 			"pix/icons/lucide/refresh-ccw.svg",
 			"pix/icons/refresh.png",

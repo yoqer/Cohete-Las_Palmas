@@ -1,48 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   width="16"
-   height="16"
-   viewBox="0 0 24 24"
-   fill="none"
-   stroke="#000000"
-   stroke-width="1.25"
-   stroke-linecap="round"
-   stroke-linejoin="round"
-   class="lucide lucide-import-icon lucide-import"
-   version="1.1"
-   id="svg3"
-   sodipodi:docname="export.svg"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs3" />
-  <sodipodi:namedview
-     id="namedview3"
-     pagecolor="#ffffff"
-     bordercolor="#cccccc"
-     borderopacity="1"
-     inkscape:showpageshadow="0"
-     inkscape:pageopacity="1"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="14.75"
-     inkscape:cx="7.9661017"
-     inkscape:cy="8"
-     inkscape:window-width="1401"
-     inkscape:window-height="448"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="svg3" />
-  <path
-     d="M12 3v12"
-     id="path1" />
-  <path
-     d="m8 7 4-4 4 4"
-     id="path2" />
-  <path
-     d="M 5,5 H 4 C 2.8954305,5 2,5.8954305 2,7 v 10 c 0,1.104569 0.8954305,2 2,2 h 16 c 1.104569,0 2,-0.895431 2,-2 V 7 C 22,5.8954305 21.104569,5 20,5 h -1"
-     id="path3"
-     sodipodi:nodetypes="cssssssssc" />
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;">
+    <path id="path1" d="M8,2L8,10" style="fill:none;fill-rule:nonzero;stroke:#499c54;stroke-width:0.83px;"/>
+    <path id="path2" d="M5.333,4.667L8,2L10.667,4.667" style="fill:none;fill-rule:nonzero;stroke:#499c54;stroke-width:0.83px;"/>
+    <path id="path3" d="M3.333,3.333L2.667,3.333C1.93,3.333 1.333,3.93 1.333,4.667L1.333,11.333C1.333,12.07 1.93,12.667 2.667,12.667L13.333,12.667C14.07,12.667 14.667,12.07 14.667,11.333L14.667,4.667C14.667,3.93 14.07,3.333 13.333,3.333L12.667,3.333" style="fill:none;fill-rule:nonzero;stroke:#000;stroke-width:0.83px;"/>
 </svg>
