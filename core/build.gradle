@@ -64,8 +64,8 @@ dependencies {
 
     implementation 'jakarta.activation:jakarta.activation-api:2.1.4'
     implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.6'
-    implementation 'org.glassfish:jakarta.json:2.0.1'
     implementation 'org.eclipse:yasson:2.0.1'
+    implementation 'com.google.code.gson:gson:2.13.2'
 }
 
 def serializedEnginesPath = './src/main/resources/datafiles/thrustcurves/thrustcurves.ser'
@@ -118,7 +118,7 @@ tasks.register('serializeEnginesExecuteDist', JavaExec) {
     workingDir  new File(projectDir, 'build/tmp')
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('info.openrocket.core.thrustcurve.serialization.SerializeThrustcurveMotors')
-    args '../../resources-src/datafiles/thrustcurves/', '../.' + serializedEnginesPathDist
+    args '../../resources-src/datafiles/thrustcurves/', '../.' + serializedEnginesPathDist, threadUtilFraction
     standardInput = System.in
     doFirst {
         println "Starting serializeEnginesExecuteDist..."
