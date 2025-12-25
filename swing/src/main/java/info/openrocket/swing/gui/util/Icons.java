@@ -87,10 +87,16 @@ public class Icons {
 				}
 			}
 
-			// Black in SVG -> Black in light theme, White in dark theme
-			// White in SVG -> White in light theme, Black in dark theme (inverted)
-			MACOS_MENU_COLOR_FILTER = new FlatSVGIcon.ColorFilter();
-			MACOS_MENU_COLOR_FILTER.add(Color.BLACK, isDark ? Color.WHITE : Color.BLACK);
+			// For macOS menus, convert ALL colors to monochrome (white for dark theme, black for light theme)
+			// This ensures multi-colored icons display correctly in native macOS menus
+			final Color targetColor = isDark ? Color.WHITE : Color.BLACK;
+			MACOS_MENU_COLOR_FILTER = new FlatSVGIcon.ColorFilter(color -> {
+				// Preserve alpha channel while converting to target monochrome color
+				if (color.getAlpha() != 255) {
+					return new Color(targetColor.getRed(), targetColor.getGreen(), targetColor.getBlue(), color.getAlpha());
+				}
+				return targetColor;
+			});
 		}
 	}
 
