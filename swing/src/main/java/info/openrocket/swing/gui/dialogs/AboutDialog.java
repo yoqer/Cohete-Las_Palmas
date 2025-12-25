@@ -83,6 +83,7 @@ public class AboutDialog extends JDialog {
 			"JTS" + href("https://github.com/locationtech/jts", true, true) + "<br>" +
 		"ClassGraph" + href("https://github.com/classgraph/classgraph", true, true) + "<br>" +
 		"Gradle Modules Plugin" + href("https://github.com/java9-modularity/gradle-modules-plugin", true, true) + "<br>" +
+		"Lucide Icons" + href("https://lucide.dev", true, true) + "<br>" +
 		"<br>" +
 		"<b>OpenRocket gratefully acknowledges our use of the following databases:</b><br>" +
 		"<br>" +
