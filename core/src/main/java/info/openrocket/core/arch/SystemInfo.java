@@ -94,4 +94,24 @@ public class SystemInfo {
 		return dir;
 	}
 
+	/**
+	 * Return the directory used by OpenRocket to store application libraries (e.g. motor database).
+	 * @return the OpenRocket library directory
+	 */
+	public static File getOpenRocketLibraryDirectory() {
+		File dir = new File(getUserApplicationDirectory(), "libraries");
+
+		if (!dir.isDirectory()) {
+			dir.mkdirs();
+		}
+
+		if (!dir.isDirectory()) {
+			return null;
+		}
+		if (!dir.canRead()) {
+			return null;
+		}
+		return dir;
+	}
+
 }
