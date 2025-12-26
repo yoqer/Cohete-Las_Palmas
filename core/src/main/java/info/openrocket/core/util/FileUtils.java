@@ -3,6 +3,7 @@ package info.openrocket.core.util;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -76,6 +77,19 @@ public abstract class FileUtils {
 			}
 		}
 		return null;
+	}
+
+	public static File makeDirectoryIfNotExists(File dir) throws IOException {
+		if (!dir.exists()) {
+			if (!dir.mkdirs()) {
+				throw new IOException("Could not create directory: " + dir.getAbsolutePath());
+			}
+		} else if (!dir.isDirectory()) {
+			throw new IOException("File exists and is not a directory: " + dir.getAbsolutePath());
+		} else if (!dir.canRead()) {
+			throw new IOException("Directory is not readable: " + dir.getAbsolutePath());
+		}
+		return dir;
 	}
 
 }

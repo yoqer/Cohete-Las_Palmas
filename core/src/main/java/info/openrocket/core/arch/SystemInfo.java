@@ -4,8 +4,12 @@ import java.io.File;
 import java.util.Locale;
 
 import info.openrocket.core.util.BugException;
+import info.openrocket.core.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SystemInfo {
+	private static final Logger log = LoggerFactory.getLogger(SystemInfo.class);
 
 	/**
 	 * Enumeration of supported operating systems.
@@ -100,18 +104,25 @@ public class SystemInfo {
 	 */
 	public static File getOpenRocketLibraryDirectory() {
 		File dir = new File(getUserApplicationDirectory(), "libraries");
-
-		if (!dir.isDirectory()) {
-			dir.mkdirs();
-		}
-
-		if (!dir.isDirectory()) {
+		try {
+			return FileUtils.makeDirectoryIfNotExists(dir);
+		} catch (Exception e) {
+			log.warn("Could not create library directory: {}", dir.getAbsolutePath(), e);
 			return null;
 		}
-		if (!dir.canRead()) {
-			return null;
-		}
-		return dir;
 	}
 
+	/**
+	 * Return the directory used by OpenRocket to store motor libraries.
+	 * @return the OpenRocket motor library directory
+	 */
+	public static File getOpenRocketMotorLibraryDirectory() {
+		File dir = new File(getOpenRocketLibraryDirectory(), "motors");
+		try {
+			return FileUtils.makeDirectoryIfNotExists(dir);
+		} catch (Exception e) {
+			log.warn("Could not create motor library directory: {}", dir.getAbsolutePath(), e);
+			return null;
+		}
+	}
 }

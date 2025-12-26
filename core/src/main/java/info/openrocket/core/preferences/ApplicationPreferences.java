@@ -35,14 +35,19 @@ import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.BugException;
 import info.openrocket.core.util.BuildProperties;
 import info.openrocket.core.util.ChangeSource;
+import info.openrocket.core.util.FileUtils;
 import info.openrocket.core.util.ORColor;
 import info.openrocket.core.util.GeodeticComputationStrategy;
 import info.openrocket.core.util.LineStyle;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.core.simulation.SimulationStepperMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ApplicationPreferences implements ChangeSource, ORPreferences, SimulationOptionsInterface, StateChangeListener {
+	private static final Logger log = LoggerFactory.getLogger(ApplicationPreferences.class);
+
 	private static final String SPLIT_CHARACTER = "|";
 
 	/*
@@ -1147,18 +1152,12 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 
 	public File getDefaultUserComponentFile() {
 		File compdir = new File(SystemInfo.getUserApplicationDirectory(), "Components");
-
-		if (!compdir.isDirectory()) {
-			compdir.mkdirs();
-		}
-
-		if (!compdir.isDirectory()) {
+		try {
+			return FileUtils.makeDirectoryIfNotExists(compdir);
+		} catch (Exception e) {
+			log.warn("Could not create library directory: {}", compdir.getAbsolutePath(), e);
 			return null;
 		}
-		if (!compdir.canRead()) {
-			return null;
-		}
-		return compdir;
 	}
 
 	/**
