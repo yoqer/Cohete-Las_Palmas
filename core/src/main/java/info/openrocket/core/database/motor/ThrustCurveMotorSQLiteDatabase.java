@@ -2,6 +2,7 @@ package info.openrocket.core.database.motor;
 
 import info.openrocket.core.motor.Manufacturer;
 import info.openrocket.core.motor.Motor;
+import info.openrocket.core.motor.MotorDigest;
 import info.openrocket.core.motor.ThrustCurveMotor;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
@@ -36,6 +37,7 @@ import java.util.Map;
 public final class ThrustCurveMotorSQLiteDatabase {
 	private static final Logger log = LoggerFactory.getLogger(ThrustCurveMotorSQLiteDatabase.class);
 	private static final int SCHEMA_VERSION = 2;
+	private static final int MIN_SUPPORTED_SCHEMA_VERSION = 2;
 
 	private ThrustCurveMotorSQLiteDatabase() {
 	}
@@ -72,8 +74,10 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		}
 
 		try (Connection connection = openConnection(dbFile)) {
-			validateSchema(connection);
-			return readMotors(connection);
+			int schemaVersion = validateSchema(connection);
+			boolean hasMotorDescriptionSource = schemaVersion >= 2 ||
+					(columnExists(connection, "motors", "description") && columnExists(connection, "motors", "source"));
+			return readMotors(connection, hasMotorDescriptionSource);
 		}
 	}
 
@@ -150,6 +154,8 @@ public final class ThrustCurveMotorSQLiteDatabase {
 					"info_url TEXT, " +
 					"data_files INTEGER, " +
 					"updated_on TEXT, " +
+					"description TEXT, " +
+					"source TEXT, " +
 					"FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(id)" +
 					")");
 
@@ -216,7 +222,7 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		}
 	}
 
-	private static void validateSchema(Connection connection) throws SQLException {
+	private static int validateSchema(Connection connection) throws SQLException {
 		if (!tableExists(connection, "meta")) {
 			throw new SQLException("SQLite motor database missing meta table");
 		}
@@ -234,10 +240,34 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		}
 
 		int schemaVersion = readSchemaVersion(connection);
-		if (schemaVersion != SCHEMA_VERSION) {
-			throw new SQLException("Unsupported thrust curve database schema version: " + schemaVersion + 
-					" (expected " + SCHEMA_VERSION + ")");
+		if (schemaVersion < MIN_SUPPORTED_SCHEMA_VERSION || schemaVersion > SCHEMA_VERSION) {
+			throw new SQLException("Unsupported thrust curve database schema version: " + schemaVersion +
+					" (supported " + MIN_SUPPORTED_SCHEMA_VERSION + "-" + SCHEMA_VERSION + ")");
 		}
+
+		requireColumns(connection, "meta", "key", "value");
+		requireColumns(connection, "manufacturers", "id", "name", "abbrev");
+		requireColumns(connection, "thrust_curves",
+				"id", "motor_id", "tc_simfile_id", "source", "format", "license", "info_url", "data_url",
+				"total_impulse", "avg_thrust", "max_thrust", "burn_time");
+		requireColumns(connection, "thrust_data", "id", "curve_id", "time_seconds", "force_newtons");
+
+		if (schemaVersion >= 3) {
+			requireColumns(connection, "motors",
+					"id", "manufacturer_id", "tc_motor_id", "designation", "common_name", "impulse_class",
+					"diameter", "length", "total_impulse", "avg_thrust", "max_thrust", "burn_time",
+					"propellant_weight", "total_weight", "type", "delays", "case_info", "prop_info",
+					"sparky", "info_url", "data_files", "updated_on", "description", "source");
+		} else {
+			// Schema v2: no description/source columns.
+			requireColumns(connection, "motors",
+					"id", "manufacturer_id", "tc_motor_id", "designation", "common_name", "impulse_class",
+					"diameter", "length", "total_impulse", "avg_thrust", "max_thrust", "burn_time",
+					"propellant_weight", "total_weight", "type", "delays", "case_info", "prop_info",
+					"sparky", "info_url", "data_files", "updated_on");
+		}
+
+		return schemaVersion;
 	}
 
 	private static boolean tableExists(Connection connection, String tableName) throws SQLException {
@@ -276,10 +306,10 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		String insertManufacturer = "INSERT OR IGNORE INTO manufacturers (name, abbrev) VALUES (?, ?)";
 		String selectManufacturer = "SELECT id FROM manufacturers WHERE name = ?";
 		String insertMotor = "INSERT INTO motors (" +
-				"manufacturer_id, designation, common_name, impulse_class, diameter, length, " +
-				"total_impulse, avg_thrust, burn_time, propellant_weight, total_weight, " +
-				"type, delays, case_info, prop_info" +
-				") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				"manufacturer_id, tc_motor_id, designation, common_name, impulse_class, diameter, length, " +
+				"total_impulse, avg_thrust, max_thrust, burn_time, propellant_weight, total_weight, " +
+				"type, delays, case_info, prop_info, sparky, info_url, data_files, updated_on, description, source" +
+				") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		String insertCurve = "INSERT INTO thrust_curves (motor_id, source, format) VALUES (?, ?, ?)";
 		String insertThrust = "INSERT INTO thrust_data (curve_id, time_seconds, force_newtons) VALUES (?, ?, ?)";
 
@@ -317,6 +347,12 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				double impulse = calculateTotalImpulse(timePoints, thrustPoints);
 				double burnTime = timePoints.length > 0 ? timePoints[timePoints.length - 1] : 0;
 				double avgThrust = burnTime > 0 ? impulse / burnTime : 0;
+				double maxThrust = 0;
+				for (double t : thrustPoints) {
+					if (t > maxThrust) {
+						maxThrust = t;
+					}
+				}
 				double propellantWeight = (motor.getInitialMass() - motor.getBurnoutMass()) * 1000; // kg to g
 				String impulseClass = getImpulseClass(impulse);
 				String motorType = getMotorTypeCode(motor.getMotorType());
@@ -324,20 +360,32 @@ public final class ThrustCurveMotorSQLiteDatabase {
 
 				// Insert motor
 				motorStmt.setInt(1, mfrId);
-				motorStmt.setString(2, safeString(motor.getDesignation()));
-				motorStmt.setString(3, safeString(motor.getCommonName()));
-				motorStmt.setString(4, impulseClass);
-				motorStmt.setDouble(5, motor.getDiameter() * 1000); // m to mm
-				motorStmt.setDouble(6, motor.getLength() * 1000);   // m to mm
-				motorStmt.setDouble(7, impulse);
-				motorStmt.setDouble(8, avgThrust);
-				motorStmt.setDouble(9, burnTime);
-				motorStmt.setDouble(10, propellantWeight);
-				motorStmt.setDouble(11, motor.getInitialMass() * 1000); // kg to g
-				motorStmt.setString(12, motorType);
-				motorStmt.setString(13, delays);
-				motorStmt.setString(14, safeString(motor.getCaseInfo()));
-				motorStmt.setString(15, safeString(motor.getPropellantInfo()));
+				motorStmt.setString(2, nullIfBlank(motor.getTcMotorId()));
+				motorStmt.setString(3, safeString(motor.getDesignation()));
+				motorStmt.setString(4, safeString(motor.getCommonName()));
+				motorStmt.setString(5, impulseClass);
+				motorStmt.setDouble(6, motor.getDiameter() * 1000); // m to mm
+				motorStmt.setDouble(7, motor.getLength() * 1000);   // m to mm
+				motorStmt.setDouble(8, impulse);
+				motorStmt.setDouble(9, avgThrust);
+				motorStmt.setDouble(10, maxThrust);
+				motorStmt.setDouble(11, burnTime);
+				motorStmt.setDouble(12, propellantWeight);
+				motorStmt.setDouble(13, motor.getInitialMass() * 1000); // kg to g
+				motorStmt.setString(14, motorType);
+				motorStmt.setString(15, delays);
+				motorStmt.setString(16, safeString(motor.getCaseInfo()));
+				motorStmt.setString(17, safeString(motor.getPropellantInfo()));
+				motorStmt.setInt(18, motor.isSparky() ? 1 : 0);
+				motorStmt.setString(19, nullIfBlank(motor.getInfoUrl()));
+				if (motor.getDataFiles() == null) {
+					motorStmt.setObject(20, null);
+				} else {
+					motorStmt.setInt(20, motor.getDataFiles());
+				}
+				motorStmt.setString(21, nullIfBlank(motor.getUpdatedOn()));
+				motorStmt.setString(22, normalizeDescriptionForDb(motor.getDescription()));
+				motorStmt.setString(23, nullIfBlank(motor.getDataSource()));
 				motorStmt.executeUpdate();
 
 				int motorId;
@@ -376,7 +424,7 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		}
 	}
 
-	private static List<ThrustCurveMotor> readMotors(Connection connection) throws SQLException {
+	private static List<ThrustCurveMotor> readMotors(Connection connection, boolean hasMotorDescriptionSource) throws SQLException {
 		// First, log some stats about the database
 		try (Statement stmt = connection.createStatement()) {
 			ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM motors");
@@ -398,6 +446,8 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		String motorSql = "SELECT m.id, m.designation, m.common_name, m.diameter, m.length, " +
 				"m.total_impulse, m.avg_thrust, m.burn_time, m.propellant_weight, m.total_weight, " +
 				"m.type, m.delays, m.case_info, m.prop_info, " +
+				"m.tc_motor_id, m.sparky, m.info_url, m.data_files, m.updated_on" +
+				(hasMotorDescriptionSource ? ", m.description, m.source" : "") + ", " +
 				"mfr.name, mfr.abbrev " +
 				"FROM motors m " +
 				"JOIN manufacturers mfr ON m.manufacturer_id = mfr.id";
@@ -438,7 +488,22 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				String delaysStr = motorRs.getString(12);
 				String caseInfo = motorRs.getString(13);
 				String propInfo = motorRs.getString(14);
-				String manufacturerName = motorRs.getString(15);
+				String tcMotorId = motorRs.getString(15);
+				boolean sparky = getIntOrDefault(motorRs, 16, 0) != 0;
+				String infoUrl = motorRs.getString(17);
+				Integer dataFiles = getIntegerOrNull(motorRs, 18);
+				String updatedOn = motorRs.getString(19);
+				String description = null;
+				String dataSource = null;
+				String manufacturerName;
+
+				if (hasMotorDescriptionSource) {
+					description = motorRs.getString(20);
+					dataSource = motorRs.getString(21);
+					manufacturerName = motorRs.getString(22);
+				} else {
+					manufacturerName = motorRs.getString(20);
+				}
 
 				// Get the preferred thrust curve ID
 				Integer curveId = null;
@@ -500,18 +565,27 @@ public final class ThrustCurveMotorSQLiteDatabase {
 
 				Motor.Type motorType = parseMotorType(typeCode);
 
+				String digest = computeDigest(timePoints, thrustPoints, cgPoints);
+
 				ThrustCurveMotor.Builder builder = new ThrustCurveMotor.Builder();
 				builder.setManufacturer(Manufacturer.getManufacturer(defaultManufacturer(manufacturerName)))
+						.setCode(safeString(designation))
 						.setDesignation(safeString(designation))
 						.setCommonName(safeString(commonName))
-						.setDescription("")
+						.setDescription(description == null ? "" : description)
+						.setTcMotorId(tcMotorId == null ? "" : tcMotorId)
+						.setInfoUrl(infoUrl == null ? "" : infoUrl)
+						.setDataFiles(dataFiles)
+						.setUpdatedOn(updatedOn == null ? "" : updatedOn)
+						.setDataSource(dataSource == null ? "" : dataSource)
+						.setSparky(sparky)
 						.setMotorType(motorType)
 						.setDiameter(diameter)
 						.setLength(length)
 						.setCaseInfo(safeString(caseInfo))
 						.setPropellantInfo(safeString(propInfo))
 						.setInitialMass(totalWeight)
-						.setDigest("")
+						.setDigest(digest)
 						.setAvailability(true)
 						.setStandardDelays(delays)
 						.setTimePoints(timePoints)
@@ -745,11 +819,47 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		return value == null ? "" : value;
 	}
 
+	private static String nullIfBlank(String value) {
+		if (value == null) {
+			return null;
+		}
+		String trimmed = value.trim();
+		return trimmed.isEmpty() ? null : trimmed;
+	}
+
+	private static String normalizeDescriptionForDb(String value) {
+		if (value == null) {
+			return null;
+		}
+		String trimmed = value.replace('\r', '\n').replaceAll("\\s*\\n\\s*", " ").replaceAll("\\s+", " ").trim();
+		return trimmed.isEmpty() ? null : trimmed;
+	}
+
 	private static String defaultManufacturer(String manufacturer) {
 		if (manufacturer == null || manufacturer.trim().isEmpty()) {
 			return "Unknown";
 		}
 		return manufacturer;
+	}
+
+	private static void requireColumns(Connection connection, String tableName, String... requiredColumns) throws SQLException {
+		List<String> missing = new ArrayList<>();
+		try (PreparedStatement stmt = connection.prepareStatement("PRAGMA table_info(" + tableName + ")")) {
+			try (ResultSet rs = stmt.executeQuery()) {
+				List<String> existing = new ArrayList<>();
+				while (rs.next()) {
+					existing.add(rs.getString("name"));
+				}
+				for (String col : requiredColumns) {
+					if (!existing.contains(col)) {
+						missing.add(col);
+					}
+				}
+			}
+		}
+		if (!missing.isEmpty()) {
+			throw new SQLException("SQLite motor database table '" + tableName + "' missing required columns: " + missing);
+		}
 	}
 
 	private static double getDoubleOrDefault(ResultSet rs, int columnIndex, double defaultValue) throws SQLException {
@@ -765,5 +875,65 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		} catch (NumberFormatException e) {
 			return defaultValue;
 		}
+	}
+
+	private static int getIntOrDefault(ResultSet rs, int columnIndex, int defaultValue) throws SQLException {
+		Object value = rs.getObject(columnIndex);
+		if (value == null) {
+			return defaultValue;
+		}
+		if (value instanceof Number) {
+			return ((Number) value).intValue();
+		}
+		try {
+			return Integer.parseInt(value.toString());
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
+	private static Integer getIntegerOrNull(ResultSet rs, int columnIndex) throws SQLException {
+		Object value = rs.getObject(columnIndex);
+		if (value == null) {
+			return null;
+		}
+		if (value instanceof Number) {
+			return ((Number) value).intValue();
+		}
+		try {
+			return Integer.valueOf(value.toString());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	private static boolean columnExists(Connection connection, String tableName, String columnName) throws SQLException {
+		try (Statement stmt = connection.createStatement();
+			 ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + tableName + ")")) {
+			while (rs.next()) {
+				String name = rs.getString(2); // column name
+				if (columnName.equals(name)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	private static String computeDigest(double[] timePoints, double[] thrustPoints, CoordinateIF[] cgPoints) {
+		MotorDigest motorDigest = new MotorDigest();
+		motorDigest.update(MotorDigest.DataType.TIME_ARRAY, timePoints);
+
+		double[] cgx = new double[cgPoints.length];
+		double[] mass = new double[cgPoints.length];
+		for (int i = 0; i < cgPoints.length; i++) {
+			cgx[i] = cgPoints[i].getX();
+			mass[i] = cgPoints[i].getWeight();
+		}
+
+		motorDigest.update(MotorDigest.DataType.MASS_PER_TIME, mass);
+		motorDigest.update(MotorDigest.DataType.CG_PER_TIME, cgx);
+		motorDigest.update(MotorDigest.DataType.FORCE_PER_TIME, thrustPoints);
+		return motorDigest.getDigest();
 	}
 }
