@@ -4,6 +4,7 @@ import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.database.MotorDatabaseMetadata;
 import info.openrocket.core.database.MotorDatabaseRemoteUpdater;
 import info.openrocket.core.l10n.Translator;
+import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.startup.Application;
 import info.openrocket.swing.gui.util.GUIUtil;
 import net.miginfocom.swing.MigLayout;
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 public final class MotorDatabaseUpdateChecker {
 	private static final Logger log = LoggerFactory.getLogger(MotorDatabaseUpdateChecker.class);
 	private static final Translator trans = Application.getTranslator();
+	private static final ApplicationPreferences prefs = Application.getPreferences();
 
 	private MotorDatabaseUpdateChecker() {
 	}
@@ -37,6 +39,10 @@ public final class MotorDatabaseUpdateChecker {
 	 * install the latest motor database.
 	 */
 	public static void checkForUpdatesAndInstallIfRequested() {
+		if (!prefs.getCheckMotorDatabaseUpdates()) {
+			return;
+		}
+
 		File motorLibraryDir = SystemInfo.getOpenRocketMotorLibraryDirectory();
 		if (motorLibraryDir == null) {
 			return;

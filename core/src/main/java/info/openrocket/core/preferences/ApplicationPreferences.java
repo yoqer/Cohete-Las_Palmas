@@ -85,6 +85,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 
 	private static final String IGNORE_UPDATE_VERSIONS = "IgnoreUpdateVersions";
 	private static final String CHECK_BETA_UPDATES = "CheckBetaUpdates";
+	private static final String CHECK_MOTOR_DATABASE_UPDATES = "CheckMotorDatabaseUpdates";
 
 	public static final String MOTOR_DIAMETER_FILTER = "MotorDiameterMatch";
 	public static final String MOTOR_HIDE_SIMILAR = "MotorHideSimilar";
@@ -305,6 +306,14 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 
 	public final void setCheckBetaUpdates(boolean check) {
 		this.putBoolean(CHECK_BETA_UPDATES, check);
+	}
+
+	public final boolean getCheckMotorDatabaseUpdates() {
+		return this.getBoolean(CHECK_MOTOR_DATABASE_UPDATES, true);
+	}
+
+	public final void setCheckMotorDatabaseUpdates(boolean check) {
+		this.putBoolean(CHECK_MOTOR_DATABASE_UPDATES, check);
 	}
 
 

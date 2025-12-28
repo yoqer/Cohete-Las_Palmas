@@ -303,6 +303,18 @@ public class GeneralPreferencesPanel extends PreferencesPanel {
 			}
 		});
 		this.add(betaUpdateBox, "gapleft para, wrap");
+
+		//// Check for motor database updates at startup
+		final JCheckBox motorDatabaseUpdateBox = new JCheckBox(trans.get("pref.dlg.checkbox.CheckMotorDbUpdates"));
+		motorDatabaseUpdateBox.setToolTipText(trans.get("pref.dlg.checkbox.CheckMotorDbUpdates.ttip"));
+		motorDatabaseUpdateBox.setSelected(preferences.getCheckMotorDatabaseUpdates());
+		motorDatabaseUpdateBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				preferences.setCheckMotorDatabaseUpdates(motorDatabaseUpdateBox.isSelected());
+			}
+		});
+		this.add(motorDatabaseUpdateBox, "spanx, wrap");
 		
 		//// Open most recent file on startup
 		final JCheckBox openRecentOnStartupBox = new JCheckBox(trans.get("pref.dlg.but.openlast"));
