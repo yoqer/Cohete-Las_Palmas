@@ -1,6 +1,7 @@
 package info.openrocket.swing.startup;
 
 import info.openrocket.core.arch.SystemInfo;
+import info.openrocket.core.database.MotorDatabaseMetadataIO;
 import info.openrocket.core.database.MotorDatabaseMetadata;
 import info.openrocket.core.database.MotorDatabaseRemoteUpdater;
 import info.openrocket.core.l10n.Translator;
@@ -57,9 +58,9 @@ public abstract class MotorDatabaseUpdateChecker {
 				updater::fetchRemoteMetadata);
 
 		MotorDatabaseMetadata remote = remoteResult.value;
-		if (remote == null) {
-			return;
-		}
+			if (remote == null) {
+				return;
+			}
 			if (!updater.isRemoteNewer(motorLibraryDir, remote)) {
 				return;
 			}
@@ -70,9 +71,20 @@ public abstract class MotorDatabaseUpdateChecker {
 			}
 
 			JPanel prompt = new JPanel(new MigLayout("fillx, ins 0", "[grow]"));
+
+			/// Get the local DB version
+			String localVersion = trans.get("MotorDbUpdate.Available.yourVersion.Unknown");
+			try {
+				long v = MotorDatabaseMetadataIO.readDatabaseVersion(new File(motorLibraryDir, "metadata.json"));
+				if (v > 0) {
+					localVersion = Long.toString(v);
+				}
+			} catch (Exception ignore) {
+			}
 			String message = "<html>" +
 					trans.get("MotorDbUpdate.Available.message") + "<br><br>" +
-					trans.get("MotorDbUpdate.Available.version") + " " + remoteVersion + "<br>" +
+					trans.get("MotorDbUpdate.Available.yourVersion") + " " + localVersion + "<br>" +
+					trans.get("MotorDbUpdate.Available.remoteVersion") + " " + remoteVersion + "<br>" +
 					trans.get("MotorDbUpdate.Available.question") +
 					"</html>";
 			prompt.add(new JLabel(message), "growx, wrap para");
@@ -113,7 +125,7 @@ public abstract class MotorDatabaseUpdateChecker {
 				return;
 			}
 
-			// Downloading motor databas
+			// Downloading motor database
 			TaskResult<Boolean> installedResult = runWithProgressDialog(
 					trans.get("MotorDbUpdate.Downloading.title"),
 					trans.get("MotorDbUpdate.Downloading.message"),
