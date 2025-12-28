@@ -56,10 +56,10 @@ public class GuiModule extends AbstractModule {
 		BlockingComponentPresetDatabaseProvider componentDatabaseProvider = new BlockingComponentPresetDatabaseProvider(presetLoader);
 		bind(ComponentPresetDao.class).toProvider(componentDatabaseProvider).in(Scopes.SINGLETON);
 		
-		BlockingMotorDatabaseProvider motorDatabaseProvider = new BlockingMotorDatabaseProvider(motorLoader);
-		bind(ThrustCurveMotorSetDatabase.class).toProvider(motorDatabaseProvider).in(Scopes.SINGLETON);
-		bind(MotorDatabase.class).toProvider(motorDatabaseProvider).in(Scopes.SINGLETON);
-	}
+			BlockingMotorDatabaseProvider motorDatabaseProvider = new BlockingMotorDatabaseProvider(motorLoader);
+			bind(ThrustCurveMotorSetDatabase.class).toProvider(motorDatabaseProvider).in(Scopes.SINGLETON);
+			bind(MotorDatabase.class).to(ThrustCurveMotorSetDatabase.class).in(Scopes.SINGLETON);
+		}
 	
 	/**
 	 * startLoader must be called after the Injector created with this module is registered
