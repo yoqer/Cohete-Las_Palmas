@@ -1,18 +1,13 @@
 package info.openrocket.core.database;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.util.FileUtils;
@@ -44,7 +39,6 @@ public class MotorDatabaseInitializer {
 	
 	private static final String MOTORS_DB_FILENAME = "motors.db";
 	private static final String METADATA_FILENAME = "metadata.json";
-	private static final String DATABASE_VERSION_KEY = "database_version";
 	
 	/**
 	 * Initialize the motor database in the user's motor library directory.
@@ -95,7 +89,7 @@ public class MotorDatabaseInitializer {
 	private static void checkAndUpdateDatabase(File motorLibraryDir, File motorsDbFile, File metadataFile) {
 		try {
 			long resourceVersion = getResourceDatabaseVersion();
-			long libraryVersion = getFileDatabaseVersion(metadataFile);
+			long libraryVersion = MotorDatabaseMetadataIO.readDatabaseVersion(metadataFile);
 			
 			log.debug("Resource database version: {}, Library database version: {}", resourceVersion, libraryVersion);
 			
@@ -115,35 +109,7 @@ public class MotorDatabaseInitializer {
 	 * Get the database_version from the bundled metadata.json resource.
 	 */
 	private static long getResourceDatabaseVersion() throws IOException {
-		try (InputStream is = MotorDatabaseInitializer.class.getResourceAsStream(METADATA_RESOURCE)) {
-			if (is == null) {
-				throw new IOException("Could not find resource: " + METADATA_RESOURCE);
-			}
-			return parseDatabaseVersion(is);
-		}
-	}
-	
-	/**
-	 * Get the database_version from a metadata.json file.
-	 */
-	private static long getFileDatabaseVersion(File metadataFile) throws IOException {
-		try (InputStream is = new FileInputStream(metadataFile)) {
-			return parseDatabaseVersion(is);
-		}
-	}
-	
-	/**
-	 * Parse the database_version from a JSON input stream.
-	 */
-	private static long parseDatabaseVersion(InputStream is) throws IOException {
-		String jsonContent = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-		JsonObject json = JsonParser.parseString(jsonContent).getAsJsonObject();
-		
-		if (!json.has(DATABASE_VERSION_KEY)) {
-			throw new IOException("metadata.json does not contain " + DATABASE_VERSION_KEY);
-		}
-		
-		return json.get(DATABASE_VERSION_KEY).getAsLong();
+		return MotorDatabaseMetadataIO.readResource(MotorDatabaseInitializer.class, METADATA_RESOURCE).getDatabaseVersion();
 	}
 	
 	/**
@@ -165,4 +131,3 @@ public class MotorDatabaseInitializer {
 		}
 	}
 }
-

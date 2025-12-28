@@ -59,10 +59,6 @@ public class GuiModule extends AbstractModule {
 		BlockingMotorDatabaseProvider motorDatabaseProvider = new BlockingMotorDatabaseProvider(motorLoader);
 		bind(ThrustCurveMotorSetDatabase.class).toProvider(motorDatabaseProvider).in(Scopes.SINGLETON);
 		bind(MotorDatabase.class).toProvider(motorDatabaseProvider).in(Scopes.SINGLETON);
-
-		if (System.getProperty("openrocket.debug") != null) {
-
-		}
 	}
 	
 	/**
@@ -82,6 +78,8 @@ public class GuiModule extends AbstractModule {
 		if (!bypassMotors) {
 			// Initialize the motor database before loading
 			MotorDatabaseInitializer.initialize();
+			// Check for a newer remote database and optionally install it before loading
+			MotorDatabaseUpdateChecker.checkForUpdatesAndInstallIfRequested();
 			motorLoader.startLoading();
 		} else {
 			motorLoader.markAsLoaded();
