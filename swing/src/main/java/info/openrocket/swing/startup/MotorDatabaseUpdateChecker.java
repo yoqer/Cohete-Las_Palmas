@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 import java.io.File;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Startup-time motor database update checker that can optionally install the latest remote motor database.
@@ -44,11 +45,12 @@ public final class MotorDatabaseUpdateChecker {
 		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater();
 
 		// Checking for motor database updates
-		MotorDatabaseMetadata remote = runWithProgressDialog(
+		TaskResult<MotorDatabaseMetadata> remoteResult = runWithProgressDialog(
 				trans.get("MotorDbUpdate.Checking.title"),
 				trans.get("MotorDbUpdate.Checking.message"),
 				updater::fetchRemoteMetadata);
 
+		MotorDatabaseMetadata remote = remoteResult.value;
 		if (remote == null) {
 			return;
 		}
@@ -70,7 +72,7 @@ public final class MotorDatabaseUpdateChecker {
 		}
 
 		// Downloading motor databas
-		Boolean installed = runWithProgressDialog(
+		TaskResult<Boolean> installedResult = runWithProgressDialog(
 				trans.get("MotorDbUpdate.Downloading.title"),
 				trans.get("MotorDbUpdate.Downloading.message"),
 				() -> {
@@ -78,10 +80,13 @@ public final class MotorDatabaseUpdateChecker {
 					return Boolean.TRUE;
 				});
 
-		if (installed == null || !installed) {
+		if (installedResult.value == null || !installedResult.value) {
 			// Unable to download and install the motor database update
-			JOptionPane.showMessageDialog(null,
-					trans.get("MotorDbUpdate.Failed.message"),
+			String failureMessage = trans.get("MotorDbUpdate.Failed.message");
+			if (installedResult.error != null) {
+				failureMessage = failureMessage + "\n\n" + formatThrowable(installedResult.error);
+			}
+			JOptionPane.showMessageDialog(null, failureMessage,
 					trans.get("MotorDbUpdate.Failed.title"),
 					JOptionPane.WARNING_MESSAGE);
 			return;
@@ -98,6 +103,16 @@ public final class MotorDatabaseUpdateChecker {
 		T run() throws Exception;
 	}
 
+	private static final class TaskResult<T> {
+		private final T value;
+		private final Throwable error;
+
+		private TaskResult(T value, Throwable error) {
+			this.value = value;
+			this.error = error;
+		}
+	}
+
 	/**
 	 * Run a task in the background while showing a modal progress dialog.
 	 *
@@ -106,7 +121,7 @@ public final class MotorDatabaseUpdateChecker {
 	 * @param task    the task to run
 	 * @return the result of the task, or null if an error occurred
 	 */
-	private static <T> T runWithProgressDialog(String title, String message, WorkerTask<T> task) {
+	private static <T> TaskResult<T> runWithProgressDialog(String title, String message, WorkerTask<T> task) {
 		final ProgressDialog dialog = new ProgressDialog(title, message);
 		final SwingWorker<T, Void> worker = new SwingWorker<>() {
 			@Override
@@ -124,13 +139,33 @@ public final class MotorDatabaseUpdateChecker {
 		dialog.setVisible(true);
 
 		try {
-			return worker.get();
+			return new TaskResult<>(worker.get(), null);
 		} catch (Exception e) {
-			log.info("Motor database update check/download failed: {}", e.getMessage());
-			return null;
+			Throwable t = unwrapWorkerException(e);
+			log.info("Motor database update check/download failed: {}", t.getMessage());
+			log.debug("Motor database update check/download failed", t);
+			return new TaskResult<>(null, t);
 		} finally {
 			dialog.dispose();
 		}
+	}
+
+	private static Throwable unwrapWorkerException(Exception e) {
+		if (e instanceof ExecutionException && e.getCause() != null) {
+			return e.getCause();
+		}
+		return e;
+	}
+
+	private static String formatThrowable(Throwable t) {
+		if (t == null) {
+			return "";
+		}
+		String msg = t.getMessage();
+		if (msg == null || msg.trim().isEmpty()) {
+			return t.getClass().getName();
+		}
+		return msg;
 	}
 
 	private static class ProgressDialog extends JDialog {
