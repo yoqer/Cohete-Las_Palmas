@@ -13,6 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.security.MessageDigest;
 import java.util.zip.GZIPOutputStream;
 
@@ -23,7 +26,7 @@ public class MotorDatabaseRemoteUpdaterTest {
 
 	@Test
 	public void testInstallAcceptsGzipSha256() throws Exception {
-		byte[] dbBytes = "db-bytes".getBytes();
+		byte[] dbBytes = createValidMotorDbBytes();
 		byte[] gzBytes = gzip(dbBytes);
 		String gzSha = sha256Hex(gzBytes);
 
@@ -44,7 +47,7 @@ public class MotorDatabaseRemoteUpdaterTest {
 
 	@Test
 	public void testInstallAcceptsDbSha256() throws Exception {
-		byte[] dbBytes = "db-bytes-2".getBytes();
+		byte[] dbBytes = createValidMotorDbBytes();
 		byte[] gzBytes = gzip(dbBytes);
 		String dbSha = sha256Hex(dbBytes);
 
@@ -65,11 +68,11 @@ public class MotorDatabaseRemoteUpdaterTest {
 
 	@Test
 	public void testInstallRejectsMismatchedSha256() throws Exception {
-		byte[] dbBytes = "db-bytes-3".getBytes();
+		byte[] dbBytes = createValidMotorDbBytes();
 		byte[] gzBytes = gzip(dbBytes);
 
 		MotorDatabaseMetadata metadata = MotorDatabaseMetadata.parse(new ByteArrayInputStream((
-				"{\"schema_version\":2,\"database_version\":123,\"sha256\":\"deadbeef\"}").getBytes()));
+				"{\"schema_version\":2,\"database_version\":123,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}").getBytes()));
 
 		HttpURLConnectionMock connection = new HttpURLConnectionMock();
 		connection.setDoInput(true);
@@ -89,6 +92,75 @@ public class MotorDatabaseRemoteUpdaterTest {
 		return bout.toByteArray();
 	}
 
+	private byte[] createValidMotorDbBytes() throws Exception {
+		Class.forName("org.sqlite.JDBC");
+		File dbFile = tempDir.resolve("motors.db").toFile();
+		try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+			 Statement stmt = connection.createStatement()) {
+			stmt.execute("PRAGMA foreign_keys = ON");
+			stmt.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+			stmt.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '2')");
+
+			stmt.execute("CREATE TABLE manufacturers (" +
+					"id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+					"name TEXT NOT NULL UNIQUE, " +
+					"abbrev TEXT" +
+					")");
+
+			stmt.execute("CREATE TABLE motors (" +
+					"id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+					"manufacturer_id INTEGER NOT NULL, " +
+					"tc_motor_id TEXT, " +
+					"designation TEXT NOT NULL, " +
+					"common_name TEXT, " +
+					"impulse_class TEXT, " +
+					"diameter REAL, " +
+					"length REAL, " +
+					"total_impulse REAL, " +
+					"avg_thrust REAL, " +
+					"max_thrust REAL, " +
+					"burn_time REAL, " +
+					"propellant_weight REAL, " +
+					"total_weight REAL, " +
+					"type TEXT, " +
+					"delays TEXT, " +
+					"case_info TEXT, " +
+					"prop_info TEXT, " +
+					"sparky INTEGER, " +
+					"info_url TEXT, " +
+					"data_files INTEGER, " +
+					"updated_on TEXT, " +
+					"FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(id)" +
+					")");
+
+			stmt.execute("CREATE TABLE thrust_curves (" +
+					"id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+					"motor_id INTEGER NOT NULL, " +
+					"tc_simfile_id TEXT, " +
+					"source TEXT, " +
+					"format TEXT, " +
+					"license TEXT, " +
+					"info_url TEXT, " +
+					"data_url TEXT, " +
+					"total_impulse REAL, " +
+					"avg_thrust REAL, " +
+					"max_thrust REAL, " +
+					"burn_time REAL, " +
+					"FOREIGN KEY (motor_id) REFERENCES motors(id) ON DELETE CASCADE" +
+					")");
+
+			stmt.execute("CREATE TABLE thrust_data (" +
+					"id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+					"curve_id INTEGER NOT NULL, " +
+					"time_seconds REAL NOT NULL, " +
+					"force_newtons REAL NOT NULL, " +
+					"FOREIGN KEY (curve_id) REFERENCES thrust_curves(id) ON DELETE CASCADE" +
+					")");
+		}
+
+		return Files.readAllBytes(dbFile.toPath());
+	}
+
 	private static String sha256Hex(byte[] content) throws Exception {
 		MessageDigest digest = MessageDigest.getInstance("SHA-256");
 		byte[] hash = digest.digest(content);
@@ -99,4 +171,3 @@ public class MotorDatabaseRemoteUpdaterTest {
 		return sb.toString();
 	}
 }
-
