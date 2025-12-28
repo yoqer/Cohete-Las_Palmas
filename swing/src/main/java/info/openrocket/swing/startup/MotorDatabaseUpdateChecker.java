@@ -83,8 +83,8 @@ public abstract class MotorDatabaseUpdateChecker {
 			}
 			String message = "<html>" +
 					trans.get("MotorDbUpdate.Available.message") + "<br><br>" +
-					trans.get("MotorDbUpdate.Available.yourVersion") + " " + localVersion + "<br>" +
-					trans.get("MotorDbUpdate.Available.remoteVersion") + " " + remoteVersion + "<br>" +
+					trans.get("MotorDbUpdate.Available.yourVersion") + " <b>" + localVersion + "</b><br>" +
+					trans.get("MotorDbUpdate.Available.remoteVersion") + " <b>" + remoteVersion + "</b><br>" +
 					trans.get("MotorDbUpdate.Available.question") +
 					"</html>";
 			prompt.add(new JLabel(message), "growx, wrap para");
