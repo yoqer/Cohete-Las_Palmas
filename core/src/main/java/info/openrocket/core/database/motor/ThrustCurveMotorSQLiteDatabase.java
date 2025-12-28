@@ -75,8 +75,9 @@ public final class ThrustCurveMotorSQLiteDatabase {
 
 		try (Connection connection = openConnection(dbFile)) {
 			int schemaVersion = validateSchema(connection);
-			boolean hasMotorDescriptionSource = schemaVersion >= 2 ||
-					(columnExists(connection, "motors", "description") && columnExists(connection, "motors", "source"));
+			// Only include optional columns in queries if they actually exist.
+			boolean hasMotorDescriptionSource =
+					columnExists(connection, "motors", "description") && columnExists(connection, "motors", "source");
 			return readMotors(connection, hasMotorDescriptionSource);
 		}
 	}
@@ -908,11 +909,12 @@ public final class ThrustCurveMotorSQLiteDatabase {
 	}
 
 	private static boolean columnExists(Connection connection, String tableName, String columnName) throws SQLException {
+		String escapedTableName = tableName.replace("'", "''");
 		try (Statement stmt = connection.createStatement();
-			 ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + tableName + ")")) {
+			 ResultSet rs = stmt.executeQuery("PRAGMA table_info('" + escapedTableName + "')")) {
 			while (rs.next()) {
-				String name = rs.getString(2); // column name
-				if (columnName.equals(name)) {
+				String name = rs.getString("name");
+				if (name != null && columnName.equalsIgnoreCase(name)) {
 					return true;
 				}
 			}
