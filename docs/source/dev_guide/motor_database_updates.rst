@@ -13,18 +13,18 @@ Remote endpoints
 By default, the updater fetches:
 
 - Metadata: `https://openrocket.info/motor-database/metadata.json`
-- Database (compressed): `https://openrocket.info/motor-database/motors.db.gz`
+- Database (compressed): `metadata.json` field `download_url` (fallback: `https://openrocket.info/motor-database/motors.db.gz`)
 
-The metadata must include `database_version` and may include `sha256`.
+The metadata must include `database_version`, `sha256_gz`, and `sig`.
 
 Update flow
 -----------
 
-1. Download remote `metadata.json` and parse it.
+1. Download remote `metadata.json`, parse it, and verify its Ed25519 signature.
 2. Compare `database_version` with the local `metadata.json` in `SystemInfo.getOpenRocketMotorLibraryDirectory()`.
 3. If remote is newer, prompt the user (Yes/No) to install.
-4. If accepted, download `motors.db.gz`, decompress to `motors.db`, validate it, then atomically replace the local DB
-   and write the remote metadata next to it.
+4. If accepted, download `motors.db.gz` from `download_url`, verify SHA-256, decompress to `motors.db`, validate it,
+   then atomically replace the local DB and write the remote metadata next to it.
 
 Security properties
 -------------------
@@ -33,16 +33,16 @@ The updater takes several precautions when downloading and installing data:
 
 - HTTPS-only and redirect constraints
   - Downloads use HTTPS.
-  - Redirects are handled manually and refused if they switch to non-HTTPS or to a different host than the original
-    URL. This reduces the chance of silent host switching.
+  - Redirects are handled manually and refused if they switch to non-HTTPS or to a host outside the updater allowlist
+    (`openrocket.info`, `openrocket.github.io`).
+
+- Offline authenticity (Ed25519 signature)
+  - `metadata.json` includes a base64 Ed25519 signature (`sig`) that is verified using a public key embedded in
+    OpenRocket. This prevents attackers from substituting a malicious metadata+database pair even if the server is
+    compromised, as long as the signing key remains secure.
 
 - Integrity verification (SHA-256)
-  - If `sha256` is present and valid (64 hex chars), the download is verified.
-  - The published `sha256` may refer to either:
-    - the compressed `motors.db.gz` bytes, or
-    - the decompressed `motors.db` bytes
-    The updater accepts a match against either convention.
-  - If the metadata contains a non-empty but invalid SHA-256 value, installation is aborted.
+  - The metadata includes `sha256_gz` (64 hex chars), which must match the SHA-256 of the downloaded `motors.db.gz`.
 
 - Schema validation before install
   - The downloaded database is validated via `ThrustCurveMotorSQLiteDatabase.validateDatabase()` before replacing the
@@ -55,14 +55,27 @@ The updater takes several precautions when downloading and installing data:
     - decompressed database size
   - This reduces risk from oversized downloads and decompression bombs.
 
+Signature format
+----------------
+
+The signer produces an Ed25519 signature over the following canonical message (UTF-8):
+
+`openrocket-motordb-v1\n{database_version}\n{sha256_gz}\n`
+
+Where:
+
+- `database_version` is the integer from `metadata.json`
+- `sha256_gz` is the lowercase hex SHA-256 of `motors.db.gz`
+
+The signature is stored as base64 in `metadata.json` under `sig`.
+
 Limitations and threat model
 ----------------------------
 
-- No offline authenticity without signatures
-  - The SHA-256 value is read from the same server as the database file. If the server is compromised (or TLS is
-    intercepted by a trusted/installed root CA), an attacker can serve a matching metadata+database pair.
-  - For stronger assurance, add cryptographic signatures (e.g., Ed25519) over `metadata.json` or `motors.db.gz`, and
-    verify using a public key embedded in OpenRocket.
+- Rollback / freeze attacks
+  - An attacker who can intercept traffic can prevent updates by serving older (but correctly signed) metadata.
+  - OpenRocket never installs a database with a lower `database_version`, but it also cannot force an update without
+    reaching the authentic endpoint.
 
 - Parsing vulnerabilities
   - The update mechanism installs data files only, and does not execute code from the downloaded artifacts.
@@ -76,4 +89,3 @@ Testing
   vs decompressed) and that mismatches are rejected.
 - `core/src/test/java/info/openrocket/core/database/motor/InitialMotorsDatabaseFormatTest.java` ensures the bundled
   `initial_motors.db` can be validated and loaded.
-

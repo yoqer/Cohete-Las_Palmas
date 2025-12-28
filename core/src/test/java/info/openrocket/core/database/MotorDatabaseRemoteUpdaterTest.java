@@ -16,7 +16,19 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.util.Base64;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
 
 public class MotorDatabaseRemoteUpdaterTest {
@@ -26,62 +38,110 @@ public class MotorDatabaseRemoteUpdaterTest {
 
 	@Test
 	public void testInstallAcceptsGzipSha256() throws Exception {
+		KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+		byte[] dbBytes = createValidMotorDbBytes();
+		byte[] gzBytes = gzip(dbBytes);
+		String gzSha = sha256Hex(gzBytes);
+
+		MotorDatabaseMetadata metadata = signedMetadata(123, gzSha, keyPair.getPrivate());
+
+		HttpURLConnectionMock connection = new HttpURLConnectionMock();
+		connection.setDoInput(true);
+		connection.setResponseCode(200);
+		connection.setContent(gzBytes);
+
+		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection),
+				keyPair.getPublic());
+		updater.installRemoteDatabase(tempDir.toFile(), metadata, "https://openrocket.info/motor-database/motors.db.gz");
+
+		byte[] installed = Files.readAllBytes(new File(tempDir.toFile(), "motors.db").toPath());
+		assertArrayEquals(dbBytes, installed);
+	}
+
+	@Test
+	public void testInstallRejectsDbSha256WhenSha256GzDoesNotMatch() throws Exception {
+		KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+		byte[] dbBytes = createValidMotorDbBytes();
+		byte[] gzBytes = gzip(dbBytes);
+		String dbSha = sha256Hex(dbBytes);
+
+		MotorDatabaseMetadata metadata = signedMetadata(123, dbSha, keyPair.getPrivate());
+
+		HttpURLConnectionMock connection = new HttpURLConnectionMock();
+		connection.setDoInput(true);
+		connection.setResponseCode(200);
+		connection.setContent(gzBytes);
+
+		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection),
+				keyPair.getPublic());
+		assertThrows(Exception.class,
+				() -> updater.installRemoteDatabase(tempDir.toFile(), metadata,
+						"https://openrocket.info/motor-database/motors.db.gz"));
+	}
+
+	@Test
+	public void testInstallRejectsMismatchedSha256() throws Exception {
+		KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+		byte[] dbBytes = createValidMotorDbBytes();
+		byte[] gzBytes = gzip(dbBytes);
+
+		MotorDatabaseMetadata metadata = signedMetadata(
+				123,
+				"0000000000000000000000000000000000000000000000000000000000000000",
+				keyPair.getPrivate());
+
+		HttpURLConnectionMock connection = new HttpURLConnectionMock();
+		connection.setDoInput(true);
+		connection.setResponseCode(200);
+		connection.setContent(gzBytes);
+
+		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection),
+				keyPair.getPublic());
+		assertThrows(Exception.class,
+				() -> updater.installRemoteDatabase(tempDir.toFile(), metadata,
+						"https://openrocket.info/motor-database/motors.db.gz"));
+	}
+
+	@Test
+	public void testInstallRejectsMissingSignature() throws Exception {
 		byte[] dbBytes = createValidMotorDbBytes();
 		byte[] gzBytes = gzip(dbBytes);
 		String gzSha = sha256Hex(gzBytes);
 
 		MotorDatabaseMetadata metadata = MotorDatabaseMetadata.parse(new ByteArrayInputStream((
-				"{\"schema_version\":2,\"database_version\":123,\"sha256\":\"" + gzSha + "\"}").getBytes()));
+				"{\"schema_version\":2,\"database_version\":123,\"sha256_gz\":\"" + gzSha + "\"}").getBytes(StandardCharsets.UTF_8)));
 
 		HttpURLConnectionMock connection = new HttpURLConnectionMock();
 		connection.setDoInput(true);
 		connection.setResponseCode(200);
 		connection.setContent(gzBytes);
 
-		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection));
-		updater.installRemoteDatabase(tempDir.toFile(), metadata, "http://example/motors.db.gz");
-
-		byte[] installed = Files.readAllBytes(new File(tempDir.toFile(), "motors.db").toPath());
-		assertArrayEquals(dbBytes, installed);
-	}
-
-	@Test
-	public void testInstallAcceptsDbSha256() throws Exception {
-		byte[] dbBytes = createValidMotorDbBytes();
-		byte[] gzBytes = gzip(dbBytes);
-		String dbSha = sha256Hex(dbBytes);
-
-		MotorDatabaseMetadata metadata = MotorDatabaseMetadata.parse(new ByteArrayInputStream((
-				"{\"schema_version\":2,\"database_version\":123,\"sha256\":\"" + dbSha + "\"}").getBytes()));
-
-		HttpURLConnectionMock connection = new HttpURLConnectionMock();
-		connection.setDoInput(true);
-		connection.setResponseCode(200);
-		connection.setContent(gzBytes);
-
-		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection));
-		updater.installRemoteDatabase(tempDir.toFile(), metadata, "http://example/motors.db.gz");
-
-		byte[] installed = Files.readAllBytes(new File(tempDir.toFile(), "motors.db").toPath());
-		assertArrayEquals(dbBytes, installed);
-	}
-
-	@Test
-	public void testInstallRejectsMismatchedSha256() throws Exception {
-		byte[] dbBytes = createValidMotorDbBytes();
-		byte[] gzBytes = gzip(dbBytes);
-
-		MotorDatabaseMetadata metadata = MotorDatabaseMetadata.parse(new ByteArrayInputStream((
-				"{\"schema_version\":2,\"database_version\":123,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}").getBytes()));
-
-		HttpURLConnectionMock connection = new HttpURLConnectionMock();
-		connection.setDoInput(true);
-		connection.setResponseCode(200);
-		connection.setContent(gzBytes);
-
-		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection));
+		KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(new ConnectionSourceStub(connection),
+				keyPair.getPublic());
 		assertThrows(Exception.class,
-				() -> updater.installRemoteDatabase(tempDir.toFile(), metadata, "http://example/motors.db.gz"));
+				() -> updater.installRemoteDatabase(tempDir.toFile(), metadata,
+						"https://openrocket.info/motor-database/motors.db.gz"));
+	}
+
+	@Test
+	public void testInstallDoesNotDrainClosedStream() throws Exception {
+		KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+		byte[] dbBytes = createValidMotorDbBytes();
+		byte[] gzBytes = gzip(dbBytes);
+		String gzSha = sha256Hex(gzBytes);
+
+		MotorDatabaseMetadata metadata = signedMetadata(123, gzSha, keyPair.getPrivate());
+
+		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater(
+				url -> new StrictHttpURLConnection(new URL(url), gzBytes),
+				keyPair.getPublic());
+
+		updater.installRemoteDatabase(tempDir.toFile(), metadata,
+				"https://openrocket.info/motor-database/motors.db.gz");
+
+		byte[] installed = Files.readAllBytes(new File(tempDir.toFile(), "motors.db").toPath());
+		assertArrayEquals(dbBytes, installed);
 	}
 
 	private static byte[] gzip(byte[] content) throws Exception {
@@ -161,6 +221,19 @@ public class MotorDatabaseRemoteUpdaterTest {
 		return Files.readAllBytes(dbFile.toPath());
 	}
 
+	private static MotorDatabaseMetadata signedMetadata(long databaseVersion, String sha256Gz, PrivateKey privateKey)
+			throws Exception {
+		String canonicalMessage = "openrocket-motordb-v1\n" + databaseVersion + "\n" + sha256Gz + "\n";
+		Signature signature = Signature.getInstance("Ed25519");
+		signature.initSign(privateKey);
+		signature.update(canonicalMessage.getBytes(StandardCharsets.UTF_8));
+		String sigB64 = Base64.getEncoder().encodeToString(signature.sign());
+
+		String json = "{\"schema_version\":2,\"database_version\":" + databaseVersion +
+				",\"sha256_gz\":\"" + sha256Gz + "\",\"sig\":\"" + sigB64 + "\"}";
+		return MotorDatabaseMetadata.parse(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+	}
+
 	private static String sha256Hex(byte[] content) throws Exception {
 		MessageDigest digest = MessageDigest.getInstance("SHA-256");
 		byte[] hash = digest.digest(content);
@@ -169,5 +242,82 @@ public class MotorDatabaseRemoteUpdaterTest {
 			sb.append(String.format("%02x", b));
 		}
 		return sb.toString();
+	}
+
+	private static final class StrictHttpURLConnection extends HttpURLConnection {
+		private final byte[] content;
+		private final Map<String, String> headers = new HashMap<>();
+		private boolean connected;
+
+		StrictHttpURLConnection(URL url, byte[] content) {
+			super(url);
+			this.content = content;
+		}
+
+		@Override
+		public void connect() {
+			connected = true;
+		}
+
+		@Override
+		public void disconnect() {
+			connected = false;
+		}
+
+		@Override
+		public boolean usingProxy() {
+			return false;
+		}
+
+		@Override
+		public int getResponseCode() {
+			return 200;
+		}
+
+		@Override
+		public String getHeaderField(String name) {
+			return headers.get(name);
+		}
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			if (!connected) {
+				connect();
+			}
+			return new InputStream() {
+				private int idx;
+				private boolean closed;
+
+				@Override
+				public int read() throws IOException {
+					if (closed) {
+						throw new IOException("stream is closed");
+					}
+					if (idx >= content.length) {
+						return -1;
+					}
+					return content[idx++] & 0xff;
+				}
+
+				@Override
+				public int read(byte[] b, int off, int len) throws IOException {
+					if (closed) {
+						throw new IOException("stream is closed");
+					}
+					if (idx >= content.length) {
+						return -1;
+					}
+					int n = Math.min(len, content.length - idx);
+					System.arraycopy(content, idx, b, off, n);
+					idx += n;
+					return n;
+				}
+
+				@Override
+				public void close() {
+					closed = true;
+				}
+			};
+		}
 	}
 }

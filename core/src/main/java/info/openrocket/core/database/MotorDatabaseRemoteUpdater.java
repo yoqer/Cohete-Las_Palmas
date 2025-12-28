@@ -16,11 +16,19 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Objects;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.KeyFactory;
+import java.security.Signature;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Locale;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -29,19 +37,13 @@ import java.util.zip.GZIPInputStream;
  * Security properties and assumptions:
  * <ul>
  *   <li><b>Transport:</b> Uses HTTPS endpoints and refuses redirects to non-HTTPS URLs or different hosts.</li>
- *   <li><b>Integrity:</b> Verifies the downloaded database against the SHA-256 published in the metadata (accepts
- *       either the compressed {@code .gz} hash or the decompressed {@code .db} hash, since both conventions exist).
- *       If the metadata contains a non-empty but invalid SHA-256 value, installation is aborted.</li>
+ *   <li><b>Integrity:</b> Verifies the downloaded {@code motors.db.gz} against the SHA-256 published in the metadata
+ *       field {@code sha256_gz}. If the metadata contains a missing or invalid SHA-256 value, installation is aborted.</li>
+ *   <li><b>Authenticity:</b> Requires a valid Ed25519 signature in {@code metadata.json} and verifies it using an
+ *       embedded public key. This provides offline authenticity independent of TLS.</li>
  *   <li><b>Validation:</b> Always validates the downloaded SQLite database schema before replacing the local database.</li>
  *   <li><b>Resource limits:</b> Enforces hard byte limits on downloaded metadata, downloaded compressed data, and
  *       decompressed database size to reduce risk from oversized downloads or decompression bombs.</li>
- * </ul>
- * <p>
- * Limitations:
- * <ul>
- *   <li>This does not provide cryptographic authenticity independent of TLS, since both the metadata and the database
- *       are fetched from the same server. For stronger protection against server compromise or hostile TLS interception,
- *       use signed metadata/artifacts with a public key embedded in the application.</li>
  * </ul>
  *
  * @author Sibo Van Gool <sibo.vangool@hotmail.com>
@@ -51,6 +53,18 @@ public class MotorDatabaseRemoteUpdater {
 
 	public static final String METADATA_URL = "https://openrocket.info/motor-database/metadata.json";
 	public static final String DATABASE_GZ_URL = "https://openrocket.info/motor-database/motors.db.gz";
+
+	/**
+	 * Ed25519 public key (X.509 SubjectPublicKeyInfo), base64-encoded.
+	 */
+	private static final String SIGNING_PUBLIC_KEY_SPKI_BASE64 =
+			"MCowBQYDK2VwAyEA6CLrOzMhnpYon+H01z3uzRp6sjEHii608GdtTbCLRGs=";
+	private static final String SIGNATURE_MESSAGE_PREFIX = "openrocket-motordb-v1\n";
+
+	private static final Set<String> ALLOWED_REMOTE_HOSTS = Set.of(
+			"openrocket.info",
+			"openrocket.github.io"
+	);
 
 	private static final int CONNECT_TIMEOUT_MS = 10_000;
 	private static final int READ_TIMEOUT_MS = 30_000;
@@ -64,13 +78,19 @@ public class MotorDatabaseRemoteUpdater {
 	private static final String METADATA_FILENAME = "metadata.json";
 
 	private final ConnectionSource connectionSource;
+	private final PublicKey trustedSigningKey;
 
 	public MotorDatabaseRemoteUpdater() {
-		this(new DefaultConnectionSource());
+		this(new DefaultConnectionSource(), defaultSigningKey());
 	}
 
 	public MotorDatabaseRemoteUpdater(ConnectionSource connectionSource) {
-		this.connectionSource = connectionSource;
+		this(connectionSource, defaultSigningKey());
+	}
+
+	public MotorDatabaseRemoteUpdater(ConnectionSource connectionSource, PublicKey trustedSigningKey) {
+		this.connectionSource = Objects.requireNonNull(connectionSource, "connectionSource");
+		this.trustedSigningKey = Objects.requireNonNull(trustedSigningKey, "trustedSigningKey");
 	}
 
 	/**
@@ -91,7 +111,9 @@ public class MotorDatabaseRemoteUpdater {
 	public MotorDatabaseMetadata fetchRemoteMetadata(String metadataUrl) throws IOException {
 		try (InputStream in = openStream(metadataUrl);
 			 InputStream limited = new ThrowingLimitedInputStream(in, MAX_METADATA_BYTES)) {
-			return MotorDatabaseMetadata.parse(limited);
+			MotorDatabaseMetadata metadata = MotorDatabaseMetadata.parse(limited);
+			verifySignedMetadata(metadata);
+			return metadata;
 		}
 	}
 
@@ -127,7 +149,12 @@ public class MotorDatabaseRemoteUpdater {
 	 * @throws IOException if an I/O error occurs
 	 */
 	public void installRemoteDatabase(File motorLibraryDir, MotorDatabaseMetadata remoteMetadata) throws IOException {
-		installRemoteDatabase(motorLibraryDir, remoteMetadata, DATABASE_GZ_URL);
+		String url = DATABASE_GZ_URL;
+		if (remoteMetadata != null && remoteMetadata.getDownloadUrl() != null &&
+				!remoteMetadata.getDownloadUrl().trim().isEmpty()) {
+			url = remoteMetadata.getDownloadUrl().trim();
+		}
+		installRemoteDatabase(motorLibraryDir, remoteMetadata, url);
 	}
 
 	/**
@@ -148,6 +175,8 @@ public class MotorDatabaseRemoteUpdater {
 		if (remoteMetadata == null) {
 			throw new IOException("Remote metadata is null");
 		}
+		verifySignedMetadata(remoteMetadata);
+		validateDatabaseDownloadUrl(databaseGzUrl);
 
 		File targetDbFile = new File(motorLibraryDir, MOTORS_DB_FILENAME);
 		File targetMetadataFile = new File(motorLibraryDir, METADATA_FILENAME);
@@ -156,10 +185,10 @@ public class MotorDatabaseRemoteUpdater {
 		File tmpMetadataFile = new File(motorLibraryDir, METADATA_FILENAME + ".download");
 
 		log.info("Downloading motor database from {}", databaseGzUrl);
-		String rawSha256 = remoteMetadata.getSha256();
-		String expectedSha256 = normalizeSha256(rawSha256);
-		if (rawSha256 != null && !rawSha256.trim().isEmpty() && expectedSha256 == null) {
-			throw new IOException("Remote metadata contains an invalid sha256 value");
+		String rawSha256Gz = remoteMetadata.getSha256Gz();
+		String expectedGzipSha256 = normalizeSha256(rawSha256Gz);
+		if (expectedGzipSha256 == null) {
+			throw new IOException("Remote metadata missing or invalid sha256_gz");
 		}
 
 		try (InputStream rawIn0 = openStream(databaseGzUrl);
@@ -171,24 +200,22 @@ public class MotorDatabaseRemoteUpdater {
 			String actualGzipSha256;
 			String actualDbSha256;
 
-			DigestInputStream gzipDigestStream = new DigestInputStream(rawIn, gzipDigest);
-			try (GZIPInputStream gzIn = new GZIPInputStream(gzipDigestStream);
+			try (DigestInputStream gzipDigestStream = new DigestInputStream(rawIn, gzipDigest);
+				 GZIPInputStream gzIn = new GZIPInputStream(nonClosing(gzipDigestStream));
 				 DigestInputStream dbDigestStream = new DigestInputStream(gzIn, dbDigest);
 				 InputStream dbLimited = new ThrowingLimitedInputStream(dbDigestStream, MAX_DB_BYTES)) {
 				FileUtils.copy(dbLimited, out);
+				// Ensure we hash the full response body for the gzip digest (not only what the decompressor consumed).
+				drain(gzipDigestStream);
 			}
-
-			// Ensure we hash the full response body for the gzip digest (not only what the decompressor consumed).
-			drain(gzipDigestStream);
 
 			actualGzipSha256 = TextUtil.bytesToHex(gzipDigest.digest());
 			actualDbSha256 = TextUtil.bytesToHex(dbDigest.digest());
 
-			// The published SHA-256 may refer to either the compressed archive or the decompressed database.
-			if (expectedSha256 != null &&
-					!expectedSha256.equals(actualGzipSha256) && !expectedSha256.equals(actualDbSha256)) {
-				throw new IOException("Downloaded motor database SHA-256 mismatch (expected " + expectedSha256 +
-						", got gzip=" + actualGzipSha256 + ", db=" + actualDbSha256 + ")");
+			if (!expectedGzipSha256.equals(actualGzipSha256)) {
+				throw new IOException("Downloaded motor database SHA-256 mismatch (expected sha256_gz=" +
+						expectedGzipSha256 + ", got sha256_gz=" + actualGzipSha256 +
+						", sha256_db=" + actualDbSha256 + ")");
 			}
 
 			// Always validate the downloaded DB before replacing the local one (even if SHA is missing).
@@ -214,6 +241,7 @@ public class MotorDatabaseRemoteUpdater {
 	 * @throws IOException if an I/O error occurs
 	 */
 	private InputStream openStream(String url) throws IOException {
+		validateHttpsUrl(url);
 		final int maxRedirects = 3;
 		String current = url;
 
@@ -245,6 +273,89 @@ public class MotorDatabaseRemoteUpdater {
 		}
 
 		throw new IOException("Too many redirects when fetching " + url);
+	}
+
+	private static void validateHttpsUrl(String url) throws IOException {
+		try {
+			URI uri = new URI(url);
+			if (!"https".equalsIgnoreCase(uri.getScheme())) {
+				throw new IOException("Refusing non-HTTPS URL: " + url);
+			}
+		} catch (IOException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new IOException("Invalid URL: " + url, e);
+		}
+	}
+
+	private static void validateDatabaseDownloadUrl(String url) throws IOException {
+		validateHttpsUrl(url);
+		try {
+			URI uri = new URI(url);
+			String host = uri.getHost();
+			if (host == null) {
+				throw new IOException("Database download URL missing host: " + url);
+			}
+			String normalizedHost = host.toLowerCase(Locale.ENGLISH);
+			if (!ALLOWED_REMOTE_HOSTS.contains(normalizedHost)) {
+				throw new IOException("Refusing database download from unexpected host: " + normalizedHost);
+			}
+		} catch (IOException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new IOException("Invalid database download URL: " + url, e);
+		}
+	}
+
+	private static PublicKey defaultSigningKey() {
+		try {
+			byte[] keyBytes = Base64.getDecoder().decode(SIGNING_PUBLIC_KEY_SPKI_BASE64);
+			KeyFactory factory = KeyFactory.getInstance("Ed25519");
+			return factory.generatePublic(new X509EncodedKeySpec(keyBytes));
+		} catch (GeneralSecurityException | IllegalArgumentException e) {
+			throw new IllegalStateException("Unable to load embedded motor database signing key", e);
+		}
+	}
+
+	private void verifySignedMetadata(MotorDatabaseMetadata metadata) throws IOException {
+		if (metadata == null) {
+			throw new IOException("Remote metadata is null");
+		}
+		if (metadata.getDatabaseVersion() <= 0) {
+			throw new IOException("Remote metadata has an invalid database_version");
+		}
+
+		String sha256Gz = normalizeSha256(metadata.getSha256Gz());
+		if (sha256Gz == null) {
+			throw new IOException("Remote metadata missing or invalid sha256_gz");
+		}
+
+		String sigB64 = metadata.getSignature();
+		if (sigB64 == null || sigB64.trim().isEmpty()) {
+			throw new IOException("Remote metadata missing signature");
+		}
+
+		byte[] sigBytes;
+		try {
+			sigBytes = Base64.getDecoder().decode(sigB64.trim());
+		} catch (IllegalArgumentException e) {
+			throw new IOException("Remote metadata signature is not valid base64", e);
+		}
+
+		String canonicalMessage = SIGNATURE_MESSAGE_PREFIX +
+				Long.toString(metadata.getDatabaseVersion()) + "\n" +
+				sha256Gz + "\n";
+
+		try {
+			Signature sig = Signature.getInstance("Ed25519");
+			sig.initVerify(trustedSigningKey);
+			sig.update(canonicalMessage.getBytes(StandardCharsets.UTF_8));
+			if (!sig.verify(sigBytes)) {
+				throw new IOException("Remote metadata signature verification failed");
+			}
+		} catch (GeneralSecurityException e) {
+			throw new IOException("Unable to verify remote metadata signature", e);
+		}
 	}
 
 	/**
@@ -295,6 +406,15 @@ public class MotorDatabaseRemoteUpdater {
 		}
 	}
 
+	private static InputStream nonClosing(InputStream in) {
+		return new java.io.FilterInputStream(in) {
+			@Override
+			public void close() {
+				// Do not close the underlying stream; the caller owns it.
+			}
+		};
+	}
+
 	private static String resolveRedirect(String currentUrl, String location) throws IOException {
 		try {
 			URL base = new URL(currentUrl);
@@ -307,16 +427,21 @@ public class MotorDatabaseRemoteUpdater {
 
 	private static void validateRedirect(String originalUrl, String redirectedUrl) throws IOException {
 		try {
-			URI orig = new URI(originalUrl);
 			URI next = new URI(redirectedUrl);
 			if (!"https".equalsIgnoreCase(next.getScheme())) {
 				throw new IOException("Refusing redirect to non-HTTPS URL: " + redirectedUrl);
 			}
-			// Only allow redirects within the same host to prevent silent host switching.
-			if (orig.getHost() != null && next.getHost() != null && !Objects.equals(orig.getHost().toLowerCase(Locale.ENGLISH),
-					next.getHost().toLowerCase(Locale.ENGLISH))) {
-				throw new IOException("Refusing redirect to different host: " + redirectedUrl);
+			// Only allow redirects to well-known, allowlisted hosts.
+			String host = next.getHost();
+			if (host == null) {
+				throw new IOException("Refusing redirect without host: " + redirectedUrl);
 			}
+			String normalizedHost = host.toLowerCase(Locale.ENGLISH);
+			if (!ALLOWED_REMOTE_HOSTS.contains(normalizedHost)) {
+				throw new IOException("Refusing redirect to unexpected host: " + normalizedHost);
+			}
+		} catch (IOException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new IOException("Invalid redirect URL: " + redirectedUrl, e);
 		}
