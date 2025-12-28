@@ -7,6 +7,12 @@ directory. The update flow is implemented in:
 - `core/src/main/java/info/openrocket/core/database/MotorDatabaseRemoteUpdater.java`
 - `swing/src/main/java/info/openrocket/swing/startup/MotorDatabaseUpdateChecker.java`
 
+The motor database contents and build pipeline live in the separate repository:
+
+- https://github.com/openrocket/motor-database
+
+For the SQLite schema, see :doc:`motor_database_schema`.
+
 Remote endpoints
 ----------------
 
@@ -16,6 +22,22 @@ By default, the updater fetches:
 - Database (compressed): `metadata.json` field `download_url` (fallback: `https://openrocket.info/motor-database/motors.db.gz`)
 
 The metadata must include `database_version`, `sha256_gz`, and `sig`.
+
+Metadata fields
+---------------
+
+`metadata.json` is expected to contain (at minimum):
+
+- `schema_version`: schema version of `motors.db`
+- `database_version`: monotonic version identifier (typically a timestamp)
+- `download_url`: HTTPS URL for `motors.db.gz`
+- `sha256_gz`: lowercase hex SHA-256 of `motors.db.gz`
+- `sig`: base64 Ed25519 signature over the canonical message
+
+Optional fields that may be present:
+
+- `key_id`: identifier for key rotation
+- `generated_at`, `motor_count`, `curve_count`, ...
 
 Update flow
 -----------
