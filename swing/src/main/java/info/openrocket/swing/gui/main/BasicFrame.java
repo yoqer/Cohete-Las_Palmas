@@ -1,9 +1,13 @@
 package info.openrocket.swing.gui.main;
 
+import java.awt.AWTEvent;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -11,7 +15,10 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -35,6 +42,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -50,6 +58,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
@@ -123,6 +135,7 @@ import info.openrocket.swing.gui.util.SaveFileWorker;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.util.URLUtil;
 import info.openrocket.swing.utils.ComponentPresetEditor;
+import info.openrocket.swing.gui.figureelements.BananaForScale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +193,13 @@ private static final Translator trans = Application.getTranslator();
 	private final DesignPanel designPanel;
 	private final FlightConfigurationPanel flightConfigurationPanel;
 	private final SimulationPanel simulationPanel;
+
+	private boolean showBananaForScaleInToolsMenu = false;
+	private JCheckBoxMenuItem bananaForScaleMenuItem = null;
+	private JPopupMenu.Separator bananaForScaleSeparator = null;
+	private BananaForScale bananaForScaleElement = null;
+	private volatile boolean bananaAltKeyDown = false;
+	private KeyEventDispatcher bananaAltKeyDispatcher = null;
 
 	public static BasicFrame lastFrameInstance = null;		// Latest BasicFrame that was created
 	private static boolean quitCalled = false;				// Keeps track whether the quit action has been called
@@ -272,6 +292,7 @@ private static final Translator trans = Application.getTranslator();
 			popupMenu.add(actions.getExportSVGAction());
 		}
 
+		installBananaAltKeyTracker();
 		createMenu();
 
 
@@ -337,6 +358,36 @@ private static final Translator trans = Application.getTranslator();
 			}
 		}
 		log.debug("BasicFrame instantiation complete");
+	}
+
+	@Override
+	public void dispose() {
+		uninstallBananaAltKeyTracker();
+		super.dispose();
+	}
+
+	private void installBananaAltKeyTracker() {
+		if (bananaAltKeyDispatcher != null) {
+			return;
+		}
+		bananaAltKeyDispatcher = new KeyEventDispatcher() {
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ALT) {
+					bananaAltKeyDown = (e.getID() == KeyEvent.KEY_PRESSED);
+				}
+				return false;
+			}
+		};
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(bananaAltKeyDispatcher);
+	}
+
+	private void uninstallBananaAltKeyTracker() {
+		if (bananaAltKeyDispatcher == null) {
+			return;
+		}
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(bananaAltKeyDispatcher);
+		bananaAltKeyDispatcher = null;
 	}
 
 
@@ -799,6 +850,60 @@ private static final Translator trans = Application.getTranslator();
 		});
 		toolsMenu.add(item);
 
+		bananaForScaleSeparator = new JPopupMenu.Separator();
+		bananaForScaleMenuItem = new JCheckBoxMenuItem("Banana for scale");
+		bananaForScaleMenuItem.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				setBananaForScaleEnabled(e.getStateChange() == ItemEvent.SELECTED);
+			}
+		});
+
+		toolsMenu.addMenuListener(new MenuListener() {
+			@Override
+			public void menuSelected(MenuEvent e) {
+				boolean show = showBananaForScaleInToolsMenu || bananaAltKeyDown || isAltDownInCurrentAwtEvent();
+				setBananaForScaleMenuVisible(toolsMenu, show);
+			}
+
+			@Override
+			public void menuDeselected(MenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+
+			@Override
+			public void menuCanceled(MenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+		});
+
+		toolsMenu.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+					showBananaForScaleInToolsMenu = true;
+				}
+			}
+		});
+
+		toolsMenu.getPopupMenu().addPopupMenuListener(new PopupMenuListener() {
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+				boolean show = showBananaForScaleInToolsMenu || bananaAltKeyDown || isAltDownInCurrentAwtEvent();
+				setBananaForScaleMenuVisible(toolsMenu, show);
+			}
+
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+		});
+
 		////	Debug
 		//	//	(shown if openrocket.debug.fileMenu is defined)
 		if (System.getProperty("openrocket.debug.fileMenu") != null) {
@@ -809,6 +914,53 @@ private static final Translator trans = Application.getTranslator();
 		generateHelpMenu(menubar, this);
 
 		this.setJMenuBar(menubar);
+	}
+
+	private static boolean isAltDownInCurrentAwtEvent() {
+		AWTEvent event = EventQueue.getCurrentEvent();
+		if (event instanceof InputEvent) {
+			return (((InputEvent) event).getModifiersEx() & InputEvent.ALT_DOWN_MASK) != 0;
+		}
+		if (event instanceof java.awt.event.KeyEvent) {
+			return ((((java.awt.event.KeyEvent) event).getModifiersEx() & InputEvent.ALT_DOWN_MASK) != 0);
+		}
+		return false;
+	}
+
+	private void setBananaForScaleMenuVisible(JMenu toolsMenu, boolean visible) {
+		if (toolsMenu == null || bananaForScaleSeparator == null || bananaForScaleMenuItem == null) {
+			return;
+		}
+
+		if (visible) {
+			if (bananaForScaleSeparator.getParent() == null) {
+				toolsMenu.add(bananaForScaleSeparator);
+			}
+			if (bananaForScaleMenuItem.getParent() == null) {
+				toolsMenu.add(bananaForScaleMenuItem);
+			}
+		} else {
+			toolsMenu.remove(bananaForScaleMenuItem);
+			toolsMenu.remove(bananaForScaleSeparator);
+		}
+		toolsMenu.revalidate();
+		toolsMenu.repaint();
+	}
+
+	private void setBananaForScaleEnabled(boolean enabled) {
+		if (rocketpanel == null) {
+			return;
+		}
+
+		if (bananaForScaleElement == null) {
+			bananaForScaleElement = new BananaForScale(rocketpanel.getFigure());
+		}
+
+		rocketpanel.getFigure().removeAbsoluteExtra(bananaForScaleElement);
+		if (enabled) {
+			rocketpanel.getFigure().addAbsoluteExtra(bananaForScaleElement);
+		}
+		rocketpanel.getFigure().repaint();
 	}
 
 	/**
