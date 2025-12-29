@@ -181,18 +181,6 @@ public class UITheme {
 
 		Color getStatusColor(Status status);
 
-        Icon getMassOverrideIcon();
-        Icon getMassOverrideSubcomponentIcon();
-        Icon getCGOverrideIcon();
-        Icon getCGOverrideSubcomponentIcon();
-        Icon getCDOverrideIcon();
-        Icon getCDOverrideSubcomponentIcon();
-
-        Icon getVisibilityHiddenIcon();
-        Icon getVisibilityShowingIcon();
-
-        Icon getDisabledIcon();
-
         Border getBorder();
         Border getMarginBorder();
         Border getUnitSelectorBorder();
@@ -521,51 +509,6 @@ public class UITheme {
             @Override
             public Color getFinPointSnapHighlightColor() {
                 return themedColor("OR.colors.fin.snapHighlight", Color.RED);
-            }
-
-            @Override
-            public Icon getMassOverrideIcon() {
-                return Icons.MASS_OVERRIDE_LIGHT;
-            }
-
-            @Override
-            public Icon getMassOverrideSubcomponentIcon() {
-                return Icons.MASS_OVERRIDE_SUBCOMPONENT_LIGHT;
-            }
-
-            @Override
-            public Icon getCGOverrideIcon() {
-                return Icons.CG_OVERRIDE_LIGHT;
-            }
-
-            @Override
-            public Icon getCGOverrideSubcomponentIcon() {
-                return Icons.CG_OVERRIDE_SUBCOMPONENT_LIGHT;
-            }
-
-            @Override
-            public Icon getCDOverrideIcon() {
-                return Icons.CD_OVERRIDE_LIGHT;
-            }
-
-            @Override
-            public Icon getCDOverrideSubcomponentIcon() {
-                return Icons.CD_OVERRIDE_SUBCOMPONENT_LIGHT;
-            }
-
-            @Override
-            public Icon getVisibilityHiddenIcon() {
-                return Icons.COMPONENT_HIDDEN_LIGHT;
-            }
-
-            @Override
-            public Icon getVisibilityShowingIcon() {
-                return Icons.COMPONENT_SHOWING_LIGHT;
-            }
-
-            @Override
-            public Icon getDisabledIcon() {
-                return Icons.COMPONENT_DISABLED_LIGHT;
             }
 
             @Override
@@ -945,51 +888,6 @@ public class UITheme {
             }
 
             @Override
-            public Icon getMassOverrideIcon() {
-                return Icons.MASS_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getMassOverrideSubcomponentIcon() {
-                return Icons.MASS_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getCGOverrideIcon() {
-                return Icons.CG_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getCGOverrideSubcomponentIcon() {
-                return Icons.CG_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getCDOverrideIcon() {
-                return Icons.CD_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getCDOverrideSubcomponentIcon() {
-                return Icons.CD_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getVisibilityHiddenIcon() {
-                return Icons.COMPONENT_HIDDEN_DARK;
-            }
-
-            @Override
-            public Icon getVisibilityShowingIcon() {
-                return Icons.COMPONENT_SHOWING_DARK;
-            }
-
-            @Override
-            public Icon getDisabledIcon() {
-                return Icons.COMPONENT_DISABLED_DARK;
-            }
-
-            @Override
             public Border getBorder() {
                 return new FlatBorder();
             }
@@ -1363,51 +1261,6 @@ public class UITheme {
             @Override
             public Color getFinPointSnapHighlightColor() {
                 return themedColor("OR.colors.fin.snapHighlight", new Color(241, 77, 77, 255));
-            }
-
-            @Override
-            public Icon getMassOverrideIcon() {
-                return Icons.MASS_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getMassOverrideSubcomponentIcon() {
-                return Icons.MASS_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getCGOverrideIcon() {
-                return Icons.CG_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getCGOverrideSubcomponentIcon() {
-                return Icons.CG_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getCDOverrideIcon() {
-                return Icons.CD_OVERRIDE_DARK;
-            }
-
-            @Override
-            public Icon getCDOverrideSubcomponentIcon() {
-                return Icons.CD_OVERRIDE_SUBCOMPONENT_DARK;
-            }
-
-            @Override
-            public Icon getVisibilityHiddenIcon() {
-                return Icons.COMPONENT_HIDDEN_DARK;
-            }
-
-            @Override
-            public Icon getVisibilityShowingIcon() {
-                return Icons.COMPONENT_SHOWING_DARK;
-            }
-
-            @Override
-            public Icon getDisabledIcon() {
-                return Icons.COMPONENT_DISABLED_DARK;
             }
 
             @Override
@@ -1803,51 +1656,6 @@ public class UITheme {
             @Override
             public Color getFinPointSnapHighlightColor() {
                 return getCurrentTheme().getFinPointBodyLineColor();
-            }
-
-            @Override
-            public Icon getMassOverrideIcon() {
-                return getCurrentTheme().getMassOverrideIcon();
-            }
-
-            @Override
-            public Icon getMassOverrideSubcomponentIcon() {
-                return getCurrentTheme().getMassOverrideSubcomponentIcon();
-            }
-
-            @Override
-            public Icon getCGOverrideIcon() {
-                return getCurrentTheme().getCGOverrideIcon();
-            }
-
-            @Override
-            public Icon getCGOverrideSubcomponentIcon() {
-                return getCurrentTheme().getCGOverrideSubcomponentIcon();
-            }
-
-            @Override
-            public Icon getCDOverrideIcon() {
-                return getCurrentTheme().getCDOverrideIcon();
-            }
-
-            @Override
-            public Icon getCDOverrideSubcomponentIcon() {
-                return getCurrentTheme().getCDOverrideSubcomponentIcon();
-            }
-
-            @Override
-            public Icon getVisibilityHiddenIcon() {
-                return getCurrentTheme().getVisibilityHiddenIcon();
-            }
-
-            @Override
-            public Icon getVisibilityShowingIcon() {
-                return getCurrentTheme().getVisibilityHiddenIcon();
-            }
-
-            @Override
-            public Icon getDisabledIcon() {
-                return getCurrentTheme().getVisibilityHiddenIcon();
             }
 
             @Override

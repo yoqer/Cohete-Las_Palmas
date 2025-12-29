@@ -1377,7 +1377,7 @@ public class RocketActions {
 		public ToggleVisibilityAction() {
 			super.putValue(NAME, trans.get("RocketActions.VisibilityAct.HideSelected"));
 			super.putValue(SHORT_DESCRIPTION, trans.get("RocketActions.VisibilityAct.ttip.HideSelected"));
-			super.putValue(SMALL_ICON, GUIUtil.getUITheme().getVisibilityHiddenIcon());
+			super.putValue(SMALL_ICON, Icons.COMPONENT_HIDDEN);
 			clipboardChanged();
 		}
 
@@ -1398,8 +1398,8 @@ public class RocketActions {
 						trans.get("RocketActions.VisibilityAct.ttip.HideAll") :
 						trans.get("RocketActions.VisibilityAct.ttip.ShowAll"));
 				super.putValue(SMALL_ICON, rocket.isVisible() ?
-						GUIUtil.getUITheme().getVisibilityHiddenIcon() :
-						GUIUtil.getUITheme().getVisibilityShowingIcon());
+						Icons.COMPONENT_HIDDEN :
+						Icons.COMPONENT_SHOWING);
 			} else {
 				var visibility = components.stream().anyMatch(RocketComponent::isVisible);
 				super.putValue(NAME, visibility ?
@@ -1409,8 +1409,8 @@ public class RocketActions {
 						trans.get("RocketActions.VisibilityAct.ttip.HideSelected") :
 						trans.get("RocketActions.VisibilityAct.ttip.ShowSelected"));
 				super.putValue(SMALL_ICON, visibility ?
-						GUIUtil.getUITheme().getVisibilityHiddenIcon() :
-						GUIUtil.getUITheme().getVisibilityShowingIcon());
+						Icons.COMPONENT_HIDDEN :
+						Icons.COMPONENT_SHOWING);
 			}
 		}
 
@@ -1471,7 +1471,7 @@ public class RocketActions {
 		public ShowAllComponentsAction() {
 			super.putValue(NAME, trans.get("RocketActions.VisibilityAct.ShowAll"));
 			super.putValue(SHORT_DESCRIPTION, trans.get("RocketActions.VisibilityAct.ttip.ShowAll"));
-			super.putValue(SMALL_ICON, GUIUtil.getUITheme().getVisibilityShowingIcon());
+			super.putValue(SMALL_ICON, Icons.COMPONENT_SHOWING);
 			clipboardChanged();
 		}
 
