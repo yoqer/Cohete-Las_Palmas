@@ -55,8 +55,12 @@ public abstract class MotorDatabaseUpdateChecker {
 	}
 
 	private static void checkForUpdatesAndInstallIfRequested(Component parent, boolean userInitiated) {
+		// 1) Locate the on-disk motor library directory.
+		//    This is where we read the local metadata/version from and where we install an updated DB.
 		File motorLibraryDir = SystemInfo.getOpenRocketMotorLibraryDirectory();
 		if (motorLibraryDir == null) {
+			// If we can't locate the directory, we can't determine the current DB version nor install updates.
+			// Only show a dialog when the user explicitly initiated the check (manual "Check now").
 			if (userInitiated) {
 				JOptionPane.showMessageDialog(parent,
 						trans.get("MotorDbUpdate.Failed.message"),
@@ -68,7 +72,8 @@ public abstract class MotorDatabaseUpdateChecker {
 
 		MotorDatabaseRemoteUpdater updater = new MotorDatabaseRemoteUpdater();
 
-		// Checking for motor database updates
+		// 2) Fetch remote metadata (with signature verification handled by MotorDatabaseRemoteUpdater).
+		//    This call is performed in a background thread and wrapped by a modal progress dialog.
 		TaskResult<MotorDatabaseMetadata> remoteResult = runWithProgressDialog(
 				trans.get("MotorDbUpdate.Checking.title"),
 				trans.get("MotorDbUpdate.Checking.message"),
@@ -76,6 +81,8 @@ public abstract class MotorDatabaseUpdateChecker {
 
 		MotorDatabaseMetadata remote = remoteResult.value;
 		if (remote == null) {
+			// If metadata cannot be downloaded/validated/parsed, we cannot safely offer an update.
+			// For user-initiated checks, show the failure message (and the underlying exception if present).
 			if (userInitiated) {
 				String failureMessage = trans.get("MotorDbUpdate.Failed.message");
 				if (remoteResult.error != null) {
@@ -88,6 +95,8 @@ public abstract class MotorDatabaseUpdateChecker {
 			return;
 		}
 
+		// 3) Read local database version from the local metadata.json, if present.
+		//    If anything fails, we fall back to "Unknown" (we still may be able to offer an update).
 		String localVersion = trans.get("MotorDbUpdate.Available.yourVersion.Unknown");
 		try {
 			long v = MotorDatabaseMetadataIO.readDatabaseVersion(new File(motorLibraryDir, "metadata.json"));
@@ -97,7 +106,10 @@ public abstract class MotorDatabaseUpdateChecker {
 		} catch (Exception ignore) {
 		}
 
+		// 4) Decide whether the remote database is newer than what we currently have installed.
+		//    The comparison is delegated to MotorDatabaseRemoteUpdater to avoid duplicating logic.
 		if (!updater.isRemoteNewer(motorLibraryDir, remote)) {
+			// On user-initiated checks, provide feedback when up-to-date. For startup checks, stay silent.
 			if (userInitiated) {
 				String message = trans.get("MotorDbUpdate.Latest.message") + "\n\n" +
 						trans.get("MotorDbUpdate.Available.yourVersion") + " " + localVersion + "\n" +
@@ -109,6 +121,8 @@ public abstract class MotorDatabaseUpdateChecker {
 			return;
 		}
 
+		// 5) Respect "skip this version": if the user previously chose to ignore this remote version,
+		//    don't prompt again (but do show feedback for manual checks).
 		String remoteVersion = Long.toString(remote.getDatabaseVersion());
 		if (prefs.getIgnoreMotorDatabaseUpdateVersions().contains(remoteVersion)) {
 			if (userInitiated) {
@@ -121,6 +135,8 @@ public abstract class MotorDatabaseUpdateChecker {
 			return;
 		}
 
+		// 6) Prompt the user: install now / not now / skip this version.
+		//    The prompt also includes a "Don't ask me again" checkbox which disables startup checks.
 		JPanel prompt = new JPanel(new MigLayout("fillx, ins 0", "[grow]"));
 		String message = "<html>" +
 				trans.get("MotorDbUpdate.Available.message") + "<br><br>" +
@@ -150,10 +166,12 @@ public abstract class MotorDatabaseUpdateChecker {
 				options,
 				options[0]);
 
+		// Apply the "Don't ask me again" choice immediately, regardless of which button was clicked.
 		if (dontAskAgain.isSelected()) {
 			prefs.setCheckMotorDatabaseUpdates(false);
 		}
 
+		// "Skip this version": add this remote version to the ignore list and exit.
 		if (res == 2) {
 			List<String> ignored = new ArrayList<>(prefs.getIgnoreMotorDatabaseUpdateVersions());
 			if (!ignored.contains(remoteVersion)) {
@@ -162,11 +180,14 @@ public abstract class MotorDatabaseUpdateChecker {
 			}
 			return;
 		}
+		// Anything other than "Install" exits without changes ("Not now", dialog close, etc.).
 		if (res != 0) {
 			return;
 		}
 
-		// Downloading motor database
+		// 7) Download and install the remote database.
+		//    MotorDatabaseRemoteUpdater enforces security checks (e.g. signature and SHA-256) and
+		//    performs the actual replacement on disk. This is also done with a progress dialog.
 		TaskResult<Boolean> installedResult = runWithProgressDialog(
 				trans.get("MotorDbUpdate.Downloading.title"),
 				trans.get("MotorDbUpdate.Downloading.message"),
@@ -176,7 +197,8 @@ public abstract class MotorDatabaseUpdateChecker {
 				});
 
 		if (installedResult.value == null || !installedResult.value) {
-			// Unable to download and install the motor database update
+			// Unable to download and install the motor database update.
+			// Always show failure details here because the user explicitly clicked "Install".
 			String failureMessage = trans.get("MotorDbUpdate.Failed.message");
 			if (installedResult.error != null) {
 				failureMessage = failureMessage + "\n\n" + formatThrowable(installedResult.error);
@@ -187,7 +209,7 @@ public abstract class MotorDatabaseUpdateChecker {
 			return;
 		}
 
-		// Motor database updated successfully
+		// 8) Success: notify the user.
 		JOptionPane.showMessageDialog(parent,
 				trans.get("MotorDbUpdate.Installed.message"),
 				trans.get("MotorDbUpdate.Installed.title"),
