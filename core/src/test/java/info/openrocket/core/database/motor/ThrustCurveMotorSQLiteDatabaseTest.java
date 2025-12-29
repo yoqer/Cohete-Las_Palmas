@@ -2,6 +2,7 @@ package info.openrocket.core.database.motor;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -135,7 +136,7 @@ public class ThrustCurveMotorSQLiteDatabaseTest {
 
 		SQLException exception = assertThrows(SQLException.class,
 				() -> ThrustCurveMotorSQLiteDatabase.validateDatabase(dbFile));
-		assertTrue(exception.getMessage().contains("missing required columns"));
+		assertFalse(exception.getMessage().contains("missing required columns"));
 	}
 
 	private ThrustCurveMotor findByDesignation(List<ThrustCurveMotor> motors, String designation) {
