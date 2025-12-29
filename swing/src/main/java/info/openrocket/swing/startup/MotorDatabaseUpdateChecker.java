@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.awt.Component;
 
 /**
  * Startup-time motor database update checker that can optionally install the latest remote motor database.
@@ -43,9 +44,25 @@ public abstract class MotorDatabaseUpdateChecker {
 		if (!prefs.getCheckMotorDatabaseUpdates()) {
 			return;
 		}
+		checkForUpdatesAndInstallIfRequested(null, false);
+	}
 
+	/**
+	 * Check for motor database updates immediately (ignores the "check at startup" preference).
+	 */
+	public static void checkForUpdatesNowAndInstallIfRequested(Component parent) {
+		checkForUpdatesAndInstallIfRequested(parent, true);
+	}
+
+	private static void checkForUpdatesAndInstallIfRequested(Component parent, boolean userInitiated) {
 		File motorLibraryDir = SystemInfo.getOpenRocketMotorLibraryDirectory();
 		if (motorLibraryDir == null) {
+			if (userInitiated) {
+				JOptionPane.showMessageDialog(parent,
+						trans.get("MotorDbUpdate.Failed.message"),
+						trans.get("MotorDbUpdate.Failed.title"),
+						JOptionPane.WARNING_MESSAGE);
+			}
 			return;
 		}
 
@@ -58,77 +75,101 @@ public abstract class MotorDatabaseUpdateChecker {
 				updater::fetchRemoteMetadata);
 
 		MotorDatabaseMetadata remote = remoteResult.value;
-			if (remote == null) {
-				return;
-			}
-			if (!updater.isRemoteNewer(motorLibraryDir, remote)) {
-				return;
-			}
-
-			String remoteVersion = Long.toString(remote.getDatabaseVersion());
-			if (prefs.getIgnoreMotorDatabaseUpdateVersions().contains(remoteVersion)) {
-				return;
-			}
-
-			JPanel prompt = new JPanel(new MigLayout("fillx, ins 0", "[grow]"));
-
-			/// Get the local DB version
-			String localVersion = trans.get("MotorDbUpdate.Available.yourVersion.Unknown");
-			try {
-				long v = MotorDatabaseMetadataIO.readDatabaseVersion(new File(motorLibraryDir, "metadata.json"));
-				if (v > 0) {
-					localVersion = Long.toString(v);
+		if (remote == null) {
+			if (userInitiated) {
+				String failureMessage = trans.get("MotorDbUpdate.Failed.message");
+				if (remoteResult.error != null) {
+					failureMessage = failureMessage + "\n\n" + formatThrowable(remoteResult.error);
 				}
-			} catch (Exception ignore) {
+				JOptionPane.showMessageDialog(parent, failureMessage,
+						trans.get("MotorDbUpdate.Failed.title"),
+						JOptionPane.WARNING_MESSAGE);
 			}
-			String message = "<html>" +
-					trans.get("MotorDbUpdate.Available.message") + "<br><br>" +
-					trans.get("MotorDbUpdate.Available.yourVersion") + " <b>" + localVersion + "</b><br>" +
-					trans.get("MotorDbUpdate.Available.remoteVersion") + " <b>" + remoteVersion + "</b><br>" +
-					trans.get("MotorDbUpdate.Available.question") +
-					"</html>";
-			prompt.add(new JLabel(message), "growx, wrap para");
+			return;
+		}
 
-			JCheckBox dontAskAgain = new JCheckBox(trans.get("MotorDbUpdate.Available.dontAskAgain"));
-			dontAskAgain.setToolTipText(trans.get("MotorDbUpdate.Available.dontAskAgain.ttip"));
-			prompt.add(dontAskAgain, "growx, wrap");
-
-			Object[] options = new Object[]{
-					trans.get("MotorDbUpdate.Available.btn.install"),
-					trans.get("MotorDbUpdate.Available.btn.later"),
-					trans.get("MotorDbUpdate.Available.btn.skipVersion"),
-			};
-
-			int res = JOptionPane.showOptionDialog(
-					null,
-					prompt,
-					trans.get("MotorDbUpdate.Available.title"),
-					JOptionPane.DEFAULT_OPTION,
-					JOptionPane.INFORMATION_MESSAGE,
-					null,
-					options,
-					options[0]);
-
-			if (dontAskAgain.isSelected()) {
-				prefs.setCheckMotorDatabaseUpdates(false);
+		String localVersion = trans.get("MotorDbUpdate.Available.yourVersion.Unknown");
+		try {
+			long v = MotorDatabaseMetadataIO.readDatabaseVersion(new File(motorLibraryDir, "metadata.json"));
+			if (v > 0) {
+				localVersion = Long.toString(v);
 			}
+		} catch (Exception ignore) {
+		}
 
-			if (res == 2) {
-				List<String> ignored = new ArrayList<>(prefs.getIgnoreMotorDatabaseUpdateVersions());
-				if (!ignored.contains(remoteVersion)) {
-					ignored.add(remoteVersion);
-					prefs.setIgnoreMotorDatabaseUpdateVersions(ignored);
-				}
-				return;
+		if (!updater.isRemoteNewer(motorLibraryDir, remote)) {
+			if (userInitiated) {
+				String message = trans.get("MotorDbUpdate.Latest.message") + "\n\n" +
+						trans.get("MotorDbUpdate.Available.yourVersion") + " " + localVersion + "\n" +
+						trans.get("MotorDbUpdate.Available.remoteVersion") + " " + remote.getDatabaseVersion();
+				JOptionPane.showMessageDialog(parent, message,
+						trans.get("MotorDbUpdate.Latest.title"),
+						JOptionPane.INFORMATION_MESSAGE);
 			}
-			if (res != 0) {
-				return;
-			}
+			return;
+		}
 
-			// Downloading motor database
-			TaskResult<Boolean> installedResult = runWithProgressDialog(
-					trans.get("MotorDbUpdate.Downloading.title"),
-					trans.get("MotorDbUpdate.Downloading.message"),
+		String remoteVersion = Long.toString(remote.getDatabaseVersion());
+		if (prefs.getIgnoreMotorDatabaseUpdateVersions().contains(remoteVersion)) {
+			if (userInitiated) {
+				String message = trans.get("MotorDbUpdate.Skipped.message") + "\n\n" +
+						trans.get("MotorDbUpdate.Available.remoteVersion") + " " + remoteVersion;
+				JOptionPane.showMessageDialog(parent, message,
+						trans.get("MotorDbUpdate.Skipped.title"),
+						JOptionPane.INFORMATION_MESSAGE);
+			}
+			return;
+		}
+
+		JPanel prompt = new JPanel(new MigLayout("fillx, ins 0", "[grow]"));
+		String message = "<html>" +
+				trans.get("MotorDbUpdate.Available.message") + "<br><br>" +
+				trans.get("MotorDbUpdate.Available.yourVersion") + " <b>" + localVersion + "</b><br>" +
+				trans.get("MotorDbUpdate.Available.remoteVersion") + " <b>" + remoteVersion + "</b><br>" +
+				trans.get("MotorDbUpdate.Available.question") +
+				"</html>";
+		prompt.add(new JLabel(message), "growx, wrap para");
+
+		JCheckBox dontAskAgain = new JCheckBox(trans.get("MotorDbUpdate.Available.dontAskAgain"));
+		dontAskAgain.setToolTipText(trans.get("MotorDbUpdate.Available.dontAskAgain.ttip"));
+		prompt.add(dontAskAgain, "growx, wrap");
+
+		Object[] options = new Object[]{
+				trans.get("MotorDbUpdate.Available.btn.install"),
+				trans.get("MotorDbUpdate.Available.btn.later"),
+				trans.get("MotorDbUpdate.Available.btn.skipVersion"),
+		};
+
+		int res = JOptionPane.showOptionDialog(
+				parent,
+				prompt,
+				trans.get("MotorDbUpdate.Available.title"),
+				JOptionPane.DEFAULT_OPTION,
+				JOptionPane.INFORMATION_MESSAGE,
+				null,
+				options,
+				options[0]);
+
+		if (dontAskAgain.isSelected()) {
+			prefs.setCheckMotorDatabaseUpdates(false);
+		}
+
+		if (res == 2) {
+			List<String> ignored = new ArrayList<>(prefs.getIgnoreMotorDatabaseUpdateVersions());
+			if (!ignored.contains(remoteVersion)) {
+				ignored.add(remoteVersion);
+				prefs.setIgnoreMotorDatabaseUpdateVersions(ignored);
+			}
+			return;
+		}
+		if (res != 0) {
+			return;
+		}
+
+		// Downloading motor database
+		TaskResult<Boolean> installedResult = runWithProgressDialog(
+				trans.get("MotorDbUpdate.Downloading.title"),
+				trans.get("MotorDbUpdate.Downloading.message"),
 				() -> {
 					updater.installRemoteDatabase(motorLibraryDir, remote);
 					return Boolean.TRUE;
@@ -140,14 +181,14 @@ public abstract class MotorDatabaseUpdateChecker {
 			if (installedResult.error != null) {
 				failureMessage = failureMessage + "\n\n" + formatThrowable(installedResult.error);
 			}
-			JOptionPane.showMessageDialog(null, failureMessage,
+			JOptionPane.showMessageDialog(parent, failureMessage,
 					trans.get("MotorDbUpdate.Failed.title"),
 					JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 
 		// Motor database updated successfully
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(parent,
 				trans.get("MotorDbUpdate.Installed.message"),
 				trans.get("MotorDbUpdate.Installed.title"),
 				JOptionPane.INFORMATION_MESSAGE);
