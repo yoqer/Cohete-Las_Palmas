@@ -5,9 +5,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import info.openrocket.core.logging.MessagePriority;
 import info.openrocket.core.logging.Warning;
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.motor.Motor;
+import info.openrocket.core.motor.MotorDigest;
+import info.openrocket.core.motor.ThrustCurveMotor;
 import info.openrocket.core.motor.Motor.Type;
 import info.openrocket.core.startup.Application;
 
@@ -71,12 +74,12 @@ public class DatabaseMotorFinder implements MotorFinder {
 
 			log.debug("motor is " + m.getDesignation());
 
-			if (digest != null && !digest.equals(m.getDigest())) {
+			if (digest != null && !isDigestCompatible(m, digest)) {
 				String str = "Motor with designation '" + designation + "'";
 				if (manufacturer != null)
 					str += " for manufacturer '" + manufacturer + "'";
 				str += " has differing thrust curve than the original.";
-				warnings.add(str);
+				warnings.add(Warning.fromString(str, MessagePriority.LOW));
 			}
 			return m;
 		}
@@ -86,7 +89,7 @@ public class DatabaseMotorFinder implements MotorFinder {
 
 			// Check for motor with correct digest
 			for (Motor m : motors) {
-				if (digest.equals(m.getDigest())) {
+				if (isDigestCompatible(m, digest)) {
 					return m;
 				}
 			}
@@ -94,7 +97,7 @@ public class DatabaseMotorFinder implements MotorFinder {
 			if (manufacturer != null)
 				str += " for manufacturer '" + manufacturer + "'";
 			str += " has differing thrust curve than the original.";
-			warnings.add(str);
+			warnings.add(Warning.fromString(str, MessagePriority.LOW));
 
 		} else {
 
@@ -106,6 +109,33 @@ public class DatabaseMotorFinder implements MotorFinder {
 
 		}
 		return motors.get(0);
+	}
+
+	private static boolean isDigestCompatible(Motor motor, String digest) {
+		if (digest == null || motor == null) {
+			return false;
+		}
+
+		String motorDigest = motor.getDigest();
+		if (digest.equals(motorDigest)) {
+			return true;
+		}
+
+		// Backward compatibility: older OpenRocket files may store a "RASP-style" digest
+		// (TIME_ARRAY + MASS_SPECIFIC + FORCE_PER_TIME) instead of the current digest.
+		if (motor instanceof ThrustCurveMotor tcMotor) {
+			try {
+				MotorDigest legacyDigest = new MotorDigest();
+				legacyDigest.update(MotorDigest.DataType.TIME_ARRAY, tcMotor.getTimePoints());
+				legacyDigest.update(MotorDigest.DataType.MASS_SPECIFIC, tcMotor.getInitialMass(), tcMotor.getBurnoutMass());
+				legacyDigest.update(MotorDigest.DataType.FORCE_PER_TIME, tcMotor.getThrustPoints());
+				return digest.equals(legacyDigest.getDigest());
+			} catch (Exception e) {
+				return false;
+			}
+		}
+
+		return false;
 	}
 
 }

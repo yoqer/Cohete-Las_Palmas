@@ -159,4 +159,5 @@ public class ThrustCurveMotorSQLiteDatabaseTest {
 			assertEquals(masses[i], coordinates[i].getWeight(), 1.0e-9);
 		}
 	}
+
 }

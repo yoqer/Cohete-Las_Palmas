@@ -188,7 +188,7 @@ public class ExampleFilesTest extends BaseTestCase {
 				.simulationWarnings("Simulation 4", 0, 0, 0)
 				.simulationWarnings("Simulation 5", 0, 0, 0)
 				.build());
-		
+
 	}
 
 	@BeforeAll
