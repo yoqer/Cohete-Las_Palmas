@@ -5,7 +5,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.openrocket.core.logging.MessagePriority;
 import info.openrocket.core.logging.Warning;
 import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.motor.Motor;
@@ -74,30 +73,25 @@ public class DatabaseMotorFinder implements MotorFinder {
 
 			log.debug("motor is " + m.getDesignation());
 
-			if (digest != null && !isDigestCompatible(m, digest)) {
-				String str = "Motor with designation '" + designation + "'";
-				if (manufacturer != null)
-					str += " for manufacturer '" + manufacturer + "'";
-				str += " has differing thrust curve than the original.";
-				warnings.add(Warning.fromString(str, MessagePriority.LOW));
-			}
 			return m;
 		}
 
 		// Multiple motors, check digest for which one to use
 		if (digest != null) {
 
-			// Check for motor with correct digest
+			// Prefer a motor with a compatible digest (historical digests included).
 			for (Motor m : motors) {
 				if (isDigestCompatible(m, digest)) {
 					return m;
 				}
 			}
-			String str = "Motor with designation '" + designation + "'";
-			if (manufacturer != null)
-				str += " for manufacturer '" + manufacturer + "'";
-			str += " has differing thrust curve than the original.";
-			warnings.add(Warning.fromString(str, MessagePriority.LOW));
+
+			// Fall back to an exact designation match if possible (e.g. prefer "B6" over "B6-0").
+			for (Motor m : motors) {
+				if (m.getDesignation() != null && m.getDesignation().equalsIgnoreCase(designation)) {
+					return m;
+				}
+			}
 
 		} else {
 
@@ -121,15 +115,57 @@ public class DatabaseMotorFinder implements MotorFinder {
 			return true;
 		}
 
-		// Backward compatibility: older OpenRocket files may store a "RASP-style" digest
-		// (TIME_ARRAY + MASS_SPECIFIC + FORCE_PER_TIME) instead of the current digest.
+		// Backward compatibility: historically OpenRocket has used multiple digest
+		// variants. We accept older/alternate digests computed from subsets of the
+		// motor data, so that older designs can be opened without spurious warnings.
 		if (motor instanceof ThrustCurveMotor tcMotor) {
+			double[] timePoints = tcMotor.getTimePoints();
+			double[] thrustPoints = tcMotor.getThrustPoints();
+
 			try {
-				MotorDigest legacyDigest = new MotorDigest();
-				legacyDigest.update(MotorDigest.DataType.TIME_ARRAY, tcMotor.getTimePoints());
-				legacyDigest.update(MotorDigest.DataType.MASS_SPECIFIC, tcMotor.getInitialMass(), tcMotor.getBurnoutMass());
-				legacyDigest.update(MotorDigest.DataType.FORCE_PER_TIME, tcMotor.getThrustPoints());
-				return digest.equals(legacyDigest.getDigest());
+				// Old RASP-style digest: TIME_ARRAY + MASS_SPECIFIC + FORCE_PER_TIME.
+				MotorDigest raspStyle = new MotorDigest();
+				raspStyle.update(MotorDigest.DataType.TIME_ARRAY, timePoints);
+				raspStyle.update(MotorDigest.DataType.MASS_SPECIFIC, tcMotor.getInitialMass(), tcMotor.getBurnoutMass());
+				raspStyle.update(MotorDigest.DataType.FORCE_PER_TIME, thrustPoints);
+				if (digest.equals(raspStyle.getDigest())) {
+					return true;
+				}
+
+				// Thrust-only digest: TIME_ARRAY + FORCE_PER_TIME.
+				// This stays stable even if mass/CG modeling changes between database versions.
+				MotorDigest thrustOnly = new MotorDigest();
+				thrustOnly.update(MotorDigest.DataType.TIME_ARRAY, timePoints);
+				thrustOnly.update(MotorDigest.DataType.FORCE_PER_TIME, thrustPoints);
+				if (digest.equals(thrustOnly.getDigest())) {
+					return true;
+				}
+
+				// Mass-per-time digest: TIME_ARRAY + MASS_PER_TIME + FORCE_PER_TIME.
+				// This matches variants where CG data was not included in the digest.
+				var cgPoints = tcMotor.getCGPoints();
+				double[] mass = new double[cgPoints.length];
+				for (int i = 0; i < cgPoints.length; i++) {
+					mass[i] = cgPoints[i].getWeight();
+				}
+				MotorDigest massPerTime = new MotorDigest();
+				massPerTime.update(MotorDigest.DataType.TIME_ARRAY, timePoints);
+				massPerTime.update(MotorDigest.DataType.MASS_PER_TIME, mass);
+				massPerTime.update(MotorDigest.DataType.FORCE_PER_TIME, thrustPoints);
+				if (digest.equals(massPerTime.getDigest())) {
+					return true;
+				}
+
+				// CG-per-time digest: TIME_ARRAY + CG_PER_TIME + FORCE_PER_TIME.
+				double[] cgx = new double[cgPoints.length];
+				for (int i = 0; i < cgPoints.length; i++) {
+					cgx[i] = cgPoints[i].getX();
+				}
+				MotorDigest cgPerTime = new MotorDigest();
+				cgPerTime.update(MotorDigest.DataType.TIME_ARRAY, timePoints);
+				cgPerTime.update(MotorDigest.DataType.CG_PER_TIME, cgx);
+				cgPerTime.update(MotorDigest.DataType.FORCE_PER_TIME, thrustPoints);
+				return digest.equals(cgPerTime.getDigest());
 			} catch (Exception e) {
 				return false;
 			}

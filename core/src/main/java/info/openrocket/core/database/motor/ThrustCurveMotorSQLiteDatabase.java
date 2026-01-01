@@ -497,13 +497,16 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				String description = null;
 				String dataSource = null;
 				String manufacturerName;
+				String manufacturerAbbrev;
 
 				if (hasMotorDescriptionSource) {
 					description = motorRs.getString(20);
 					dataSource = motorRs.getString(21);
 					manufacturerName = motorRs.getString(22);
+					manufacturerAbbrev = motorRs.getString(23);
 				} else {
 					manufacturerName = motorRs.getString(20);
+					manufacturerAbbrev = motorRs.getString(21);
 				}
 
 				// Get the preferred thrust curve ID
@@ -559,7 +562,7 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				}
 
 				// Calculate CG points
-				CoordinateIF[] cgPoints = calculateCGPoints(timePoints, totalWeight, propellantWeight, length);
+				CoordinateIF[] cgPoints = calculateCGPoints(timePoints, thrustPoints, totalWeight, propellantWeight, length);
 
 				// Parse delays
 				double[] delays = parseDelays(delaysStr);
@@ -569,7 +572,7 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				String digest = computeDigest(timePoints, thrustPoints, cgPoints);
 
 				ThrustCurveMotor.Builder builder = new ThrustCurveMotor.Builder();
-				builder.setManufacturer(Manufacturer.getManufacturer(defaultManufacturer(manufacturerName)))
+				builder.setManufacturer(Manufacturer.getManufacturer(chooseManufacturerName(manufacturerName, manufacturerAbbrev)))
 						.setCode(safeString(designation))
 						.setDesignation(safeString(designation))
 						.setCommonName(safeString(commonName))
@@ -638,19 +641,20 @@ public final class ThrustCurveMotorSQLiteDatabase {
 			return null;
 		}
 
+		final double timeEpsilon = 0.0001;
 		List<Double> normTime = new ArrayList<>();
 		List<Double> normThrust = new ArrayList<>();
 
 		// Always ensure the curve starts at t=0
 		double firstTime = timePoints[0];
-		if (Math.abs(firstTime) > 0.0001) {
+		if (Math.abs(firstTime) > timeEpsilon) {
 			// Curve doesn't start at 0, prepend a zero point
 			log.debug("Motor {}: prepending t=0 point (original starts at {})", designation, firstTime);
 			normTime.add(0.0);
 			normThrust.add(0.0);
 		}
 
-		double lastTime = -1;
+		double lastTime = Double.NEGATIVE_INFINITY;
 		for (int i = 0; i < timePoints.length; i++) {
 			double t = timePoints[i];
 			double thrust = thrustPoints[i];
@@ -660,13 +664,21 @@ public final class ThrustCurveMotorSQLiteDatabase {
 				thrust = 0;
 			}
 
-			// Ensure time is strictly increasing
-			if (t > lastTime + 0.0001) {
+			// Ensure time is strictly increasing.
+			// If multiple points exist at the same time, keep the maximum thrust (this
+			// matches OpenRocket's motor-file loaders which typically prefer a non-zero
+			// point at t=0 if one exists).
+			if (t > lastTime + timeEpsilon) {
 				normTime.add(t);
 				normThrust.add(thrust);
 				lastTime = t;
+			} else if (Math.abs(t - lastTime) <= timeEpsilon && !normThrust.isEmpty()) {
+				int lastIndex = normThrust.size() - 1;
+				if (thrust > normThrust.get(lastIndex)) {
+					normThrust.set(lastIndex, thrust);
+				}
 			}
-			// Skip duplicate or decreasing time points
+			// Skip decreasing time points
 		}
 
 		if (normTime.size() < 2) {
@@ -687,22 +699,84 @@ public final class ThrustCurveMotorSQLiteDatabase {
 
 	/**
 	 * Calculate CG points based on mass loss during burn.
-	 * Assumes CG is at center of motor and mass decreases linearly.
+	 * Assumes CG is at center of motor and propellant burn follows thrust (constant exhaust velocity).
 	 */
-	private static CoordinateIF[] calculateCGPoints(double[] timePoints, double totalMass, 
+	private static CoordinateIF[] calculateCGPoints(double[] timePoints, double[] thrustPoints, double totalMass,
 			double propellantMass, double length) {
 		CoordinateIF[] cgPoints = new CoordinateIF[timePoints.length];
 		double cgX = length / 2;  // CG at center of motor
 		double burnoutMass = totalMass - propellantMass;
-		double burnTime = timePoints.length > 0 ? timePoints[timePoints.length - 1] : 1;
+		if (burnoutMass < 0) {
+			burnoutMass = 0;
+		}
 
-		for (int i = 0; i < timePoints.length; i++) {
-			double t = timePoints[i];
-			double massAtTime = totalMass - (propellantMass * (t / burnTime));
-			if (massAtTime < burnoutMass) {
-				massAtTime = burnoutMass;
+		if (timePoints.length == 0) {
+			return cgPoints;
+		}
+
+		if (propellantMass <= 0) {
+			for (int i = 0; i < timePoints.length; i++) {
+				cgPoints[i] = new Coordinate(cgX, 0, 0, totalMass);
 			}
-			cgPoints[i] = new Coordinate(cgX, 0, 0, massAtTime);
+			return cgPoints;
+		}
+
+		if (thrustPoints == null || thrustPoints.length != timePoints.length || timePoints.length < 2) {
+			// Fallback to a linear mass decrease if thrust data is missing or inconsistent.
+			double burnTime = timePoints.length > 0 ? timePoints[timePoints.length - 1] : 1;
+			for (int i = 0; i < timePoints.length; i++) {
+				double t = timePoints[i];
+				double massAtTime = totalMass - (propellantMass * (t / burnTime));
+				if (massAtTime < burnoutMass) {
+					massAtTime = burnoutMass;
+				}
+				cgPoints[i] = new Coordinate(cgX, 0, 0, massAtTime);
+			}
+			return cgPoints;
+		}
+
+		// Calculate mass change between points using trapezoidal integration of thrust.
+		double totalMassChange = 0;
+		double t0 = timePoints[0];
+		double f0 = thrustPoints[0];
+		double[] deltaMass = new double[timePoints.length - 1];
+		for (int i = 1; i < timePoints.length; i++) {
+			double t1 = timePoints[i];
+			double f1 = thrustPoints[i];
+			double dm = 0.5 * (f0 + f1) * (t1 - t0);
+			if (dm < 0) {
+				dm = 0;
+			}
+			deltaMass[i - 1] = dm;
+			totalMassChange += dm;
+			t0 = t1;
+			f0 = f1;
+		}
+
+		if (totalMassChange <= 0) {
+			// No thrust -> cannot scale consumption by impulse; fall back to linear.
+			double burnTime = timePoints[timePoints.length - 1] == 0 ? 1 : timePoints[timePoints.length - 1];
+			for (int i = 0; i < timePoints.length; i++) {
+				double t = timePoints[i];
+				double massAtTime = totalMass - (propellantMass * (t / burnTime));
+				if (massAtTime < burnoutMass) {
+					massAtTime = burnoutMass;
+				}
+				cgPoints[i] = new Coordinate(cgX, 0, 0, massAtTime);
+			}
+			return cgPoints;
+		}
+
+		double scale = propellantMass / totalMassChange;
+
+		double mass = totalMass;
+		cgPoints[0] = new Coordinate(cgX, 0, 0, mass);
+		for (int i = 1; i < timePoints.length; i++) {
+			mass -= deltaMass[i - 1] * scale;
+			if (mass < burnoutMass) {
+				mass = burnoutMass;
+			}
+			cgPoints[i] = new Coordinate(cgX, 0, 0, mass);
 		}
 		return cgPoints;
 	}
@@ -836,11 +910,20 @@ public final class ThrustCurveMotorSQLiteDatabase {
 		return trimmed.isEmpty() ? null : trimmed;
 	}
 
-	private static String defaultManufacturer(String manufacturer) {
-		if (manufacturer == null || manufacturer.trim().isEmpty()) {
-			return "Unknown";
+	private static String chooseManufacturerName(String manufacturerName, String manufacturerAbbrev) {
+		if (manufacturerAbbrev != null) {
+			String trimmed = manufacturerAbbrev.trim();
+			if (!trimmed.isEmpty()) {
+				return trimmed;
+			}
 		}
-		return manufacturer;
+		if (manufacturerName != null) {
+			String trimmed = manufacturerName.trim();
+			if (!trimmed.isEmpty()) {
+				return trimmed;
+			}
+		}
+		return "Unknown";
 	}
 
 	private static void requireColumns(Connection connection, String tableName, String... requiredColumns) throws SQLException {
