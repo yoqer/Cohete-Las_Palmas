@@ -255,7 +255,7 @@ public class ExampleFilesTest extends BaseTestCase {
 
 		WarningCounts openWarnings = countRelevantWarnings(loader.getWarnings());
 		if (expected != null) {
-			assertEquals(openWarnings, expected.openWarnings, () -> "Warnings when opening " + orkFile + " (expected=" + expected.openWarnings +
+			assertEquals(expected.openWarnings, openWarnings, () -> "Warnings when opening " + orkFile + " (expected=" + expected.openWarnings +
 					", actual=" + openWarnings + "):\n" + formatWarnings(loader.getWarnings()));
 		}
 
@@ -278,10 +278,9 @@ public class ExampleFilesTest extends BaseTestCase {
 							simulation.getName() + "'.\n\n" + expectationSnippet(fileName, openWarnings, actualSimWarnings));
 				}
 
-				assertTrue(simulationWarnings.equals(expectedSimWarnings),
-						() -> "Warnings when simulating " + orkFile + " (" + simulation.getName() + ") " +
-								"(expected=" + expectedSimWarnings + ", actual=" + simulationWarnings + "):\n" +
-								(warnings == null ? "<null WarningSet>" : formatWarnings(warnings)));
+				assertEquals(expectedSimWarnings, simulationWarnings, () -> "Warnings when simulating " + orkFile + " (" + simulation.getName() + ") " +
+						"(expected=" + expectedSimWarnings + ", actual=" + simulationWarnings + "):\n" +
+						(warnings == null ? "<null WarningSet>" : formatWarnings(warnings)));
 			}
 
 			assertFalse(simulation.hasErrors(),
