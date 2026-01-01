@@ -155,27 +155,18 @@ def externalComponentsPath = './src/main/resources/datafiles/components/database
 def externalResourceComponents = './resources-src/datafiles/openrocket-database'
 
 // Initializes the submodules in Git.
-tasks.register('submoduleInit') {
-    doLast {
-        exec {
-            workingDir "../"
-            executable 'git'
-            args 'submodule', 'init'
-        }
-        println "Executed submoduleInit!"
-    }
+
+// Initializes the submodules in Git.
+tasks.register("submoduleInit", Exec) {
+    workingDir = "../"
+    commandLine("git", "submodule", "init")
 }
+
 // Updates the initialized submodules in Git.
-tasks.register('subModuleUpdate') {
+tasks.register("subModuleUpdate", Exec) {
     dependsOn 'submoduleInit'
-    doLast {
-        exec {
-            workingDir "../"
-            executable 'git'
-            args 'submodule', 'update', '--remote'
-        }
-        println "Executed subModuleUpdate!"
-    }
+    workingDir = "../"
+    commandLine("git", "submodule", "update", "--remote")
 }
 
 // Copies the external components to the Core resource folder.
