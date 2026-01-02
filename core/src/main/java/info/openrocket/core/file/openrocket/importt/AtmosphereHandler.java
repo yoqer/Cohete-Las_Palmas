@@ -53,6 +53,10 @@ class AtmosphereHandler extends AbstractElementHandler {
 		} else if (element.equals("baserelativehumidity")) {
 			if (Double.isNaN(d)) {
 				warnings.add("Illegal base humidity specified, ignoring");
+			} else if (d < 0 || d > 1) {
+				warnings.add("Illegal base humidity specified, ignoring");
+			} else {
+				humidity = d;
 			}
 		} else {
 			super.closeElement(element, attributes, content, warnings);
