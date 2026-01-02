@@ -157,7 +157,7 @@ public class MultiLevelWindEditDialog extends JDialog {
 		//// Import Levels
 		JButton importButton = new JButton(trans.get("WindProfileEditorDlg.but.importLevels"));
 		importButton.setToolTipText(trans.get("WindProfileEditorDlg.but.importLevels.ttip"));
-		importButton.setIcon(Icons.IMPORT);
+		importButton.setIcon(Icons.FILE_IMPORT);
 		importButton.addActionListener(e -> {
 			importLevels(model);
 		});
@@ -249,7 +249,7 @@ public class MultiLevelWindEditDialog extends JDialog {
 
 		// Now open file chooser to select the CSV file
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		fileChooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 		fileChooser.setDialogTitle(trans.get("WindProfileEditorDlg.dlg.importLevels.title"));
 
 		fileChooser.addChoosableFileFilter(FileHelper.CSV_FILTER);
@@ -265,7 +265,7 @@ public class MultiLevelWindEditDialog extends JDialog {
 		File selectedFile = fileChooser.getSelectedFile();
 		selectedFile = FileHelper.forceExtension(selectedFile, "csv");
 
-		((SwingPreferences) Application.getPreferences()).setDefaultDirectory(fileChooser.getCurrentDirectory());
+		Application.getPreferences().setDefaultDirectory(fileChooser.getCurrentDirectory());
 
 		// Show a warning message that the current levels will be overwritten
 		if (!model.getLevels().isEmpty()) {

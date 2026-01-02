@@ -49,12 +49,11 @@ class AtmosphereHandler extends AbstractElementHandler {
 			if (Double.isNaN(d)) {
 				warnings.add("Illegal base pressure specified, ignoring.");
 			}
-			pressure = d;
+			pressure = Math.max(d, 0.001); // Prevent zero or negative pressures.
 		} else if (element.equals("basehumidity")) {
 			if (Double.isNaN(d)) {
 				warnings.add("Illegal base humidity specified, ignoring");
 			}
-			humidity = d;
 		} else {
 			super.closeElement(element, attributes, content, warnings);
 		}

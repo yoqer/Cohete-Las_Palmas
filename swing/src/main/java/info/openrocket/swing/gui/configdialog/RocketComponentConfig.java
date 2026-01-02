@@ -4,7 +4,9 @@ package info.openrocket.swing.gui.configdialog;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -22,13 +24,16 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -37,6 +42,8 @@ import javax.swing.event.ChangeListener;
 import info.openrocket.core.rocketcomponent.FinSet;
 import info.openrocket.core.rocketcomponent.NoseCone;
 import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.swing.gui.main.BasicFrame;
+import info.openrocket.swing.gui.main.RocketActions;
 import info.openrocket.swing.gui.theme.ORScrollPaneBorder;
 import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
@@ -53,6 +60,7 @@ import info.openrocket.swing.gui.dialogs.preset.ComponentPresetChooserDialog;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.theme.UITheme;
+import info.openrocket.swing.gui.widgets.KebabMenu;
 import info.openrocket.swing.gui.widgets.IconToggleButton;
 
 import info.openrocket.core.database.ComponentPresetDatabase;
@@ -172,8 +180,10 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			order.add(selectPreset);
 		}
 
+		// Add the header action menu (kebab menu)
+		addHeaderActionMenu();
+
 		tabbedPane = new JTabbedPane();
-		this.add(tabbedPane, "newline, span, growx, growy 100, wrap");
 		order.add(tabbedPane);
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override
@@ -197,9 +207,56 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		tabbedPane.addTab(trans.get("RocketCompCfg.tab.Comment"), null, commentTab(),
 				trans.get("RocketCompCfg.tab.Comment.ttip"));
 
+        JScrollPane scrollPane = new JScrollPane(tabbedPane);
+        scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        this.add(scrollPane, "newline, grow, push, wrap");
+
 		addButtons();
 
 		updateFields();
+	}
+
+	/**
+	 * Add the header action menu (kebab menu) to the configuration dialog.
+	 */
+	private void addHeaderActionMenu() {
+		KebabMenu menu = createHeaderActionMenu();
+		if (menu == null) {
+			return;
+		}
+
+		this.add(menu, "gapleft unrel, gapright 0");
+		order.add(menu);
+	}
+
+	private KebabMenu createHeaderActionMenu() {
+		if (parent == null) {
+			return null;
+		}
+
+		// Get the owner window
+		Window owner = parent.getOwner();
+		if (!(owner instanceof BasicFrame)) {
+			return null;
+		}
+
+		// Get the rocket actions
+		RocketActions actions = ((BasicFrame) owner).getRocketActions();
+		if (actions == null) {
+			return null;
+		}
+
+		// Populate the menu
+		KebabMenu menu = new KebabMenu();
+		menu.add(new JMenuItem(actions.getScaleAction()));
+		menu.addSeparator();
+		menu.add(new JMenuItem(actions.getExportOBJAction()));
+		menu.add(new JMenuItem(actions.getExportSVGAction()));
+
+		return menu;
 	}
 
 	private static void initColors() {
@@ -208,8 +265,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 	}
 
 	public static void updateColors() {
-		darkErrorColor = GUIUtil.getUITheme().getDarkErrorColor();
-		multiCompEditColor = GUIUtil.getUITheme().getMultiCompEditColor();
+		darkErrorColor = UITheme.getColor(UITheme.Keys.DARK_ERROR);
+		multiCompEditColor = UITheme.getColor(UITheme.Keys.MULTI_COMP_EDIT);
 		marginBorder = GUIUtil.getUITheme().getMarginBorder();
 	}
 
@@ -239,8 +296,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		// Component info toggle button
 		infoBtn = new IconToggleButton();
 		infoBtn.setToolTipText(trans.get("RocketCompCfg.btn.ComponentInfo.ttip"));
-		infoBtn.setIconScale(1.2f);
-		infoBtn.setSelectedIcon(Icons.HELP_ABOUT);
+		infoBtn.setSelectedIcon(Icons.deriveScaledIcon(Icons.HELP_ABOUT, 1.5f));
 		buttonPanel.add(infoBtn, "split 3, gapright para");
 
 		infoBtn.addItemListener(new ItemListener() {
@@ -269,8 +325,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		if (buttonPanel != null) {
 			this.remove(buttonPanel);
 		}
-		
-		buttonPanel = new JPanel(new MigLayout("fill, ins 5, hidemode 3"));
+
+		buttonPanel = new JPanel(new MigLayout("fill, ins 0, hidemode 3"));
 
 		//// Component info
 		addComponentInfo(buttonPanel);
@@ -339,8 +395,8 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 		buttonPanel.add(okButton);
 
 		updateFields();
-		
-		this.add(buttonPanel, "newline, spanx, growx");
+
+		this.add(buttonPanel, "spanx, growx");
 	}
 
 	protected void disposeDialog() {
@@ -635,7 +691,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 
 				double compLen = c.getLength();
 				if (c instanceof FinSet) {
-					compLen = ((FinSet) c).getInstanceBoundingBox().span().x;
+					compLen = ((FinSet) c).getInstanceBoundingBox().span().getX();
 				}
 				if (compPos + compLen > maxL) {
 					maxL = compPos + compLen;
@@ -643,7 +699,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 			}
 			length = new DoubleModel(maxL - minL);
 		} else if (component instanceof FinSet) {
-			double compLen = ((FinSet) component).getInstanceBoundingBox().span().x;
+			double compLen = ((FinSet) component).getInstanceBoundingBox().span().getX();
 			length = new DoubleModel(compLen);
 		} else {
 			length = new DoubleModel(component, "Length", UnitGroup.UNITS_LENGTH, 0);
@@ -719,13 +775,13 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 
 		spin.setEditor(new SpinnerEditor(spin));
 		bm.addEnableComponent(spin, true);
-		panel.add(spin, "top, growx 1");
+		panel.add(spin, "growx 1");
 		order.add(((SpinnerEditor) spin.getEditor()).getTextField());
 		
 		
 		bs = new BasicSlider(m.getSliderModel(-1.0, 1.0));
 		bm.addEnableComponent(bs);
-		panel.add(bs, "top, skip, wrap");
+		panel.add(bs, "skip, wrap");
 
 		if (component.getCDOverriddenBy() != null) {
 			check.setEnabled(false);
@@ -758,7 +814,7 @@ public class RocketComponentConfig extends JPanel implements Invalidatable, Inva
 				Style.BOLD), "wrap");
 		
 		// TODO: LOW:  Changes in comment from other sources not reflected in component
-		commentTextArea = new JTextArea(component.getComment());
+		commentTextArea = new JTextArea(component.getComment(), 1, 1);
 		commentTextArea.setBorder(marginBorder);
 		commentTextArea.setLineWrap(true);
 		commentTextArea.setWrapStyleWord(true);

@@ -48,6 +48,7 @@ import info.openrocket.core.rocketcomponent.ThicknessRingComponent;
 import info.openrocket.core.rocketcomponent.Transition;
 import info.openrocket.core.rocketcomponent.TrapezoidFinSet;
 import info.openrocket.core.rocketcomponent.position.AxialMethod;
+import info.openrocket.core.util.CoordinateIF;
 import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,6 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.BugException;
-import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.Reflection;
 import info.openrocket.core.util.Reflection.Method;
@@ -753,7 +753,7 @@ public class ScaleDialog extends JDialog {
 			// to prevent the fore/aft shoulder radius from becoming larger than the fore/aft radius
 			if (multiplier >= 1) {
 				addScaler(Transition.class, "ForeRadius", "isForeRadiusAutomatic", scalers);
-				addScaler(Transition.class, "AftRadius", "isForeRadiusAutomatic", scalers);
+				addScaler(Transition.class, "AftRadius", "isAftRadiusAutomatic", scalers);
 				addScaler(Transition.class, "ForeShoulderRadius", scalers, false);
 				addScaler(Transition.class, "AftShoulderRadius", scalers, false);
 			}
@@ -763,7 +763,7 @@ public class ScaleDialog extends JDialog {
 				addScaler(Transition.class, "ForeShoulderRadius", scalers, false);
 				addScaler(Transition.class, "AftShoulderRadius", scalers, false);
 				addScaler(Transition.class, "ForeRadius", "isForeRadiusAutomatic", scalers);
-				addScaler(Transition.class, "AftRadius", "isForeRadiusAutomatic", scalers);
+				addScaler(Transition.class, "AftRadius", "isAftRadiusAutomatic", scalers);
 			}
 
 			performIterativeScaling(scalers, component, multiplier, scaleMass);
@@ -834,7 +834,7 @@ public class ScaleDialog extends JDialog {
 		@Override
 		public void scale(RocketComponent component, double multiplier, boolean scaleMass) {
 			FreeformFinSet finset = (FreeformFinSet) component;
-			Coordinate[] points = finset.getFinPoints();
+			CoordinateIF[] points = finset.getFinPoints();
 			for (int i = 0; i < points.length; i++) {
 				points[i] = points[i].multiply(multiplier);
 			}

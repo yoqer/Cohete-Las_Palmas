@@ -1,11 +1,24 @@
 package info.openrocket.swing.gui.main;
 
+import java.awt.AWTEvent;
 import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -29,6 +42,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -44,6 +58,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
@@ -70,6 +88,7 @@ import info.openrocket.core.document.events.DocumentChangeListener;
 import info.openrocket.core.file.GeneralRocketSaver;
 import info.openrocket.core.file.RocketLoadException;
 import info.openrocket.core.file.rasaero.RASAeroCommonConstants;
+import info.openrocket.core.file.svg.export.SVGExportOptions;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.Markers;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
@@ -84,12 +103,13 @@ import info.openrocket.core.util.MemoryManagement.MemoryData;
 import info.openrocket.core.util.Reflection;
 import info.openrocket.core.util.TestRockets;
 
-import info.openrocket.swing.gui.choosers.OBJOptionChooser;
 import info.openrocket.swing.gui.configdialog.SaveDesignInfoPanel;
 import info.openrocket.swing.gui.dialogs.ErrorWarningDialog;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
 import info.openrocket.swing.gui.customexpression.CustomExpressionDialog;
+import info.openrocket.swing.gui.export.SVGRocketPartsExporter;
+import info.openrocket.swing.gui.export.SvgOptionsDialog;
 import info.openrocket.swing.gui.dialogs.AboutDialog;
 import info.openrocket.swing.gui.dialogs.BugReportDialog;
 import info.openrocket.swing.gui.dialogs.componentanalysis.ComponentAnalysisDialog;
@@ -115,31 +135,30 @@ import info.openrocket.swing.gui.util.SaveFileWorker;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.util.URLUtil;
 import info.openrocket.swing.utils.ComponentPresetEditor;
+import info.openrocket.swing.gui.figureelements.BananaForScale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
-
 
 public class BasicFrame extends JFrame {
 	private static final long serialVersionUID = 948877655223365313L;
 
-	private static final Logger log = LoggerFactory.getLogger(BasicFrame.class);
+private static final Logger log = LoggerFactory.getLogger(BasicFrame.class);
 
-	private static final GeneralRocketSaver ROCKET_SAVER = new GeneralRocketSaver();
+private static final GeneralRocketSaver ROCKET_SAVER = new GeneralRocketSaver();
+private static final int PREVIEW_WIDTH = 1000;
+private static final int PREVIEW_MIN_HEIGHT = 600;
+private static final int PREVIEW_MAX_HEIGHT = 800;
 
-	private static final Translator trans = Application.getTranslator();
+private static final Translator trans = Application.getTranslator();
 	private static final ApplicationPreferences prefs = Application.getPreferences();
-
-	public static final int SHORTCUT_KEY = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
-
-	public static final int SHIFT_SHORTCUT_KEY = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() |
-			SHIFT_DOWN_MASK;
 
 	public static final int DESIGN_TAB = 0;
 	public static final int FLIGHT_CONFIGURATION_TAB = 1;
 	public static final int SIMULATION_TAB = 2;
 	private int previousTab = DESIGN_TAB;
+
+	private static final int CASCADE_OFFSET_X = 30;
+	private static final int CASCADE_OFFSET_Y = 30;
 
 
 	/**
@@ -174,6 +193,13 @@ public class BasicFrame extends JFrame {
 	private final DesignPanel designPanel;
 	private final FlightConfigurationPanel flightConfigurationPanel;
 	private final SimulationPanel simulationPanel;
+
+	private boolean showBananaForScaleInToolsMenu = false;
+	private JCheckBoxMenuItem bananaForScaleMenuItem = null;
+	private JPopupMenu.Separator bananaForScaleSeparator = null;
+	private BananaForScale bananaForScaleElement = null;
+	private volatile boolean bananaAltKeyDown = false;
+	private KeyEventDispatcher bananaAltKeyDispatcher = null;
 
 	public static BasicFrame lastFrameInstance = null;		// Latest BasicFrame that was created
 	private static boolean quitCalled = false;				// Keeps track whether the quit action has been called
@@ -263,8 +289,10 @@ public class BasicFrame extends JFrame {
 
 			popupMenu.addSeparator();
 			popupMenu.add(actions.getExportOBJAction());
+			popupMenu.add(actions.getExportSVGAction());
 		}
 
+		installBananaAltKeyTracker();
 		createMenu();
 
 
@@ -297,6 +325,7 @@ public class BasicFrame extends JFrame {
 
 		this.setLocationByPlatform(true);
 		GUIUtil.rememberWindowPosition(this);
+		positionRelativeToExistingFrames();
 
 		GUIUtil.setWindowIcons(this);
 
@@ -329,6 +358,89 @@ public class BasicFrame extends JFrame {
 			}
 		}
 		log.debug("BasicFrame instantiation complete");
+	}
+
+	@Override
+	public void dispose() {
+		uninstallBananaAltKeyTracker();
+		super.dispose();
+	}
+
+	private void installBananaAltKeyTracker() {
+		if (bananaAltKeyDispatcher != null) {
+			return;
+		}
+		bananaAltKeyDispatcher = new KeyEventDispatcher() {
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ALT) {
+					bananaAltKeyDown = (e.getID() == KeyEvent.KEY_PRESSED);
+				}
+				return false;
+			}
+		};
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(bananaAltKeyDispatcher);
+	}
+
+	private void uninstallBananaAltKeyTracker() {
+		if (bananaAltKeyDispatcher == null) {
+			return;
+		}
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(bananaAltKeyDispatcher);
+		bananaAltKeyDispatcher = null;
+	}
+
+
+	/**
+	 * Cascade this frame relative to the previously opened frame while keeping it on-screen.
+	 */
+	private void positionRelativeToExistingFrames() {
+		if (frames.isEmpty()) {
+			return;
+		}
+
+		BasicFrame previousFrame = frames.get(frames.size() - 1);
+		Point baseLocation = previousFrame.getLocation();
+
+		GraphicsConfiguration targetConfiguration = previousFrame.getGraphicsConfiguration();
+		if (targetConfiguration == null) {
+			targetConfiguration = this.getGraphicsConfiguration();
+		}
+		if (targetConfiguration == null) {
+			targetConfiguration = GraphicsEnvironment.getLocalGraphicsEnvironment()
+				.getDefaultScreenDevice().getDefaultConfiguration();
+		}
+
+		Rectangle usableBounds = targetConfiguration.getBounds();
+		Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(targetConfiguration);
+
+		int minX = usableBounds.x + screenInsets.left;
+		int minY = usableBounds.y + screenInsets.top;
+		int maxX = usableBounds.x + usableBounds.width - screenInsets.right - this.getWidth();
+		int maxY = usableBounds.y + usableBounds.height - screenInsets.bottom - this.getHeight();
+
+		if (maxX < minX) {
+			maxX = minX;
+		}
+		if (maxY < minY) {
+			maxY = minY;
+		}
+
+		int x = baseLocation.x + CASCADE_OFFSET_X;
+		int y = baseLocation.y + CASCADE_OFFSET_Y;
+
+		if (x > maxX) {
+			x = minX;
+		}
+		if (y > maxY) {
+			y = minY;
+		}
+
+		x = Math.max(x, minX);
+		y = Math.max(y, minY);
+
+		this.setLocationByPlatform(false);
+		this.setLocation(x, y);
 	}
 
 
@@ -390,10 +502,10 @@ public class BasicFrame extends JFrame {
 
 		//// 	Save
 		item = new JMenuItem(trans.get("main.menu.file.save"), KeyEvent.VK_S);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.META_DOWN_MASK));
 		//// Save the current rocket design
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.save.desc"));
-		item.setIcon(Icons.FILE_SAVE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_SAVE));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -406,10 +518,10 @@ public class BasicFrame extends JFrame {
 		//// 	Save as...
 		item = new JMenuItem(trans.get("main.menu.file.saveAs"), KeyEvent.VK_A);
 		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-				SHORTCUT_KEY | ActionEvent.SHIFT_MASK));
+				InputEvent.SHIFT_DOWN_MASK | InputEvent.META_DOWN_MASK));
 		//// Save the current rocket design to a new file
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.saveAs.desc"));
-		item.setIcon(Icons.FILE_SAVE_AS);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_SAVE_AS));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -423,11 +535,11 @@ public class BasicFrame extends JFrame {
 		//// 	Export as
 		JMenu exportSubMenu = new JMenu(trans.get("main.menu.file.exportAs"));
 		exportSubMenu.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.desc"));
-		exportSubMenu.setIcon(Icons.FILE_EXPORT);
+		exportSubMenu.setIcon(Icons.deriveMenuIcon(Icons.FILE_EXPORT));
 
 		////// 		Export RASAero
 		JMenuItem exportRASAero = new JMenuItem(trans.get("main.menu.file.exportAs.RASAero"));
-		exportRASAero.setIcon(Icons.RASAERO);
+		exportRASAero.setIcon(Icons.deriveMenuIcon(Icons.RASAERO));
 		exportRASAero.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.RASAero.desc"));
 		exportRASAero.addActionListener(new ActionListener() {
 			@Override
@@ -438,7 +550,7 @@ public class BasicFrame extends JFrame {
 
 		////// 		Export RockSim
 		JMenuItem exportRockSim = new JMenuItem(trans.get("main.menu.file.exportAs.RockSim"));
-		exportRockSim.setIcon(Icons.ROCKSIM);
+		exportRockSim.setIcon(Icons.deriveMenuIcon(Icons.ROCKSIM));
 		exportRockSim.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.RockSim.desc"));
 		exportRockSim.addActionListener(new ActionListener() {
 			@Override
@@ -451,7 +563,7 @@ public class BasicFrame extends JFrame {
 
 		////// 		Export Wavefront OBJ
 		JMenuItem exportOBJ = new JMenuItem(trans.get("main.menu.file.exportAs.WavefrontOBJ"));
-		exportOBJ.setIcon(Icons.EXPORT_3D);
+		exportOBJ.setIcon(Icons.deriveMenuIcon(Icons.EXPORT_3D));
 		exportOBJ.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.WavefrontOBJ.desc"));
 		exportOBJ.addActionListener(new ActionListener() {
 			@Override
@@ -466,6 +578,18 @@ public class BasicFrame extends JFrame {
 		});
 		exportSubMenu.add(exportOBJ);
 
+		//////		Export SVG profiles
+		JMenuItem exportSvgProfiles = new JMenuItem(trans.get("main.menu.file.exportAs.SVGProfiles"));
+		exportSvgProfiles.setIcon(Icons.deriveMenuIcon(Icons.EXPORT_SVG));
+		exportSvgProfiles.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportAs.SVGProfiles.desc"));
+		exportSvgProfiles.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exportSvgProfilesAction();
+			}
+		});
+		exportSubMenu.add(exportSvgProfiles);
+
 		fileMenu.add(exportSubMenu);
 		fileMenu.addSeparator();
 
@@ -473,7 +597,7 @@ public class BasicFrame extends JFrame {
 
 		////	Save decal image...
 		item = new JMenuItem(trans.get("main.menu.file.exportDecal"));
-		item.setIcon(Icons.SAVE_DECAL);
+		item.setIcon(Icons.deriveMenuIcon(Icons.SAVE_DECAL));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.exportDecal.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -481,7 +605,7 @@ public class BasicFrame extends JFrame {
 				exportDecalAction();
 			}
 		});
-		item.setEnabled(document.getDecalList().size() > 0);
+		item.setEnabled(!document.getDecalList().isEmpty());
 
 		// TODO
 		/* document.getRocket().addChangeListener(new StateChangeListener() {
@@ -495,9 +619,9 @@ public class BasicFrame extends JFrame {
 
 		//// 	Print design info...
 		item = new JMenuItem(trans.get("main.menu.file.print"), KeyEvent.VK_P);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.META_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.print.desc"));
-		item.setIcon(Icons.FILE_PRINT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_PRINT));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -509,7 +633,7 @@ public class BasicFrame extends JFrame {
 
 		//  export sim table...
 		AbstractAction simTableExportAction = simulationPanel.getExportSimulationTableAsCSVAction();
-		JMenuItem exportSimTableToCSVMenuItem = new JMenuItem(simTableExportAction);
+		JMenuItem exportSimTableToCSVMenuItem = createMenuItemFromAction(simTableExportAction);
 		fileMenu.add(exportSimTableToCSVMenuItem);
 
 		fileMenu.addSeparator();
@@ -520,8 +644,8 @@ public class BasicFrame extends JFrame {
 		//// Properties
 		item = new JMenuItem(trans.get("main.menu.file.properties"), KeyEvent.VK_I);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.properties.desc"));
-		item.setIcon(Icons.CONFIGURE);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, SHORTCUT_KEY));
+		item.setIcon(Icons.deriveMenuIcon(Icons.CONFIGURE));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.META_DOWN_MASK));
 		item.addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -533,10 +657,10 @@ public class BasicFrame extends JFrame {
 
 		////	Close
 		item = new JMenuItem(trans.get("main.menu.file.close"), KeyEvent.VK_C);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK));
 		//// Close the current rocket design
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.close.desc"));
-		item.setIcon(Icons.FILE_CLOSE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_CLOSE));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -551,10 +675,10 @@ public class BasicFrame extends JFrame {
 
 		////	Quit
 		item = new JMenuItem(trans.get("main.menu.file.quit"), KeyEvent.VK_Q);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.META_DOWN_MASK));
 		//// Quit the program
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.quit.desc"));
-		item.setIcon(Icons.FILE_QUIT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_QUIT));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -573,8 +697,8 @@ public class BasicFrame extends JFrame {
 		menubar.add(editMenu);
 
 		Action action = UndoRedoAction.newUndoAction(document);
-		item = new JMenuItem(action);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, SHORTCUT_KEY));
+		item = createMenuItemFromAction(action);
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_U);
 
 		////	Undo the previous operation
@@ -583,8 +707,8 @@ public class BasicFrame extends JFrame {
 		editMenu.add(item);
 
 		action = UndoRedoAction.newRedoAction(document);
-		item = new JMenuItem(action);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, SHORTCUT_KEY));
+		item = createMenuItemFromAction(action);
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_R);
 
 		////	Redo the previously undone operation
@@ -594,51 +718,51 @@ public class BasicFrame extends JFrame {
 		editMenu.addSeparator();
 
 
-		item = new JMenuItem(actions.getEditAction());
+		item = createMenuItemFromAction(actions.getEditAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getCutAction());
+		item = createMenuItemFromAction(actions.getCutAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getCopyAction());
+		item = createMenuItemFromAction(actions.getCopyAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getPasteAction());
+		item = createMenuItemFromAction(actions.getPasteAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getDuplicateAction());
+		item = createMenuItemFromAction(actions.getDuplicateAction());
 		editMenu.add(item);
 
-		item = new JMenuItem(actions.getDeleteAction());
+		item = createMenuItemFromAction(actions.getDeleteAction());
 		editMenu.add(item);
 
 		editMenu.addSeparator();
 
 		JMenu selectSubMenu = new JMenu(trans.get("RocketActions.Select"));
 		editMenu.add(selectSubMenu);
-		item = new JMenuItem(actions.getSelectSameColorAction());
+		item = createMenuItemFromAction(actions.getSelectSameColorAction());
 		selectSubMenu.add(item);
-		item = new JMenuItem(actions.getDeselectAllAction());
+		item = createMenuItemFromAction(actions.getDeselectAllAction());
 		selectSubMenu.add(item);
 
 		editMenu.addSeparator();
 
-		item = new JMenuItem(actions.getScaleAction());
+		item = createMenuItemFromAction(actions.getScaleAction());
 		editMenu.add(item);
 
 		////	Visibility
 		JMenu visibilitySubMenu = new JMenu(trans.get("RocketActions.Visibility"));
 		editMenu.add(visibilitySubMenu);
-		item = new JMenuItem(actions.getToggleVisibilityAction());
+		item = createMenuItemFromAction(actions.getToggleVisibilityAction());
 		visibilitySubMenu.add(item);
-		item = new JMenuItem(actions.getShowAllComponentsAction());
+		item = createMenuItemFromAction(actions.getShowAllComponentsAction());
 		visibilitySubMenu.add(item);
 
 		editMenu.addSeparator();
 
 		////	Preferences
 		item = new JMenuItem(trans.get("main.menu.edit.preferences"));
-		item.setIcon(Icons.PREFERENCES);
+		item.setIcon(Icons.deriveMenuIcon(Icons.PREFERENCES));
 
 		////	Setup the application preferences
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.edit.preferences.desc"));
@@ -726,6 +850,60 @@ public class BasicFrame extends JFrame {
 		});
 		toolsMenu.add(item);
 
+		bananaForScaleSeparator = new JPopupMenu.Separator();
+		bananaForScaleMenuItem = new JCheckBoxMenuItem("Banana for scale");
+		bananaForScaleMenuItem.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				setBananaForScaleEnabled(e.getStateChange() == ItemEvent.SELECTED);
+			}
+		});
+
+		toolsMenu.addMenuListener(new MenuListener() {
+			@Override
+			public void menuSelected(MenuEvent e) {
+				boolean show = showBananaForScaleInToolsMenu || bananaAltKeyDown || isAltDownInCurrentAwtEvent();
+				setBananaForScaleMenuVisible(toolsMenu, show);
+			}
+
+			@Override
+			public void menuDeselected(MenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+
+			@Override
+			public void menuCanceled(MenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+		});
+
+		toolsMenu.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+					showBananaForScaleInToolsMenu = true;
+				}
+			}
+		});
+
+		toolsMenu.getPopupMenu().addPopupMenuListener(new PopupMenuListener() {
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+				boolean show = showBananaForScaleInToolsMenu || bananaAltKeyDown || isAltDownInCurrentAwtEvent();
+				setBananaForScaleMenuVisible(toolsMenu, show);
+			}
+
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent e) {
+				showBananaForScaleInToolsMenu = false;
+			}
+		});
+
 		////	Debug
 		//	//	(shown if openrocket.debug.fileMenu is defined)
 		if (System.getProperty("openrocket.debug.fileMenu") != null) {
@@ -736,6 +914,64 @@ public class BasicFrame extends JFrame {
 		generateHelpMenu(menubar, this);
 
 		this.setJMenuBar(menubar);
+	}
+
+	private static boolean isAltDownInCurrentAwtEvent() {
+		AWTEvent event = EventQueue.getCurrentEvent();
+		if (event instanceof InputEvent) {
+			return (((InputEvent) event).getModifiersEx() & InputEvent.ALT_DOWN_MASK) != 0;
+		}
+		if (event instanceof java.awt.event.KeyEvent) {
+			return ((((java.awt.event.KeyEvent) event).getModifiersEx() & InputEvent.ALT_DOWN_MASK) != 0);
+		}
+		return false;
+	}
+
+	private void setBananaForScaleMenuVisible(JMenu toolsMenu, boolean visible) {
+		if (toolsMenu == null || bananaForScaleSeparator == null || bananaForScaleMenuItem == null) {
+			return;
+		}
+
+		if (visible) {
+			if (bananaForScaleSeparator.getParent() == null) {
+				toolsMenu.add(bananaForScaleSeparator);
+			}
+			if (bananaForScaleMenuItem.getParent() == null) {
+				toolsMenu.add(bananaForScaleMenuItem);
+			}
+		} else {
+			toolsMenu.remove(bananaForScaleMenuItem);
+			toolsMenu.remove(bananaForScaleSeparator);
+		}
+		toolsMenu.revalidate();
+		toolsMenu.repaint();
+	}
+
+	private void setBananaForScaleEnabled(boolean enabled) {
+		if (rocketpanel == null) {
+			return;
+		}
+
+		if (bananaForScaleElement == null) {
+			bananaForScaleElement = new BananaForScale(rocketpanel.getFigure());
+		}
+
+		rocketpanel.getFigure().removeAbsoluteExtra(bananaForScaleElement);
+		if (enabled) {
+			rocketpanel.getFigure().addAbsoluteExtra(bananaForScaleElement);
+		}
+		rocketpanel.getFigure().repaint();
+	}
+
+	/**
+	 * Create a JMenuItem from an Action. It styles the icon appropriately.
+	 * @param action the action
+	 * @return the menu item
+	 */
+	private static JMenuItem createMenuItemFromAction(Action action) {
+		JMenuItem item = new JMenuItem(action);
+		item.setIcon(Icons.deriveMenuIcon(item.getIcon()));
+		return item;
 	}
 
 	public static void generateHelpMenu(JMenuBar menubar, JFrame parent) {
@@ -749,7 +985,7 @@ public class BasicFrame extends JFrame {
 
 		////	Guided tours
 		item = new JMenuItem(trans.get("main.menu.help.tours"), KeyEvent.VK_L);
-		item.setIcon(Icons.HELP_TOURS);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_TOURS));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.tours.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -762,7 +998,7 @@ public class BasicFrame extends JFrame {
 
 		////	Online Documentation
 		item = new JMenuItem(trans.get("main.menu.help.documentation"));
-		item.setIcon(Icons.DOCUMENTATION);
+		item.setIcon(Icons.deriveMenuIcon(Icons.DOCUMENTATION));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.documentation.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -777,7 +1013,7 @@ public class BasicFrame extends JFrame {
 
 		////	Bug report
 		item = new JMenuItem(trans.get("main.menu.help.bugReport"), KeyEvent.VK_B);
-		item.setIcon(Icons.HELP_BUG_REPORT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_BUG_REPORT));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.bugReport.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -790,8 +1026,8 @@ public class BasicFrame extends JFrame {
 
 		////	Debug log
 		item = new JMenuItem(trans.get("main.menu.help.debugLog"), KeyEvent.VK_D);
-		item.setIcon(Icons.HELP_DEBUG_LOG);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, SHIFT_SHORTCUT_KEY));
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_DEBUG_LOG));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.SHIFT_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.debugLog.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -806,7 +1042,7 @@ public class BasicFrame extends JFrame {
 
 		////	License
 		item = new JMenuItem(trans.get("main.menu.help.license"), KeyEvent.VK_L);
-		item.setIcon(Icons.HELP_LICENSE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_LICENSE));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.license.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -819,7 +1055,7 @@ public class BasicFrame extends JFrame {
 
 		////	Check for updates
 		item = new JMenuItem(trans.get("main.menu.help.checkForUpdates"), KeyEvent.VK_U);
-		item.setIcon(Icons.HELP_CHECK_FOR_UPDATES);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_CHECK_FOR_UPDATES));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.checkForUpdates.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -832,7 +1068,7 @@ public class BasicFrame extends JFrame {
 
 		////	About
 		item = new JMenuItem(trans.get("main.menu.help.about"), KeyEvent.VK_A);
-		item.setIcon(Icons.HELP_ABOUT);
+		item.setIcon(Icons.deriveMenuIcon(Icons.HELP_ABOUT));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.help.about.desc"));
 		item.addActionListener(new ActionListener() {
 			@Override
@@ -849,10 +1085,10 @@ public class BasicFrame extends JFrame {
 
 		//// New
 		item = new JMenuItem(trans.get("main.menu.file.new"), KeyEvent.VK_N);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.META_DOWN_MASK));
 		item.setMnemonic(KeyEvent.VK_N);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.new.desc"));
-		item.setIcon(Icons.FILE_NEW);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_NEW));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -867,9 +1103,9 @@ public class BasicFrame extends JFrame {
 
 		//// 	Open...
 		item = new JMenuItem(trans.get("main.menu.file.open"), KeyEvent.VK_O);
-		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, SHORTCUT_KEY));
+		item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.META_DOWN_MASK));
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.open.desc"));
-		item.setIcon(Icons.FILE_OPEN);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN));
 		item.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -882,26 +1118,26 @@ public class BasicFrame extends JFrame {
 		//// 	Open Recent
 		item = new MRUDesignFileAction(trans.get("main.menu.file.openRecent"), parent);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.openRecent.desc"));
-		item.setIcon(Icons.FILE_OPEN);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN_RECENT));
 		fileMenu.add(item);
 
 		//// 	Open example
 		BasicFrame basicFrame = parent instanceof BasicFrame ? (BasicFrame) parent : null;
 		item = new ExampleDesignFileAction(trans.get("main.menu.file.openExample"), basicFrame);
 		item.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.openExample.desc"));
-		item.setIcon(Icons.FILE_OPEN_EXAMPLE);
+		item.setIcon(Icons.deriveMenuIcon(Icons.FILE_OPEN_EXAMPLE));
 		fileMenu.add(item);
 
 		//// 	Import
 		JMenu importSubMenu = new JMenu(trans.get("main.menu.file.import"));
 		importSubMenu.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.desc"));
-		importSubMenu.setIcon(Icons.FILE_IMPORT);
+		importSubMenu.setIcon(Icons.deriveMenuIcon(Icons.FILE_IMPORT));
 		fileMenu.add(importSubMenu);
 
 		////// 		Import RASAero
 		JMenuItem importRASAero = new JMenuItem(trans.get("main.menu.file.import.RASAero"));
 		importRASAero.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.RASAero.desc"));
-		importRASAero.setIcon(Icons.RASAERO);
+		importRASAero.setIcon(Icons.deriveMenuIcon(Icons.RASAERO));
 		importRASAero.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -913,7 +1149,7 @@ public class BasicFrame extends JFrame {
 		////// 		Import RockSim
 		JMenuItem importRockSim = new JMenuItem(trans.get("main.menu.file.import.RockSim"));
 		importRockSim.getAccessibleContext().setAccessibleDescription(trans.get("main.menu.file.import.RockSim.desc"));
-		importRockSim.setIcon(Icons.ROCKSIM);
+		importRockSim.setIcon(Icons.deriveMenuIcon(Icons.ROCKSIM));
 		importRockSim.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -1218,14 +1454,14 @@ public class BasicFrame extends JFrame {
 
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		chooser.setMultiSelectionEnabled(true);
-		chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 		int option = chooser.showOpenDialog(parent);
 		if (option != JFileChooser.APPROVE_OPTION) {
 			log.info(Markers.USER_MARKER, "Decided not to open files, option=" + option);
 			return;
 		}
 
-		((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+		Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 
 		File[] files = chooser.getSelectedFiles();
 		log.info(Markers.USER_MARKER, "Opening files " + Arrays.toString(files));
@@ -1466,7 +1702,7 @@ public class BasicFrame extends JFrame {
 			return null;
 		}
 
-		((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+		Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 
 		return file;
 	}
@@ -1730,6 +1966,147 @@ public class BasicFrame extends JFrame {
 		return true;
 	}
 
+	/**
+	 * Export SVG profiles. If components are provided, exports only those components;
+	 * otherwise exports all exportable components from the document.
+	 *
+	 * @param components Components to export, or null to export all from document
+	 */
+	private void exportSvgProfilesAction(List<RocketComponent> components) {
+		// Get currently selected components from design (if components parameter is null)
+		List<RocketComponent> initiallySelected = components;
+		if (initiallySelected == null) {
+			initiallySelected = getSelectedComponents();
+			if (initiallySelected == null) {
+				initiallySelected = new ArrayList<>();
+			}
+		}
+		
+		// Show SVG options dialog first
+		SvgOptionsDialog optionsDialog = new SvgOptionsDialog(BasicFrame.this, document, initiallySelected);
+		optionsDialog.setFromPreferences(prefs);
+		if (!optionsDialog.showDialog()) {
+			return; // User cancelled
+		}
+
+		// Get the selected tab to determine export type
+		int selectedTab = optionsDialog.getSelectedTab();
+		
+		// Get options from dialog (includes spacing)
+		SVGExportOptions options = optionsDialog.getExportOptions();
+
+		// Now show file chooser
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileFilter(FileHelper.SVG_FILTER);
+
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		File defaultDir = swingPrefs.getDefaultDirectory();
+		if (defaultDir != null) {
+			chooser.setCurrentDirectory(defaultDir);
+		}
+
+		// Determine default filename based on selected tab
+		String defaultName;
+		String fileSuffix;
+		if (selectedTab == SvgOptionsDialog.COMPONENTS_TAB) {
+			// Components tab
+			if (components != null && !components.isEmpty()) {
+				if (components.size() == 1) {
+					defaultName = components.get(0).getName();
+					if (defaultName == null || defaultName.isBlank()) {
+						defaultName = components.get(0).getComponentName();
+					}
+				} else {
+					defaultName = "components";
+				}
+			} else {
+				defaultName = document.getRocket().getName();
+				if (defaultName == null || defaultName.isBlank()) {
+					defaultName = "rocket";
+				}
+			}
+			fileSuffix = "-profile.svg";
+		} else {
+			// Fin Guides tab
+			defaultName = document.getRocket().getName();
+			if (defaultName == null || defaultName.isBlank()) {
+				defaultName = "rocket";
+			}
+			fileSuffix = "-finguides.svg";
+		}
+		File parentDir = defaultDir != null ? defaultDir : new File(System.getProperty("user.home", "."));
+		chooser.setSelectedFile(new File(parentDir, defaultName + fileSuffix));
+
+		if (chooser.showSaveDialog(BasicFrame.this) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+
+		File target = FileHelper.forceExtension(chooser.getSelectedFile(), "svg");
+		if (!FileHelper.confirmWrite(target, BasicFrame.this)) {
+			return;
+		}
+
+		swingPrefs.setDefaultDirectory(chooser.getCurrentDirectory());
+
+		// Save SVG preferences
+		prefs.setSVGStrokeColor(optionsDialog.getStrokeColor());
+		prefs.setSVGStrokeWidth(optionsDialog.getStrokeWidth());
+		prefs.setSVGDrawCrosshair(optionsDialog.isDrawCrosshair());
+		prefs.setSVGCrosshairColor(optionsDialog.getCrosshairColor());
+		prefs.setSVGCrosshairSize(optionsDialog.getCrosshairSize());
+		prefs.setSVGShowLabels(optionsDialog.isShowLabels());
+		prefs.setSVGLabelColor(optionsDialog.getLabelColor());
+
+		try {
+			if (selectedTab == SvgOptionsDialog.COMPONENTS_TAB) {
+				// Export components
+				List<RocketComponent> selectedComponents = optionsDialog.getSelectedComponents();
+				if (!selectedComponents.isEmpty()) {
+					new SVGRocketPartsExporter().export(selectedComponents, target, options);
+				} else {
+					new SVGRocketPartsExporter().export(document, target, options);
+				}
+				log.info(Markers.USER_MARKER, "Exported SVG profiles to {}", target.getAbsolutePath());
+			}
+			// TODO: other tabs here (e.g. fin guides)
+		} catch (UnsupportedOperationException ex) {
+			log.warn("Fin guide export not implemented", ex);
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					trans.get("SVGOptionPanel.finGuides.notImplemented"),
+					trans.get("SVGOptionPanel.finGuides.notImplemented.title"),
+					JOptionPane.INFORMATION_MESSAGE);
+		} catch (IllegalStateException noParts) {
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					trans.get("main.menu.file.exportAs.SVGProfiles.empty"),
+					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
+					JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception ex) {
+			log.warn("Failed to export SVG", ex);
+			JOptionPane.showMessageDialog(BasicFrame.this,
+					String.format(trans.get("main.menu.file.exportAs.SVGProfiles.error"), ex.getMessage()),
+					trans.get("main.menu.file.exportAs.SVGProfiles.title"),
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	/**
+	 * Export all exportable components from the document as SVG profiles.
+	 */
+	private void exportSvgProfilesAction() {
+		exportSvgProfilesAction(null);
+	}
+
+	/**
+	 * Export selected components as SVG profiles.
+	 */
+	public void exportSVGAction() {
+		List<RocketComponent> selectedComponents = getSelectedComponents();
+		if (selectedComponents == null || selectedComponents.isEmpty()) {
+			return;
+		}
+		exportSvgProfilesAction(selectedComponents);
+	}
+
 
 	/**
 	 * "Save As" action.
@@ -1791,6 +2168,14 @@ public class BasicFrame extends JFrame {
 			return false;
 		}
 
+		// Generate file preview image
+		byte[] previewImage = generatePreviewImage();
+		if (previewImage != null) {
+			document.getDefaultStorageOptions().setPreviewImage(previewImage);
+		} else {
+			document.getDefaultStorageOptions().clearPreviewImage();
+		}
+
 		document.getDefaultStorageOptions().setFileType(FileType.OPENROCKET);
 		SaveFileWorker worker = new SaveFileWorker(document, file, ROCKET_SAVER);
 
@@ -1838,6 +2223,29 @@ public class BasicFrame extends JFrame {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Generate a file preview image for saving in the design file.
+	 * @return the PNG image data, or null if no preview could be generated
+	 */
+	private byte[] generatePreviewImage() {
+		if (rocketpanel == null) {
+			return null;
+		}
+
+		String viewPreference = prefs.getString(ApplicationPreferences.FILE_PREVIEW_VIEW_TYPE,
+				RocketPanel.VIEW_TYPE.SideView.name());
+		RocketPanel.VIEW_TYPE previewView = RocketPanel.VIEW_TYPE.fromName(viewPreference);
+		if (previewView == null) {
+			previewView = RocketPanel.VIEW_TYPE.SideView;
+		}
+
+		byte[] previewBytes = rocketpanel.createPreviewPng(previewView, PREVIEW_WIDTH, PREVIEW_MIN_HEIGHT, PREVIEW_MAX_HEIGHT);
+		if (previewBytes == null || previewBytes.length == 0) {
+			return null;
+		}
+		return previewBytes;
 	}
 
 
@@ -1889,7 +2297,7 @@ public class BasicFrame extends JFrame {
 	}
 
 	public void exportDecalAction() {
-		new ExportDecalDialog(BasicFrame.this, document).setVisible(true);
+		ExportDecalAction.export(BasicFrame.this, document);
 	}
 
 

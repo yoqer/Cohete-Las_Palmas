@@ -5,6 +5,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +25,11 @@ import javax.swing.JSpinner;
 import javax.swing.MenuElement;
 import javax.swing.SwingUtilities;
 
+import info.openrocket.core.aerodynamics.lookup.MachAoALookup;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.l10n.Translator;
+import info.openrocket.core.models.gravity.GravityModelType;
 import info.openrocket.core.simulation.RK4SimulationStepper;
 import info.openrocket.core.simulation.SimulationOptions;
 import info.openrocket.core.simulation.extension.SimulationExtension;
@@ -36,6 +39,7 @@ import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.GeodeticComputationStrategy;
 
+import info.openrocket.core.simulation.SimulationStepperMethod;
 import net.miginfocom.swing.MigLayout;
 import info.openrocket.swing.gui.SpinnerEditor;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
@@ -60,13 +64,22 @@ class SimulationOptionsPanel extends JPanel {
 	
 	private OpenRocketDocument document;
 	final Simulation simulation;
+	private final SimulationOptions options;
+	
+	private JLabel aerodynamicLookupSummaryLabel;
 	
 	private JPanel currentExtensions;
 	final JPopupMenu extensionMenu;
 	JMenu extensionMenuCopyExtension;
 
+	private JSpinner gravitySpinner;
+	private UnitSelector gravityUnit;
+	private BasicSlider gravitySlider;
+	private JLabel gravityLabel;
+
 	private static Color textColor;
 	private static Color dimTextColor;
+	private static Color infoTextColor;
 
 	static {
 		initColors();
@@ -76,8 +89,9 @@ class SimulationOptionsPanel extends JPanel {
 		super(new MigLayout("fill, ins n n 0 n"));
 		this.document = document;
 		this.simulation = simulation;
+		this.options = simulation.getOptions();
 
-		final SimulationOptions conditions = simulation.getOptions();
+		final SimulationOptions conditions = this.options;
 		
 		JPanel sub, subsub;
 		String tip;
@@ -116,10 +130,41 @@ class SimulationOptionsPanel extends JPanel {
 		label = new JLabel(trans.get("simedtdlg.lbl.Simmethod"));
 		label.setToolTipText(tip);
 		subsub.add(label, "gapright para");
-		
-		label = new JLabel("6-DOF Runge-Kutta 4");
+
+
+		EnumModel<SimulationStepperMethod> simulationStepperMethodChoice = new EnumModel<>(
+				conditions, "SimulationStepperMethodChoice");
+		final JComboBox<SimulationStepperMethod> SimulationStepperMethodChoiceCombo = new JComboBox<>(simulationStepperMethodChoice);
+		ActionListener SimulationStepperMethodChoiceComboTTipListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				SimulationStepperMethod SimulationStepperMethodChoiceSelected = (SimulationStepperMethod) SimulationStepperMethodChoiceCombo
+						.getSelectedItem();
+				SimulationStepperMethodChoiceCombo.setToolTipText(SimulationStepperMethodChoiceSelected.getDescription());
+			}
+		};
+		SimulationStepperMethodChoiceCombo.addActionListener(SimulationStepperMethodChoiceComboTTipListener);
+		SimulationStepperMethodChoiceComboTTipListener.actionPerformed(null);
+		subsub.add(SimulationStepperMethodChoiceCombo, "span 3, wrap");
+
+		// Aerodynamic data
+		label = new JLabel(trans.get("AerodynamicLookupDialog.lbl.summary"));
+		subsub.add(label);
+
+		/// Configure
+		JButton configureLookupButton = new JButton(trans.get("AerodynamicLookupDialog.btn.configure"));
+		configureLookupButton.addActionListener(e -> openLookupDialog());
+		subsub.add(configureLookupButton, "wrap");
+
+		aerodynamicLookupSummaryLabel = new JLabel();
+		aerodynamicLookupSummaryLabel.setForeground(infoTextColor);
+		subsub.add(aerodynamicLookupSummaryLabel, "gapleft para, spanx, growx, wrap para");
+
+		sub.add(subsub, "spanx, wrap para");
+
+		/*label = new JLabel("6-DOF Runge-Kutta 4");
 		label.setToolTipText(tip);
-		subsub.add(label, "growx, span 3, wrap");
+		subsub.add(label, "growx, span 3, wrap");*/
 		
 		// // Geodetic calculation method:
 		label = new JLabel(trans.get("simedtdlg.lbl.GeodeticMethod"));
@@ -139,7 +184,69 @@ class SimulationOptionsPanel extends JPanel {
 		};
 		gcsCombo.addActionListener(gcsTTipListener);
 		gcsTTipListener.actionPerformed(null);
-		subsub.add(gcsCombo, "span 3, wrap para");
+		subsub.add(gcsCombo, "span 3, wrap");
+		
+		// // Gravity model:
+		label = new JLabel(trans.get("simedtdlg.lbl.GravityModel"));
+		label.setToolTipText(trans.get("simedtdlg.lbl.ttip.GravityModel"));
+		subsub.add(label, "gapright para");
+		
+		EnumModel<GravityModelType> gravityModelTypeModel = new EnumModel<>(
+				conditions, "GravityModelType");
+		final JComboBox<GravityModelType> gravityModelCombo = new JComboBox<>(gravityModelTypeModel);
+		
+		// Update tooltip based on selected gravity model type
+		ActionListener gravityModelTTipListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GravityModelType selectedType = (GravityModelType) gravityModelCombo.getSelectedItem();
+				if (selectedType == GravityModelType.WGS) {
+					gravityModelCombo.setToolTipText(trans.get("simedtdlg.GravityModel.WGS84.ttip"));
+				} else if (selectedType == GravityModelType.CONSTANT) {
+					gravityModelCombo.setToolTipText(trans.get("simedtdlg.GravityModel.Constant.ttip"));
+				}
+			}
+		};
+		gravityModelCombo.addActionListener(gravityModelTTipListener);
+		gravityModelTTipListener.actionPerformed(null);
+		subsub.add(gravityModelCombo, "span 3, wrap");
+		
+		// // Constant gravity value:
+		gravityLabel = new JLabel(trans.get("simedtdlg.lbl.GravityValue"));
+		tip = trans.get("simedtdlg.lbl.ttip.GravityValue");
+		gravityLabel.setToolTipText(tip);
+		subsub.add(gravityLabel, "gapright para, hidemode 3");
+		
+		m = new DoubleModel(conditions, "ConstantGravity", UnitGroup.UNITS_ACCELERATION, 0);
+		
+		gravitySpinner = new JSpinner(m.getSpinnerModel());
+		gravitySpinner.setEditor(new SpinnerEditor(gravitySpinner));
+		gravitySpinner.setToolTipText(tip);
+		subsub.add(gravitySpinner, "hidemode 3");
+		
+		gravityUnit = new UnitSelector(m);
+		gravityUnit.setToolTipText(tip);
+		subsub.add(gravityUnit, "hidemode 3");
+		gravitySlider = new BasicSlider(m.getSliderModel(0, 20));
+		gravitySlider.setToolTipText(tip);
+		subsub.add(gravitySlider, "w 100, hidemode 3, wrap");
+		
+		// Update visibility of constant gravity components based on selected model
+		ActionListener gravityModelListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GravityModelType selectedType = (GravityModelType) gravityModelCombo.getSelectedItem();
+				boolean isConstant = selectedType == GravityModelType.CONSTANT;
+				gravityLabel.setVisible(isConstant);
+				gravitySpinner.setVisible(isConstant);
+				gravityUnit.setVisible(isConstant);
+				gravitySlider.setVisible(isConstant);
+				subsub.revalidate();
+				subsub.repaint();
+			}
+		};
+		gravityModelCombo.addActionListener(gravityModelListener);
+		gravityModelListener.actionPerformed(null); // Initialize visibility
 		
 		
 		// // Time step:
@@ -151,7 +258,7 @@ class SimulationOptionsPanel extends JPanel {
 						.toStringUnit(RK4SimulationStepper.RECOMMENDED_TIME_STEP)
 				+ ".";
 		label.setToolTipText(tip);
-		subsub.add(label, "gapright para");
+		subsub.add(label, "gaptop para, gapright para");
 		
 		m = new DoubleModel(conditions, "TimeStep", UnitGroup.UNITS_TIME_STEP,
 				0.01, 1);
@@ -185,9 +292,6 @@ class SimulationOptionsPanel extends JPanel {
 		unit = new UnitSelector(m);
 		unit.setToolTipText(tip);
 		subsub.add(unit, "wrap");
-
-		
-		sub.add(subsub, "spanx, wrap para");
 		
 		// Reset to default button
 		JButton resetBtn = new JButton(trans.get("simedtdlg.but.resettodefault"));
@@ -257,6 +361,9 @@ class SimulationOptionsPanel extends JPanel {
 		sub.add(scroll, "growx");
 		
 		updateCurrentExtensions();
+
+		options.addChangeListener(e -> SwingUtilities.invokeLater(this::updateLookupSummary));
+		updateLookupSummary();
 		
 	}
 
@@ -266,8 +373,9 @@ class SimulationOptionsPanel extends JPanel {
 	}
 
 	public static void updateColors() {
-		textColor = GUIUtil.getUITheme().getTextColor();
-		dimTextColor = GUIUtil.getUITheme().getDimTextColor();
+		textColor = UITheme.getColor(UITheme.Keys.TEXT);
+		dimTextColor = UITheme.getColor(UITheme.Keys.TEXT_DIM);
+		infoTextColor = UITheme.getColor(UITheme.Keys.INFO);
 	}
 	
 	private JPopupMenu getExtensionMenu() {
@@ -338,7 +446,7 @@ class SimulationOptionsPanel extends JPanel {
 						SwingSimulationExtensionConfigurator configurator = findConfigurator(e);
 						if (configurator != null) {
 							configurator.configure(e, simulation, SwingUtilities.windowForComponent(SimulationOptionsPanel.this));
-              updateCurrentExtensions();
+							updateCurrentExtensions();
 						}
 					}
 				});
@@ -377,7 +485,36 @@ class SimulationOptionsPanel extends JPanel {
 		}
 		return (JComponent) menu;
 	}
-	
+	private void openLookupDialog() {
+		AerodynamicLookupDialog dialog = new AerodynamicLookupDialog(
+				SwingUtilities.windowForComponent(this),
+				options);
+		dialog.setVisible(true);
+		updateLookupSummary();
+	}
+
+	private void updateLookupSummary() {
+		if (aerodynamicLookupSummaryLabel == null) {
+			return;
+		}
+		String dragDetail = buildLookupDetail(options.getDragLookupCsvPath(), options.getDragLookupTable());
+		String stabilityDetail = buildLookupDetail(options.getStabilityLookupCsvPath(), options.getStabilityLookupTable());
+		String summary = "<html>"
+				+ String.format(trans.get("AerodynamicLookupDialog.lbl.summaryDrag"), dragDetail)
+				+ "<br>"
+				+ String.format(trans.get("AerodynamicLookupDialog.lbl.summaryStability"), stabilityDetail)
+				+ "</html>";
+		aerodynamicLookupSummaryLabel.setText(summary);
+	}
+
+	private String buildLookupDetail(Path path, MachAoALookup table) {
+		if (path == null || table == null) {
+			return trans.get("AerodynamicLookupDialog.summary.none");
+		}
+		String fileName = path.getFileName() != null ? path.getFileName().toString() : path.toString();
+		String detail = AerodynamicLookupDialog.formatLookupSummary(trans, table);
+		return fileName + " - " + detail;
+	}
 	
 	private void updateCurrentExtensions() {
 		currentExtensions.removeAll();

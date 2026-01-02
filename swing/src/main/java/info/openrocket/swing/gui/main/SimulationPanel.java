@@ -14,14 +14,21 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -30,6 +37,8 @@ import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -44,6 +53,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.logging.Message;
@@ -58,6 +69,7 @@ import info.openrocket.core.document.events.SimulationChangeEvent;
 import info.openrocket.core.formatting.RocketDescriptor;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.preferences.ApplicationPreferences;
+import info.openrocket.core.preferences.DocumentPreferences;
 import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
 import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfigurationId;
@@ -67,6 +79,7 @@ import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.AlphanumComparator;
 
+import info.openrocket.core.simulation.SimulationStepperMethod;
 import info.openrocket.core.util.StringUtils;
 import info.openrocket.swing.gui.components.CsvOptionPanel;
 import info.openrocket.swing.gui.simulation.SimulationConfigDialog;
@@ -92,8 +105,6 @@ import info.openrocket.swing.gui.widgets.IconButton;
 import info.openrocket.swing.file.SimulationTableCSVExport;
 import info.openrocket.swing.utils.TableRowTraversalPolicy;
 
-import static info.openrocket.swing.gui.main.BasicFrame.SHORTCUT_KEY;
-
 @SuppressWarnings("serial")
 public class SimulationPanel extends JPanel {
 	private static final Logger log = LoggerFactory.getLogger(SimulationPanel.class);
@@ -114,6 +125,7 @@ public class SimulationPanel extends JPanel {
 	private final JButton plotButton;
 	private final JButton simTableExportButton;
 	private final JPopupMenu pm;
+	private final ColumnVisibilityController columnVisibilityController;
 
 	private final SimulationAction editSimulationAction;
 	private final SimulationAction cutSimulationAction;
@@ -128,6 +140,38 @@ public class SimulationPanel extends JPanel {
 
 	private int[] previousSelection = null;
 
+private static final String PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns";
+private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns.default";
+	private static final String COLUMN_ID_STATUS = "status";
+	private static final String COLUMN_ID_WARNINGS = "warnings";
+	private static final String COLUMN_ID_NAME = "name";
+	private static final String COLUMN_ID_CONFIGURATION = "configuration";
+	private static final String COLUMN_ID_SIMULATION_STEPPER = "simulationStepper";
+	private static final String COLUMN_ID_LAUNCH_ROD_VELOCITY = "launchRodVelocity";
+	private static final String COLUMN_ID_APOGEE = "apogee";
+	private static final String COLUMN_ID_DEPLOYMENT_VELOCITY = "deploymentVelocity";
+	private static final String COLUMN_ID_OPTIMUM_COAST_TIME = "optimumCoastTime";
+	private static final String COLUMN_ID_MAX_VELOCITY = "maxVelocity";
+	private static final String COLUMN_ID_MAX_ACCELERATION = "maxAcceleration";
+	private static final String COLUMN_ID_TIME_TO_APOGEE = "timeToApogee";
+	private static final String COLUMN_ID_FLIGHT_TIME = "flightTime";
+	private static final String COLUMN_ID_GROUND_HIT_VELOCITY = "groundHitVelocity";
+	private static final String[] SIMULATION_TABLE_COLUMN_IDS = {
+		COLUMN_ID_STATUS,
+		COLUMN_ID_WARNINGS,
+		COLUMN_ID_NAME,
+		COLUMN_ID_CONFIGURATION,
+		COLUMN_ID_SIMULATION_STEPPER,
+		COLUMN_ID_LAUNCH_ROD_VELOCITY,
+		COLUMN_ID_APOGEE,
+		COLUMN_ID_DEPLOYMENT_VELOCITY,
+		COLUMN_ID_OPTIMUM_COAST_TIME,
+		COLUMN_ID_MAX_VELOCITY,
+		COLUMN_ID_MAX_ACCELERATION,
+		COLUMN_ID_TIME_TO_APOGEE,
+		COLUMN_ID_FLIGHT_TIME,
+		COLUMN_ID_GROUND_HIT_VELOCITY
+	};
 
 	private static Color dimTextColor;
 	private static Color warningColor;
@@ -211,12 +255,12 @@ public class SimulationPanel extends JPanel {
 
 		// Unregister the default actions that would otherwise conflict with RocketActions and their acceleration keys
 		InputMap im = simulationTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, SHORTCUT_KEY), "none");
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, SHORTCUT_KEY), "none");
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, SHORTCUT_KEY), "none");
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, SHORTCUT_KEY), "none");
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, SHORTCUT_KEY), "none");
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, SHORTCUT_KEY), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_DOWN_MASK), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.META_DOWN_MASK), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.META_DOWN_MASK), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.META_DOWN_MASK), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_DOWN_MASK), "none");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.META_DOWN_MASK), "none");
 
 		// Context menu
 		pm = new JPopupMenu();
@@ -230,6 +274,21 @@ public class SimulationPanel extends JPanel {
 		pm.add(runSimulationAction);
 		pm.add(plotSimulationAction);
 		pm.add(selectedSimsExportAction);
+
+		ApplicationPreferences appPreferences = (ApplicationPreferences) Application.getPreferences();
+		columnVisibilityController = new ColumnVisibilityController(simulationTable, document.getDocumentPreferences(), appPreferences);
+
+		simulationTable.getTableHeader().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				columnVisibilityController.handleHeaderMouseEvent(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				columnVisibilityController.handleHeaderMouseEvent(e);
+			}
+		});
 
 		// The normal left/right and tab/shift-tab key action traverses each cell/column of the table instead of going to the next row.
 		TableRowTraversalPolicy.setTableRowTraversalPolicy(simulationTable);
@@ -340,10 +399,10 @@ public class SimulationPanel extends JPanel {
 	}
 
 	public static void updateColors() {
-		dimTextColor = GUIUtil.getUITheme().getDimTextColor();
-		warningColor = GUIUtil.getUITheme().getWarningColor();
-		errorColor = GUIUtil.getUITheme().getErrorColor();
-		informationColor = GUIUtil.getUITheme().getInformationColor();
+		dimTextColor = UITheme.getColor(UITheme.Keys.TEXT_DIM);
+		warningColor = UITheme.getColor(UITheme.Keys.WARNING);
+		errorColor = UITheme.getColor(UITheme.Keys.ERROR);
+		informationColor = UITheme.getColor(UITheme.Keys.INFO);
 	}
 
 	/**
@@ -402,6 +461,8 @@ public class SimulationPanel extends JPanel {
 		Simulation sim = new Simulation(document, document.getRocket());
 		sim.setName(document.getNextSimulationName());
 
+		document.addUndoPosition("Add " + sim.getName());
+
 		int n = document.getSimulationCount();
 		document.addSimulation(sim);
 		simulationTableModel.fireTableDataChanged();
@@ -444,6 +505,12 @@ public class SimulationPanel extends JPanel {
 			return;
 		}
 
+		if (sims.length == 1) {
+			document.addUndoPosition("Delete " + sims[0].getName());
+		} else {
+			document.addUndoPosition("Delete simulations");
+		}
+
 		// Delete simulations
 		for (Simulation sim : sims) {
 			document.removeSimulation(sim);
@@ -475,8 +542,6 @@ public class SimulationPanel extends JPanel {
 				new Object[] {
 				//// Delete the selected simulations?
 				trans.get("simpanel.dlg.lbl.DeleteSim1"),
-				//// <html><i>This operation cannot be undone.</i>
-				trans.get("simpanel.dlg.lbl.DeleteSim2"),
 				"",
 				panel },
 				//// Delete simulations
@@ -563,7 +628,7 @@ public class SimulationPanel extends JPanel {
 		JFileChooser chooser = new SaveFileChooser();
 		chooser.setDialogTitle(trans.get("simpanel.pop.exportToCSV.save.dialog.title"));
 		chooser.setFileFilter(FileHelper.CSV_FILTER);
-		chooser.setCurrentDirectory(((SwingPreferences) Application.getPreferences()).getDefaultDirectory());
+		chooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
 		chooser.setAcceptAllFileFilterUsed(false);
 
 		// Default output CSV to same name as the document's rocket name.
@@ -614,7 +679,8 @@ public class SimulationPanel extends JPanel {
 		}
 
 		OpenRocketClipboard.setClipboard(simsCopy);
-		copySimulationValues(Application.getPreferences().getString(ApplicationPreferences.EXPORT_FIELD_SEPARATOR, ","));
+		// Use tab separator for clipboard operations so Excel properly recognizes columns
+		copySimulationValues("\t");
 	}
 
 	/**
@@ -697,7 +763,6 @@ public class SimulationPanel extends JPanel {
 	public void duplicateSimulation(Simulation[] sims, int index) {
 		if (sims == null || sims.length == 0) return;
 
-		// TODO: the undoing doesn't do anything...
 		if (sims.length == 1) {
 			document.addUndoPosition("Duplicate " + sims[0].getName());
 		} else {
@@ -817,7 +882,7 @@ public class SimulationPanel extends JPanel {
 		}
 
 		String statusText = sim.getStatusDescription();
-		Color statusColor = GUIUtil.getUITheme().getStatusColor(sim.getStatus());
+		Color statusColor = UITheme.getStatusColor(sim.getStatus());
 
 		tip.append(ColorConversion.formatHTMLColor(statusColor, statusText)).append("<br>");
 
@@ -949,7 +1014,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.edit"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.edit.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_E);
-			this.putValue(ACCELERATOR_KEY, RocketActions.EDIT_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getEditKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_EDIT);
 		}
 
@@ -969,7 +1034,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.cut"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.cut.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_X);
-			this.putValue(ACCELERATOR_KEY, RocketActions.CUT_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getCutKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_CUT);
 		}
 
@@ -995,7 +1060,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.copy"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.copy.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_C);
-			this.putValue(ACCELERATOR_KEY, RocketActions.COPY_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getCopyKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_COPY);
 		}
 
@@ -1015,7 +1080,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.paste"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.paste.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_V);
-			this.putValue(ACCELERATOR_KEY, RocketActions.PASTE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getPasteKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_PASTE);
 		}
 
@@ -1036,7 +1101,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.duplicate"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.duplicate.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_D);
-			this.putValue(ACCELERATOR_KEY, RocketActions.DUPLICATE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getDuplicateKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_DUPLICATE);
 		}
 
@@ -1056,7 +1121,7 @@ public class SimulationPanel extends JPanel {
 			this.putValue(NAME, trans.get("simpanel.pop.delete"));
 			this.putValue(SHORT_DESCRIPTION, trans.get("simpanel.pop.delete.ttip"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_DELETE);
-			this.putValue(ACCELERATOR_KEY, RocketActions.DELETE_KEY_STROKE);
+			this.putValue(ACCELERATOR_KEY, RocketActions.getDeleteKeyStroke());
 			this.putValue(SMALL_ICON, Icons.EDIT_DELETE);
 		}
 
@@ -1456,6 +1521,19 @@ public class SimulationPanel extends JPanel {
 						}
 					},
 
+					//// Simulation RK Solver
+					new Column(trans.get("simpanel.col.SimStepper"), trans.get("simpanel.col.SimStepper.ttip")) {
+						@Override
+						public Object getValueAt(int row) {
+							if (row < 0 || row >= document.getSimulationCount()) {
+								return null;
+							}
+
+							SimulationStepperMethod simStepMethod = document.getSimulation(row).getOptions().getSimulationStepperMethodChoice();
+							return simStepMethod.getShortName();
+						}
+					},
+
 					//// Launch rod velocity
 					new ValueColumn(trans.get("simpanel.col.Velocityoffrod"), UnitGroup.UNITS_VELOCITY) {
 						@Override
@@ -1626,5 +1704,228 @@ public class SimulationPanel extends JPanel {
 				updateActions();
 			}
 		});
+	}
+
+	private static class ColumnVisibilityController {
+		private final ColumnTable table;
+		private final DocumentPreferences documentPreferences;
+		private final ApplicationPreferences applicationPreferences;
+		private final List<ColumnDescriptor> descriptors = new ArrayList<>();
+		private final Map<String, ColumnDescriptor> descriptorById = new LinkedHashMap<>();
+		private final Set<String> hiddenColumnIds = new LinkedHashSet<>();
+
+		ColumnVisibilityController(ColumnTable table, DocumentPreferences preferences, ApplicationPreferences applicationPreferences) {
+			this.table = table;
+			this.documentPreferences = preferences;
+			this.applicationPreferences = applicationPreferences;
+			captureColumns();
+			loadHiddenColumnsPreference();
+			applyHiddenColumnsFromPreferences();
+		}
+
+		void handleHeaderMouseEvent(MouseEvent e) {
+			if (!e.isPopupTrigger()) {
+				return;
+			}
+			e.consume();
+			createMenu().show(e.getComponent(), e.getX(), e.getY());
+		}
+
+		private void captureColumns() {
+			descriptors.clear();
+			descriptorById.clear();
+			TableColumnModel model = table.getColumnModel();
+			int columnCount = model.getColumnCount();
+			int limit = Math.min(columnCount, SIMULATION_TABLE_COLUMN_IDS.length);
+			for (int i = 0; i < limit; i++) {
+				addDescriptor(SIMULATION_TABLE_COLUMN_IDS[i], model.getColumn(i));
+			}
+			for (int i = limit; i < columnCount; i++) {
+				addDescriptor("column" + i, model.getColumn(i));
+			}
+		}
+
+		private void addDescriptor(String id, TableColumn column) {
+			column.setIdentifier(id);
+			ColumnDescriptor descriptor = new ColumnDescriptor(id, column);
+			descriptors.add(descriptor);
+			descriptorById.put(id, descriptor);
+		}
+
+		private void loadHiddenColumnsPreference() {
+			hiddenColumnIds.clear();
+			String prefValue = documentPreferences.getString(PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS, "");
+
+			if (StringUtils.isEmpty(prefValue)) {
+				prefValue = applicationPreferences.getString(APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS, "");
+			}
+
+			// Add default hidden columns if no preference is set
+			if (StringUtils.isEmpty(prefValue)) {
+				hiddenColumnIds.add(COLUMN_ID_SIMULATION_STEPPER);
+				return;
+			}
+
+			String[] ids = prefValue.split(",");
+			for (String raw : ids) {
+				String id = raw.trim();
+				if (id.isEmpty()) {
+					continue;
+				}
+				if (descriptorById.containsKey(id)) {
+					hiddenColumnIds.add(id);
+				}
+			}
+		}
+
+		private void applyHiddenColumnsFromPreferences() {
+			TableColumnModel model = table.getColumnModel();
+			for (ColumnDescriptor descriptor : descriptors) {
+				if (hiddenColumnIds.contains(descriptor.id) && isDescriptorInModel(descriptor, model)) {
+					model.removeColumn(descriptor.column);
+				}
+			}
+			if (model.getColumnCount() == 0 && !descriptors.isEmpty()) {
+				ColumnDescriptor first = descriptors.get(0);
+				hiddenColumnIds.remove(first.id);
+				model.addColumn(first.column);
+			}
+			refreshTable();
+		}
+
+		private JPopupMenu createMenu() {
+			JPopupMenu menu = new JPopupMenu();
+			int visibleCount = table.getColumnModel().getColumnCount();
+			for (ColumnDescriptor descriptor : descriptors) {
+				boolean visible = isDescriptorInModel(descriptor, table.getColumnModel());
+				JCheckBoxMenuItem item = new JCheckBoxMenuItem(descriptor.getDisplayName(), visible);
+				item.putClientProperty("columnId", descriptor.id);
+				if (visible && visibleCount <= 1) {
+					item.setEnabled(false);
+				}
+				item.addItemListener(event -> {
+					boolean selected = event.getStateChange() == ItemEvent.SELECTED;
+					toggleColumn(descriptor, selected);
+				});
+				menu.add(item);
+			}
+			menu.addSeparator();
+			JMenuItem saveDefaultItem = new JMenuItem(trans.get("simpanel.btn.SaveAsDefault"));
+			saveDefaultItem.setToolTipText(trans.get("simpanel.btn.SaveAsDefault.ttip"));
+			saveDefaultItem.addActionListener(actionEvent -> saveHiddenColumnsToApplicationPreferences());
+			menu.add(saveDefaultItem);
+			return menu;
+		}
+
+		private void toggleColumn(ColumnDescriptor descriptor, boolean makeVisible) {
+			if (makeVisible) {
+				showColumn(descriptor, true);
+			} else {
+				hideColumn(descriptor, true);
+			}
+		}
+
+		private void hideColumn(ColumnDescriptor descriptor, boolean persistPreference) {
+			TableColumnModel model = table.getColumnModel();
+			if (!isDescriptorInModel(descriptor, model)) {
+				if (persistPreference && hiddenColumnIds.add(descriptor.id)) {
+					saveHiddenColumnsPreference();
+				}
+				return;
+			}
+			if (model.getColumnCount() <= 1) {
+				return;
+			}
+			model.removeColumn(descriptor.column);
+			hiddenColumnIds.add(descriptor.id);
+			if (persistPreference) {
+				saveHiddenColumnsPreference();
+			}
+			refreshTable();
+		}
+
+		private void showColumn(ColumnDescriptor descriptor, boolean persistPreference) {
+			TableColumnModel model = table.getColumnModel();
+			if (isDescriptorInModel(descriptor, model)) {
+				if (persistPreference && hiddenColumnIds.remove(descriptor.id)) {
+					saveHiddenColumnsPreference();
+				}
+				return;
+			}
+			hiddenColumnIds.remove(descriptor.id);
+			model.addColumn(descriptor.column);
+			int targetIndex = calculateInsertionIndex(descriptor, model);
+			int currentIndex = model.getColumnCount() - 1;
+			if (targetIndex >= 0 && targetIndex < model.getColumnCount()) {
+				model.moveColumn(currentIndex, targetIndex);
+			}
+			if (persistPreference) {
+				saveHiddenColumnsPreference();
+			}
+			refreshTable();
+		}
+
+		private int calculateInsertionIndex(ColumnDescriptor descriptor, TableColumnModel model) {
+			int index = 0;
+			for (ColumnDescriptor current : descriptors) {
+				if (current == descriptor) {
+					break;
+				}
+				if (isDescriptorInModel(current, model)) {
+					index++;
+				}
+			}
+			return index;
+		}
+
+		private boolean isDescriptorInModel(ColumnDescriptor descriptor, TableColumnModel model) {
+			try {
+				model.getColumnIndex(descriptor.id);
+				return true;
+			} catch (IllegalArgumentException e) {
+				return false;
+			}
+		}
+
+		private void saveHiddenColumnsPreference() {
+			documentPreferences.putString(PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS, buildHiddenColumnsPreferenceValue());
+		}
+
+		private void refreshTable() {
+			table.getTableHeader().resizeAndRepaint();
+			table.revalidate();
+			table.repaint();
+		}
+
+		private void saveHiddenColumnsToApplicationPreferences() {
+			applicationPreferences.putString(APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS, buildHiddenColumnsPreferenceValue());
+		}
+
+		private String buildHiddenColumnsPreferenceValue() {
+			StringBuilder builder = new StringBuilder();
+			for (String id : hiddenColumnIds) {
+				if (!descriptorById.containsKey(id)) {
+					continue;
+				}
+				if (!builder.isEmpty()) {
+					builder.append(',');
+				}
+				builder.append(id);
+			}
+			return builder.toString();
+		}
+
+		private record ColumnDescriptor(String id, TableColumn column) {
+			private String getDisplayName() {
+						Object headerValue = column.getHeaderValue();
+						if (headerValue instanceof String header && !StringUtils.isEmpty(header)) {
+							return header;
+						}
+						if (COLUMN_ID_STATUS.equals(id)) {
+							return trans.get("simpanel.col.Status");
+						}
+						return id;
+					}
+				}
 	}
 }

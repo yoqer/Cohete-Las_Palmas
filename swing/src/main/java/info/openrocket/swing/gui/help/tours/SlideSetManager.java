@@ -12,6 +12,7 @@ import java.util.Map;
 
 import javax.swing.text.html.StyleSheet;
 
+import info.openrocket.core.util.TextLineReader;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
 
@@ -59,7 +60,7 @@ public class SlideSetManager {
 	}
 
 	public static void updateColors() {
-		textColor = GUIUtil.getUITheme().getTextColor();
+		textColor = UITheme.getColor(UITheme.Keys.TEXT);
 	}
 	
 	

@@ -11,6 +11,7 @@ import java.util.EventObject;
 import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import info.openrocket.core.l10n.Translator;
@@ -20,9 +21,11 @@ import info.openrocket.core.unit.DegreeUnit;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.ChangeSource;
+import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.ModID;
 import info.openrocket.core.util.StateChangeListener;
+import info.openrocket.core.util.TextLineReader;
 
 public class MultiLevelPinkNoiseWindModel implements WindModel {
 	private List<LevelWindModel> levels;
@@ -103,7 +106,7 @@ public class MultiLevelPinkNoiseWindModel implements WindModel {
 	}
 
 	@Override
-	public Coordinate getWindVelocity(double time, double altitudeMSL, double altitudeAGL) {
+	public CoordinateIF getWindVelocity(double time, double altitudeMSL, double altitudeAGL) {
 		if (altitudeReference == AltitudeReference.MSL) {
 			return getWindVelocity(time, altitudeMSL);
 		} else {
@@ -112,7 +115,7 @@ public class MultiLevelPinkNoiseWindModel implements WindModel {
 	}
 
 	@Override
-	public Coordinate getWindVelocity(double time, double altitude) {
+	public CoordinateIF getWindVelocity(double time, double altitude) {
 		if (levels.isEmpty()) {
 			return Coordinate.ZERO;
 		}
@@ -139,15 +142,15 @@ public class MultiLevelPinkNoiseWindModel implements WindModel {
 		LevelWindModel upperLevel = levels.get(insertionPoint);
 		double fraction = (altitude - lowerLevel.altitude) / (upperLevel.altitude - lowerLevel.altitude);
 
-		Coordinate lowerVelocity = lowerLevel.model.getWindVelocity(time, altitude);
-		Coordinate upperVelocity = upperLevel.model.getWindVelocity(time, altitude);
+		CoordinateIF lowerVelocity = lowerLevel.model.getWindVelocity(time, altitude);
+		CoordinateIF upperVelocity = upperLevel.model.getWindVelocity(time, altitude);
 
 		return lowerVelocity.interpolate(upperVelocity, fraction);
 	}
 
 	public double getWindDirection(double time, double altitude) {
-		Coordinate velocity = getWindVelocity(time, altitude);
-		double direction = Math.atan2(velocity.x, velocity.y);
+		CoordinateIF velocity = getWindVelocity(time, altitude);
+		double direction = Math.atan2(velocity.getX(), velocity.getY());
 
 		// Normalize the result to be between 0 and 2*PI
 		return (direction + 2 * Math.PI) % (2 * Math.PI);
@@ -211,13 +214,15 @@ public class MultiLevelPinkNoiseWindModel implements WindModel {
 		clearLevels();
 
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+			TextLineReader textLineReader = new TextLineReader(reader);
 			// Map column indices
-			int altIndex = -1, speedIndex = -1, dirIndex = -1, stddevIndex = -1;
+			int altIndex, speedIndex, dirIndex, stddevIndex = -1;
 
 			if (hasHeaders) {
 				// Read the first line as a header
-				line = reader.readLine();
-				if (line == null) {
+				try {
+					line = textLineReader.next();
+				} catch (NoSuchElementException e) {
 					throw new IllegalArgumentException(trans.get("MultiLevelPinkNoiseWindModel.msg.importLevelsError.EmptyFile"));
 				}
 
@@ -247,38 +252,43 @@ public class MultiLevelPinkNoiseWindModel implements WindModel {
 
 			// Read data rows
 			int lineNumber = hasHeaders ? 1 : 0;
-			while ((line = reader.readLine()) != null) {
-				lineNumber++;
+			try {
+				while (true) {
+					line = textLineReader.next();
+					lineNumber++;
 
-				// Skip empty lines
-				if (line.trim().isEmpty()) {
-					continue;
+					// Skip empty lines
+					if (line.trim().isEmpty()) {
+						continue;
+					}
+
+					String[] values = line.split(fieldSeparator, -1);  // -1 to keep empty trailing fields
+
+					// Check if we have enough columns
+					int maxColumnIndex = Math.max(Math.max(altIndex, speedIndex),
+							Math.max(dirIndex, Math.max(stddevIndex, 0)));
+					if (maxColumnIndex >= values.length) {
+						throw new IllegalArgumentException(String.format(
+								trans.get("MultiLevelPinkNoiseWindModel.msg.importLevelsError.NotEnoughColumnsInLine"),
+								lineNumber));
+					}
+
+					// Extract and convert values
+					double altitude = extractDoubleAndConvert(values, altIndex, "altitude", altitudeUnit);
+					double speed = extractDoubleAndConvert(values, speedIndex, "speed", speedUnit);
+					double direction = extractDoubleAndConvert(values, dirIndex, "direction", directionUnit);
+
+					// Standard deviation is optional
+					Double stddev = null;
+					if (stddevIndex >= 0 && stddevIndex < values.length && !values[stddevIndex].trim().isEmpty()) {
+						stddev = extractDoubleAndConvert(values, stddevIndex, "standard deviation", stdDeviationUnit);
+					}
+
+					// Add the wind level
+					addWindLevel(altitude, speed, direction, stddev);
 				}
-
-				String[] values = line.split(fieldSeparator, -1);  // -1 to keep empty trailing fields
-
-				// Check if we have enough columns
-				int maxColumnIndex = Math.max(Math.max(altIndex, speedIndex),
-						Math.max(dirIndex, Math.max(stddevIndex, 0)));
-				if (maxColumnIndex >= values.length) {
-					throw new IllegalArgumentException(String.format(
-							trans.get("MultiLevelPinkNoiseWindModel.msg.importLevelsError.NotEnoughColumnsInLine"),
-							lineNumber));
-				}
-
-				// Extract and convert values
-				double altitude = extractDoubleAndConvert(values, altIndex, "altitude", altitudeUnit);
-				double speed = extractDoubleAndConvert(values, speedIndex, "speed", speedUnit);
-				double direction = extractDoubleAndConvert(values, dirIndex, "direction", directionUnit);
-
-				// Standard deviation is optional
-				Double stddev = null;
-				if (stddevIndex >= 0 && stddevIndex < values.length && !values[stddevIndex].trim().isEmpty()) {
-					stddev = extractDoubleAndConvert(values, stddevIndex, "standard deviation", stdDeviationUnit);
-				}
-
-				// Add the wind level
-				addWindLevel(altitude, speed, direction, stddev);
+			} catch (NoSuchElementException ignore) {
+				// Nothing to do here, just means we reached the end of the file
 			}
 
 			// Sort levels by altitude

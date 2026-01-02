@@ -525,8 +525,10 @@ public class ComponentPreset implements Comparable<ComponentPreset>, Serializabl
 
 			if (value instanceof MaterialSerializationProxy) {
 				MaterialSerializationProxy m = (MaterialSerializationProxy) value;
+				MaterialGroup group = MaterialGroup.loadFromDatabaseStringWithBackwardCompatibility(
+						m.group, Material.Type.valueOf(m.type), m.name, m.density);
 				value = Material.newMaterial(Material.Type.valueOf(m.type), m.name, m.density,
-						MaterialGroup.loadFromDatabaseString(m.group), m.userDefined, true);
+						group, m.userDefined, true);
 			}
 			if (TYPE.getName().equals(keyName)) {
 				this.properties.put(TYPE, (ComponentPreset.Type) value);

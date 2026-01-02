@@ -361,7 +361,7 @@ public abstract class Material implements Comparable<Material>, Groupable<Materi
 
 		if (split.length == 4) {
 			try {
-				group = MaterialGroup.loadFromDatabaseString(split[3]);
+				group = MaterialGroup.loadFromDatabaseStringWithBackwardCompatibility(split[3], type, name, density);
 			} catch (IllegalArgumentException e) {
 				log.debug(e.toString());
 			}

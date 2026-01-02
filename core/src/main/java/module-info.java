@@ -21,12 +21,14 @@ open module info.openrocket.core {
 	requires java.prefs;
 	requires jakarta.xml.bind;
 	requires io.github.classgraph;
-	requires org.glassfish.jakarta.json;
+	requires com.google.gson;
 	requires org.slf4j;
 	requires com.opencsv;
 	requires org.commonmark;
 	requires org.locationtech.jts;
 	requires org.objectweb.asm.commons;
+	requires java.management;
+	requires java.sql;
 
 	// TODO: I'm a JPMS noob, so I just exported each package. Should really check which ones are actually needed.
 	exports info.openrocket.core.aerodynamics;
@@ -100,9 +102,12 @@ open module info.openrocket.core {
 	exports info.openrocket.core.util.enums;
 	exports info.openrocket.core.utils;
 	exports info.openrocket.core.preferences;
-    exports info.openrocket.core.thrustcurve.serialization;
+	exports info.openrocket.core.startup.providers;
+	exports info.openrocket.core.startup.jij;
+  exports info.openrocket.core.thrustcurve.serialization;
+	exports info.openrocket.core.aerodynamics.lookup;
 
-    // Service providers
+	// Service providers
 	// Also edit core/src/main/resources/META-INF/services !! (until gradle-modules-plugin supports service
 	// copying, see https://github.com/java9-modularity/gradle-modules-plugin/issues/85)
 	provides info.openrocket.core.optimization.services.OptimizableParameterService with

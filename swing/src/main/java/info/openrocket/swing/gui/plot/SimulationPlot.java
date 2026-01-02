@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -14,14 +13,12 @@ import java.util.Set;
 
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.logging.SimulationAbort;
-import info.openrocket.core.logging.Warning;
 import info.openrocket.core.simulation.FlightDataBranch;
 import info.openrocket.core.simulation.FlightDataType;
 import info.openrocket.core.simulation.FlightEvent;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.util.LinearInterpolator;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.utils.DecimalFormatter;
 
 import org.jfree.chart.annotations.XYImageAnnotation;
 import org.jfree.chart.annotations.XYTitleAnnotation;
@@ -35,8 +32,8 @@ import org.jfree.chart.ui.VerticalAlignment;
 import org.jfree.chart.ui.RectangleAnchor;
 import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.ui.RectangleInsets;
-import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import info.openrocket.swing.gui.theme.UITheme;
 
 @SuppressWarnings("serial")
 public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, SimulationPlotConfiguration> {
@@ -56,9 +53,6 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 
 		// Create list of events to show (combine event too close to each other)
 		this.eventList = buildEventInfo();
-
-		// Create the event markers
-		drawDomainMarkers(-1);
 
 		errorAnnotations = new ErrorAnnotationSet(branchCount);
 	}
@@ -261,9 +255,9 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 
 		FlightDataBranch dataBranch = simulation.getSimulatedData().getBranch(branch);
 
-		List<Double> time = dataBranch.get(FlightDataType.TYPE_TIME);
+		final List<Double> time = dataBranch.get(FlightDataType.TYPE_TIME);
 		String tName = FlightDataType.TYPE_TIME.getName();
-		List<Double> domain = dataBranch.get(config.getDomainAxisType());
+		final List<Double> domain = dataBranch.get(config.getDomainAxisType());
 		LinearInterpolator domainInterpolator = new LinearInterpolator(time, domain);
 		String xName = config.getDomainAxisType().getName();
 
@@ -293,7 +287,7 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 				int dataTypeIdx = series.getDataIdx();
 				FlightDataType type = config.getType(dataTypeIdx);
 				String yName = type.toString();
-				List<Double> range = dataBranch.get(type);
+				final List<Double> range = dataBranch.get(type);
 				LinearInterpolator rangeInterpolator = new LinearInterpolator(time, range);
 				
 				for (int i = 0; i < eventSets.size(); i++) {
@@ -340,6 +334,18 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 			}
 		}
 	}
+
+    @Override
+    public void setShowEvents(boolean showEvents) {
+        if (showEvents) {
+            drawDomainMarkers(-1); // show all added events
+        } else {
+            // Clean up the plot of its events
+            XYPlot plot = chart.getXYPlot();
+            plot.clearDomainMarkers();
+            plot.clearAnnotations();
+        }
+    }
 
 	private List<EventDisplayInfo> buildEventInfo() {
 		ArrayList<EventDisplayInfo> eventList = new ArrayList<>();
@@ -430,12 +436,12 @@ public class SimulationPlot extends Plot<FlightDataType, FlightDataBranch, Simul
 			if (!abortString.toString().isEmpty()) {
 				TextTitle abortsTitle = new TextTitle(abortString.toString(),
 													  new Font(Font.SANS_SERIF, Font.BOLD, 14),
-													  GUIUtil.getUITheme().getErrorColor(),
+													  UITheme.getColor(UITheme.Keys.ERROR),
 													  RectangleEdge.TOP,
 													  HorizontalAlignment.LEFT, VerticalAlignment.TOP,
 													  new RectangleInsets(5, 5, 5, 5));
 				abortsTitle.setBackgroundPaint(Color.WHITE);
-				BlockBorder abortsBorder = new BlockBorder(GUIUtil.getUITheme().getErrorColor());
+				BlockBorder abortsBorder = new BlockBorder(UITheme.getColor(UITheme.Keys.ERROR));
 				abortsTitle.setFrame(abortsBorder);
 
 				return new XYTitleAnnotation(0.01, 0.01, abortsTitle, RectangleAnchor.BOTTOM_LEFT);

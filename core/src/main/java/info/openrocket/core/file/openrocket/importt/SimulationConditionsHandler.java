@@ -1,5 +1,6 @@
 package info.openrocket.core.file.openrocket.importt;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 
 import info.openrocket.core.logging.WarningSet;
@@ -12,6 +13,8 @@ import info.openrocket.core.rocketcomponent.FlightConfigurationId;
 import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.simulation.SimulationOptions;
 import info.openrocket.core.util.GeodeticComputationStrategy;
+import info.openrocket.core.simulation.SimulationStepperMethod;
+import java.util.List;
 
 class SimulationConditionsHandler extends AbstractElementHandler {
 	private final DocumentLoadingContext context;
@@ -19,6 +22,9 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 	private final SimulationOptions options;
 	private AtmosphereHandler atmosphereHandler;
 	private WindHandler windHandler;
+	private GravityHandler gravityHandler;
+	private CsvLookupHandler dragLookupHandler;
+	private CsvLookupHandler stabilityLookupHandler;
 
 	public SimulationConditionsHandler(Rocket rocket, DocumentLoadingContext context) {
 		this.context = context;
@@ -40,6 +46,15 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 		} else if (element.equals("atmosphere")) {
 			atmosphereHandler = new AtmosphereHandler(attributes.get("model"), context);
 			return atmosphereHandler;
+		} else if (element.equals("gravity")) {
+			gravityHandler = new GravityHandler(attributes.get("model"));
+			return gravityHandler;
+		} else if (element.equals("draglookup")) {
+			dragLookupHandler = new CsvLookupHandler(options, List.of("cd"), true);
+			return dragLookupHandler;
+		} else if (element.equals("stabilitylookup")) {
+			stabilityLookupHandler = new CsvLookupHandler(options, List.of("cn", "cm", "cp"), false);
+			return stabilityLookupHandler;
 		}
 		return PlainTextHandler.INSTANCE;
 	}
@@ -139,7 +154,21 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 					warnings.add("Unknown geodetic computation method '" + content + "'");
 				}
 			}
+			case "simulationsteppermethod" -> {
+				SimulationStepperMethod stepperMethod = (SimulationStepperMethod) DocumentConfig.findEnum(content,
+						SimulationStepperMethod.class);
+				if (stepperMethod != null) {
+					options.setSimulationStepperMethodChoice(stepperMethod);
+				} else {
+					warnings.add("Unknown Simulation Stepper '" + content + "'");
+				}
+			}
 			case "atmosphere" -> atmosphereHandler.storeSettings(options, warnings);
+			case "gravity" -> {
+				if (gravityHandler != null) {
+					gravityHandler.storeSettings(options, warnings);
+				}
+			}
 			case "timestep" -> {
 				if (Double.isNaN(d) || d <= 0) {
 					warnings.add("Illegal time step defined, ignoring.");
@@ -152,6 +181,34 @@ class SimulationConditionsHandler extends AbstractElementHandler {
 					warnings.add("Illegal max simulation time defined, ignoring.");
 				} else {
 					options.setMaxSimulationTime(d);
+				}
+			}
+			// draglookupcsv and stabilitylookupcsv are now handled by CsvLookupHandler
+			// This case is for backward compatibility with old file format (simple text content)
+			case "draglookupcsv" -> {
+				// Only handle if we didn't use the CsvLookupHandler (old format)
+				if (dragLookupHandler == null) {
+					String trimmed = content.trim();
+					if (!trimmed.isEmpty()) {
+						try {
+							options.setDragLookupCsvPath(Path.of(trimmed));
+						} catch (RuntimeException ex) {
+							warnings.add("Failed to load drag lookup CSV '" + trimmed + "', ignoring. Reason: " + ex.getMessage());
+						}
+					}
+				}
+			}
+			case "stabilitylookupcsv" -> {
+				// Only handle if we didn't use the CsvLookupHandler (old format)
+				if (stabilityLookupHandler == null) {
+					String trimmed = content.trim();
+					if (!trimmed.isEmpty()) {
+						try {
+							options.setStabilityLookupCsvPath(Path.of(trimmed));
+						} catch (RuntimeException ex) {
+							warnings.add("Failed to load stability lookup CSV '" + trimmed + "', ignoring. Reason: " + ex.getMessage());
+						}
+					}
 				}
 			}
 		}

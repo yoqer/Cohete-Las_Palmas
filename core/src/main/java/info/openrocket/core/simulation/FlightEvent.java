@@ -1,5 +1,7 @@
 package info.openrocket.core.simulation;
 
+import java.util.UUID;
+
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.logging.SimulationAbort;
 import info.openrocket.core.logging.Warning;
@@ -109,30 +111,36 @@ public class FlightEvent implements Comparable<FlightEvent> {
 			return name;
 		}
 	}
-	
+
+	private final UUID id;
 	private final Type type;
 	private final double time;
 	private final RocketComponent source;
 	private final Object data;
 	
-	
 	public FlightEvent( final Type type, final double time) {
-		this(type, time, null, null);
+		this(type, time, null, null, null);
 	}
 	
 	public FlightEvent( final Type type, final double time, final RocketComponent source) {
-		this(type, time, source, null);
+		this(type, time, source, null, null);
 	}
 	
 	public FlightEvent( final FlightEvent sourceEvent, final RocketComponent source, final Object data) {
-		this(sourceEvent.type, sourceEvent.time, source, data);
+		this(sourceEvent.type, sourceEvent.time, source, data, null);
+	}
+
+	public FlightEvent(final Type type, final double time, final RocketComponent source, final Object data) {
+		this(type, time, source, data, null);
 	}
 	
-	public FlightEvent( final Type type, final double time, final RocketComponent source, final Object data) {
+	public FlightEvent( final Type type, final double time, final RocketComponent source, final Object data, final UUID id) {
 		this.type = type;
 		this.time = time;
 		this.source = source;
 		this.data = data;
+		this.id = (null != id) ? id : UUID.randomUUID();
+		
 		validate();
 	}
 		
@@ -150,6 +158,10 @@ public class FlightEvent implements Comparable<FlightEvent> {
 	
 	public Object getData() {
 		return data;
+	}
+
+	public UUID getID() {
+		return id;
 	}
 	
 	/**
@@ -210,10 +222,10 @@ public class FlightEvent implements Comparable<FlightEvent> {
 		}
 		switch( this.type ){
 		case BURNOUT:
-			if( null != this.source){
+			if( (null != this.source) && (RocketComponent.REMOVED != this.source)){
 				if( ! ( this.source instanceof MotorMount)){
 					throw new IllegalStateException(type.name()+" events should have "
-							+MotorMount.class.getSimpleName()+" type data payloads, instead of"
+							+MotorMount.class.getSimpleName()+" type data payloads, instead of "
 							+this.getSource().getClass().getSimpleName());
 				}
 			}
@@ -225,10 +237,10 @@ public class FlightEvent implements Comparable<FlightEvent> {
 			}
 			break;
 		case IGNITION:
-			if( null != this.source){
+			if((null != this.source) && (RocketComponent.REMOVED != this.source)){
 				if( ! ( this.getSource() instanceof MotorMount)){
 					throw new IllegalStateException(type.name()+" events should have "
-							+MotorMount.class.getSimpleName()+" type data payloads, instead of"
+							+MotorMount.class.getSimpleName()+" type data payloads, instead of "
 							+this.getSource().getClass().getSimpleName());
 				}
 			}
@@ -240,10 +252,10 @@ public class FlightEvent implements Comparable<FlightEvent> {
 			}
 			break;
 		case EJECTION_CHARGE:
-			if( null != this.source){
+			if((null != this.source) && (RocketComponent.REMOVED != this.source)) {
 				if( ! ( this.getSource() instanceof AxialStage)){
 					throw new IllegalStateException(type.name()+" events should have "
-							+AxialStage.class.getSimpleName()+" type data payloads, instead of"
+							+AxialStage.class.getSimpleName()+" type data payloads, instead of "
 							+this.getSource().getClass().getSimpleName());
 				}
 			}

@@ -116,15 +116,26 @@ Here are some of the most important Gradle tasks for OpenRocket:
 
    *  - core
       - ``serializeEngines``
-      - Fetch the latest thrust curves from ThrustCurve.org and serialize them to the OpenRocket format. The resulting serialized file is saved in the ``src`` dir so it can be used for a build.
+      - Fetch the latest thrust curves from ThrustCurve.org and store them in the OpenRocket SQLite motor database. The resulting ``.db`` file is saved in the ``src`` dir so it can be used for a build.
 
    *  - core
       - ``serializeEnginesDist``
-      - Same as ``serializeEngines``, but loads the serialized file to the distribution directory (:file:`openrocket/build`) so it can be used in the final build.
+      - Same as ``serializeEngines``, but loads the SQLite database file to the distribution directory (:file:`openrocket/build`) so it can be used in the final build.
 
    *  - core
       - ``submoduleUpdate``
       - Updates the submodule dependencies of the *core* module.
+
+Thrust Curve Motor Database
+===========================
+
+The internal thrust curve motor database is stored as a SQLite file at
+:file:`core/src/main/resources/datafiles/thrustcurves/thrustcurves.db`.
+The ``serializeEngines`` task rebuilds this file by downloading motor data from
+ThrustCurve.org. At runtime OpenRocket prefers the ``.db`` file and will fall
+back to the legacy ``.ser`` file if no SQLite database is found. User-defined
+motor directories can also include ``.db`` files; these are validated for the
+expected schema before loading.
 
 You can run these tasks from the command line using the Gradle Wrapper scripts. For example for the task ``run``, run the
 following command in the root directory of the OpenRocket repository:
@@ -192,9 +203,12 @@ The release procedure for OpenRocket is as follows:
    This includes new features, bug fixes, and other changes that are part of the release. Make sure to include the version number and the release date.
    Take a look at the previous release notes to see how it should be formatted.
 
-2. Update the component database and thrustcurves by running the gradle tasks ``subModuleUpdate`` and ``serializeEnginesDist`` respectively.
+2. Update the component database and thrustcurves by running the gradle tasks ``subModuleUpdate`` and ``serializeEngines`` respectively.
 
-3. **Update the version number** in ``openrocket/core/src/main/resources/build.properties`` to the correct version number.
+3. Rerun all example design files (open the design and overwrite the files at :file:`core/src/main/resources/datafiles/examples`
+with the new results) to ensure that they are up-to-date with the latest changes.
+
+4. **Update the version number** in ``openrocket/core/src/main/resources/build.properties`` to the correct version number.
 
    For official releases, the version number should use the format ``YY.MM`` (*year.month*). For example, if the software is released in
    September 2023, the version number should be ``23.09``. If there are multiple releases in the same month, add an incremental number
@@ -213,11 +227,11 @@ The release procedure for OpenRocket is as follows:
    For instance, if the beta testing started in September 2023 with version number ``23.09.beta.01``, the final release should have version number ``23.09``,
    even if the final release is in November 2023. This is to ensure consistency in the version numbering and to link the beta release(s) to the final release.
 
-4. **Build the project JAR file** using Gradle (see above).
+5. **Build the project JAR file** using Gradle (see above).
 
-5. **Test the JAR file** to ensure that it works correctly and that the new version number is applied to the splash screen and under :menuselection:`Help --> About`.
+6. **Test the JAR file** to ensure that it works correctly and that the new version number is applied to the splash screen and under :menuselection:`Help --> About`.
 
-6. **Create the packaged installers** using install4j (see above).
+7. **Create the packaged installers** using install4j (see above).
 
    .. warning::
       Make sure to **enable code signing** for the installers.
@@ -225,9 +239,9 @@ The release procedure for OpenRocket is as follows:
       Make sure that `DS_Store <https://github.com/openrocket/openrocket/blob/unstable/install4j/23.09/macOS_resources/DS_Store>`__ for the macOS
       installer is updated. Instructions can be found `here <https://github.com/openrocket/openrocket/blob/unstable/install4j/README.md>`__.
 
-7. **Test the installers** to ensure that they work correctly.
+8. **Test the installers** to ensure that they work correctly.
 
-8. **Prepare the website** *(for official releases only, not for alpha, beta, or release candidate releases)*.
+9. **Prepare the website** *(for official releases only, not for alpha, beta, or release candidate releases)*.
 
    The `source code for the website <https://github.com/openrocket/openrocket.github.io>`__ needs to be updated to point to the new release.
    Follow these steps:
@@ -244,7 +258,7 @@ The release procedure for OpenRocket is as follows:
       on the website. First update the ``development`` branch and test the changes on the website. In a later step, the
       changes will be merged to the ``master`` branch.
 
-9. **Publish the release on GitHub**.
+10. **Publish the release on GitHub**.
 
    Go to the `releases page <https://github.com/openrocket/openrocket/releases>`__. Click *Draft a new release*.
    Select *Choose a tag* and enter a new tag name, following the format ``release-<version number>``, e.g. ``release-23.09``.
@@ -261,13 +275,13 @@ The release procedure for OpenRocket is as follows:
 
    Click *Publish release*.
 
-10. **Push the changes to the website**
+11. **Push the changes to the website**
 
    First, build the ``development`` branch locally to verify that the changes that you made in step 8 are correct.
    If everything is working (test the download links, the release notes, and the What's new page), create a new PR
    that merges the changes from the ``development`` branch to the ``master`` branch.
 
-11. **Send out the release announcement**.
+12. **Send out the release announcement**.
 
     Send out the release announcement to the OpenRocket mailing list, the TRF forum, and the OpenRocket social media channels
     (Discord, Facebook...).
@@ -275,13 +289,39 @@ The release procedure for OpenRocket is as follows:
     The announcement should include the new features, bug fixes, and other changes that are part of the new release.
     Make sure to include the download links to the new release. Here is an `example announcement <https://www.rocketryforum.com/threads/announcement-openrocket-23-09-is-now-available-for-download.183186/>`__.
 
-12. **Merge the** ``unstable``` **branch to the** ``master``` **branch**.
+13. **Merge the** ``unstable`` **branch to the** ``master`` **branch**.
 
     After the release is published, merge the changes from the `unstable <https://github.com/openrocket/openrocket>`__ branch
     to the `master <https://github.com/openrocket/openrocket/tree/master>`__ branch.
 
-13. **Upload the new release to** `SourceForge <https://sourceforge.net/projects/openrocket/>`__.
+14. **Upload the new release to** `SourceForge <https://sourceforge.net/projects/openrocket/>`__.
 
    The downloads page on SourceForge is still very actively used, so be sure to upload the new release there as well.
 
-14. **Update package managers** (e.g. snap, Chocolatey, Homebrew) with the new release.
+15. **Update package managers** (e.g. snap, Chocolatey, Homebrew) with the new release.
+
+Snap
+====
+
+The OpenRocket snap package is automatically updated using the `Snapcraft <https://snapcraft.io/>`__ build system.
+However, the snap package's 'latest/stable' release needs to be manually updated after a new OpenRocket release is
+published.
+
+On a Linux system with snap installed, run the following command to build the new snap package:
+
+.. code-block:: bash
+
+      snapcraft remote-build
+
+This will create a file named ``openrocket_<version>_<arch>.snap`` in the current directory.
+Note that it may take up to 30 minutes for each architecture to be built.
+To publish the new snap package, run the following command (separate commands for each ``<arch>``):
+
+.. code-block:: bash
+
+      snapcraft upload --release=stable openrocket_<version>_<arch>.snap
+
+A similar procedure can be used to publish release candidates or beta versions by changing the ``--release`` option to
+``candidate`` or ``beta``.
+
+For developers with access to the OpenRocket Snapcraft account, more information can be found at the `snapcraft.io page <https://snapcraft.io/openrocket/releases>`__.

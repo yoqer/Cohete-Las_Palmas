@@ -10,6 +10,7 @@ import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.InstanceContext;
 import info.openrocket.core.rocketcomponent.TubeFinSet;
+import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.Coordinate;
 
 public class TubeFinSetExporter extends RocketComponentExporter<TubeFinSet> {
@@ -43,24 +44,26 @@ public class TubeFinSetExporter extends RocketComponentExporter<TubeFinSet> {
 
         // Generate the instance mesh
         TubeExporter.addTubeMesh(obj, transformer, null, outerRadius, innerRadius, length, LOD.getValue());
-
-        int endIdx = Math.max(obj.getNumVertices() - 1, startIdx);                  // Clamp in case no vertices were added
+        if (obj.getNumVertices() == startIdx) {
+            return;
+        }
+        int endIdx = obj.getNumVertices() - 1;
 
         // Translate the mesh to the position in the rocket
         //      We will create an offset location that has the same effect as the axial rotation of the launch lug
         final double rotX = context.transform.getXrotation();
-        final Coordinate location = context.getLocation();
-        Coordinate offsetLocation = getOffsetLocation(outerRadius, location, rotX);
+        final CoordinateIF location = context.getLocation();
+        CoordinateIF offsetLocation = getOffsetLocation(outerRadius, location, rotX);
         ObjUtils.translateVerticesFromComponentLocation(obj, transformer, startIdx, endIdx, offsetLocation);
     }
 
-    private static Coordinate getOffsetLocation(float outerRadius, Coordinate location, double rotX) {
+    private static CoordinateIF getOffsetLocation(float outerRadius, CoordinateIF location, double rotX) {
         // ! This is all still referenced to the OpenRocket coordinate system, not the OBJ one
         final float dy = outerRadius * (float) Math.cos(rotX);
         final float dz = outerRadius * (float) Math.sin(rotX);
-        final double x = location.x;
-        final double y = location.y + dy;
-        final double z = location.z + dz;
+        final double x = location.getX();
+        final double y = location.getY() + dy;
+        final double z = location.getZ() + dz;
         return new Coordinate(x, y, z);
     }
 }
