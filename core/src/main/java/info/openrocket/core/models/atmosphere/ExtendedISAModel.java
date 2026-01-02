@@ -232,7 +232,6 @@ public class ExtendedISAModel extends InterpolatingAtmosphericModel {
 	 * TODO: Implement changing humidity based on altitude.
 	 */
 	private double calculateHumidity(double alt1, double alt2, double humidity1) {
-        System.out.println(humidity1);
         return humidity1;
 	}
 
