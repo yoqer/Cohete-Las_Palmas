@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 import info.openrocket.core.file.openrocket.savers.PhotoStudioSaver;
 import info.openrocket.core.logging.ErrorSet;
@@ -386,7 +385,7 @@ public class OpenRocketSaver extends RocketSaver {
 			indent++;
 			writeElement("basetemperature", cond.getLaunchTemperature());
 			writeElement("basepressure", cond.getLaunchPressure());
-			writeElement("basehumidity", cond.getLaunchHumidity());
+			writeElement("basehumidity", cond.getLaunchRelativeHumidity());
 			indent--;
 			writeln("</atmosphere>");
 		}

@@ -18,7 +18,7 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 	/** Specific heat ratio of air (dimensionless). */
 	public static final double GAMMA = 1.4;
 
-	/** Ratio of the molar masse of water vapor and dry air */
+	/** Ratio of the molar mass of water vapor and dry air */
 	public static final double EPSILON = 0.622;
 
 	/** The standard air pressure (Pa). */
@@ -37,7 +37,7 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 	private double temperature;
 
 	/** Relative air humidity. */
-	private double humidity;
+	private double relativeHumidity;
 
 	private ModID modID;
 
@@ -51,7 +51,7 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 	public AtmosphericConditions(double temperature, double pressure) {
 		this.setTemperature(temperature);
 		this.setPressure(pressure);
-		this.setHumidity(STANDARD_HUMIDITY);
+		this.setRelativeHumidity(STANDARD_HUMIDITY);
 		this.modID = new ModID();
 	}
 
@@ -61,10 +61,10 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 	 * @param temperature the temperature in Kelvins.
 	 * @param pressure    the pressure in Pascals.
 	 */
-	public AtmosphericConditions(double temperature, double pressure, double humidity) {
+	public AtmosphericConditions(double temperature, double pressure, double relativeHumidity) {
 		this.setTemperature(temperature);
 		this.setPressure(pressure);
-		this.setHumidity(humidity);
+		this.setRelativeHumidity(relativeHumidity);
 		this.modID = new ModID();
 	}
 
@@ -92,15 +92,23 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 		this.modID = new ModID();
 	}
 
-	public double getHumidity() {
-		return humidity;
+	/**
+	 * Get the relative humidity (0 to 1).
+	 * @return the relative humidity
+	 */
+	public double getRelativeHumidity() {
+		return relativeHumidity;
 	}
 
-	public void setHumidity(double humidity) {
-		if (humidity < 0 || humidity > 1) {
+	/**
+	 * Set the relative humidity (0 to 1).
+	 * @param relativeHumidity the relative humidity
+	 */
+	public void setRelativeHumidity(double relativeHumidity) {
+		if (relativeHumidity < 0 || relativeHumidity > 1) {
 			throw new IllegalArgumentException("Humidity must be between 0 and 1");
 		}
-		this.humidity = humidity;
+		this.relativeHumidity = relativeHumidity;
 		this.modID = new ModID();
 	}
 
@@ -115,18 +123,17 @@ public class AtmosphericConditions implements Cloneable, Monitorable {
 
 	/**
 	 * Calculate the gas constant of humid air.
-     * - EPSILON is the ratio of the molar masse of water vapor and dry air
+     * - EPSILON is the ratio of the molar mass of water vapor and dry air
      * - R is the gas constant of dry air
      * - e_s(T) is the temperature-dependent saturation vapor pressure
      * - RH is the relative humidity
      *
-     * @return The gas constant of air in J/kg*K
-	 * @return R if humidity is 0
+     * @return The gas constant of air in J/kg*K. R if humidity is 0
 	 */
     public double getGasConstant() {
-		if (getHumidity() != 0) {
-			double numerator = EPSILON * getHumidity() * vaporPressureSaturation();
-			double denominator = getPressure() - getHumidity() * vaporPressureSaturation() * (1 - EPSILON);
+		if (getRelativeHumidity() > 0) {
+			double numerator = EPSILON * getRelativeHumidity() * vaporPressureSaturation();
+			double denominator = getPressure() - getRelativeHumidity() * vaporPressureSaturation() * (1 - EPSILON);
 			double scalingFactor = (1/EPSILON - 1);
 
 			return R * (1 + numerator*scalingFactor/denominator);

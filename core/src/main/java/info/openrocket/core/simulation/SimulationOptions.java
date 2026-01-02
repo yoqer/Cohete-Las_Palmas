@@ -85,7 +85,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 	private boolean useISA = preferences.isISAAtmosphere();
 	private double launchTemperature = preferences.getLaunchTemperature();	// In Kelvin
 	private double launchPressure = preferences.getLaunchPressure();		// In Pascal
-	private double launchHumidity = preferences.getLaunchHumidity();		//
+	private double launchRelativeHumidity = preferences.getLaunchRelativeHumidity();		//
 
 	private double timeStep = preferences.getTimeStep();
 	private double maxSimulationTime = preferences.getMaxSimulationTime();
@@ -286,7 +286,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		if (useISA) {
 			setLaunchTemperature(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getTemperature());
 			setLaunchPressure(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getPressure());
-			setLaunchHumidity(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getHumidity());
+			setLaunchRelativeHumidity(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getRelativeHumidity());
 		}
 
 		fireChangeEvent();
@@ -357,7 +357,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		if (isa) {
 			setLaunchTemperature(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getTemperature());
 			setLaunchPressure(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getPressure());
-			setLaunchHumidity(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getHumidity());
+			setLaunchRelativeHumidity(ISA_ATMOSPHERIC_MODEL.getConditions(getLaunchAltitude()).getRelativeHumidity());
 		}
 
 		fireChangeEvent();
@@ -385,14 +385,14 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		fireChangeEvent();
 	}
 
-	public double getLaunchHumidity() {
-		return launchHumidity;
+	public double getLaunchRelativeHumidity() {
+		return launchRelativeHumidity;
 	}
 
-	public void setLaunchHumidity(double launchHumidity) {
-		if (MathUtil.equals(this.launchHumidity, launchHumidity))
+	public void setLaunchRelativeHumidity(double launchHumidity) {
+		if (MathUtil.equals(this.launchRelativeHumidity, launchHumidity))
 			return;
-		this.launchHumidity = launchHumidity;
+		this.launchRelativeHumidity = launchHumidity;
 		fireChangeEvent();
 	}
 
@@ -406,7 +406,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 		if (useISA) {
 			return ISA_ATMOSPHERIC_MODEL;
 		}
-		return new ExtendedISAModel(getLaunchAltitude(), launchTemperature, launchPressure, launchHumidity);
+		return new ExtendedISAModel(getLaunchAltitude(), launchTemperature, launchPressure, launchRelativeHumidity);
 	}
 
 	public double getTimeStep() {
@@ -666,9 +666,9 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 			isChanged = true;
 			this.launchPressure = src.launchPressure;
 		}
-		if (this.launchHumidity != src.launchHumidity) {
+		if (this.launchRelativeHumidity != src.launchRelativeHumidity) {
 			isChanged = true;
-			this.launchHumidity = src.launchHumidity;
+			this.launchRelativeHumidity = src.launchRelativeHumidity;
 		}
 		if (this.maximumAngle != src.maximumAngle) {
 			isChanged = true;
@@ -722,7 +722,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 				MathUtil.equals(this.launchLatitude, o.launchLatitude) &&
 				MathUtil.equals(this.launchLongitude, o.launchLongitude) &&
 				MathUtil.equals(this.launchPressure, o.launchPressure) &&
-				MathUtil.equals(this.launchHumidity, o.launchHumidity) &&
+				MathUtil.equals(this.launchRelativeHumidity, o.launchRelativeHumidity) &&
 				MathUtil.equals(this.launchRodAngle, o.launchRodAngle) &&
 				MathUtil.equals(this.launchRodDirection, o.launchRodDirection) &&
 				MathUtil.equals(this.launchRodLength, o.launchRodLength) &&
@@ -828,7 +828,7 @@ public class SimulationOptions implements ChangeSource, Cloneable, SimulationOpt
 				.concat(String.format("    useISA:  %b\n", useISA))
 				.concat(String.format("    launchTemperature:  %f\n", launchTemperature))
 				.concat(String.format("    launchPressure:  %f\n", launchPressure))
-				.concat(String.format("    launchHumidity:  %f\n", launchHumidity))
+				.concat(String.format("    launchHumidity:  %f\n", launchRelativeHumidity))
 				.concat(String.format("    timeStep:  %f\n", timeStep))
 				.concat(String.format("    maxTime:  %f\n", maxSimulationTime))
 				.concat(String.format("    maximumAngle:  %f\n", maximumAngle))

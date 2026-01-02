@@ -80,7 +80,7 @@ public class SimulationConditionsPanel extends JPanel {
 		String tip;
 		BasicSlider slider;
 		UnitSelector unit;
-		DoubleModel humidityModel;
+		DoubleModel relativeHumidityModel;
 		final ExtendedISAModel standardAtmosphere = new ExtendedISAModel();
 
 		//// Wind settings:  Average wind speed, turbulence intensity, std. deviation, and direction
@@ -184,27 +184,27 @@ public class SimulationConditionsPanel extends JPanel {
 		sub.add(slider, "w 75lp, wrap");
 
 
-		// Humidity:
-		label = new JLabel(trans.get("simedtdlg.lbl.Humidity"));
+		// Relative humidity:
+		label = new JLabel(trans.get("simedtdlg.lbl.RelativeHumidity"));
 		////The humidity at the launch site.
-		tip = trans.get("simedtdlg.lbl.ttip.Humidity");
+		tip = trans.get("simedtdlg.lbl.ttip.RelativeHumidity");
 		label.setToolTipText(tip);
 		isa.addEnableComponent(label, false);
 		sub.add(label);
 
-		humidityModel = new DoubleModel(target, "LaunchHumidity", UnitGroup.UNITS_RELATIVE, 0);
+		relativeHumidityModel = new DoubleModel(target, "LaunchRelativeHumidity", UnitGroup.UNITS_RELATIVE, 0);
 
-		spin = new JSpinner(humidityModel.getSpinnerModel());
+		spin = new JSpinner(relativeHumidityModel.getSpinnerModel());
 		spin.setEditor(new SpinnerEditor(spin));
 		spin.setToolTipText(tip);
 		isa.addEnableComponent(spin, false);
 		sub.add(spin, "growx");
 
-		unit = new UnitSelector(humidityModel);
+		unit = new UnitSelector(relativeHumidityModel);
 		unit.setToolTipText(tip);
 		isa.addEnableComponent(unit, false);
 		sub.add(unit, "growx");
-		slider = new BasicSlider(humidityModel.getSliderModel(0, 1));
+		slider = new BasicSlider(relativeHumidityModel.getSliderModel(0, 1));
 		slider.setToolTipText(tip);
 		isa.addEnableComponent(slider, false);
 		sub.add(slider, "w 75lp, wrap");
@@ -215,7 +215,7 @@ public class SimulationConditionsPanel extends JPanel {
 			public void stateChanged(EventObject e) {
 				temperatureModel.stateChanged(e);
 				pressureModel.stateChanged(e);
-				humidityModel.stateChanged(e);
+				relativeHumidityModel.stateChanged(e);
 			}
 		});
 

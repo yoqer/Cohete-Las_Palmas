@@ -67,7 +67,7 @@ class AtmosphereHandler extends AbstractElementHandler {
 			cond.setLaunchTemperature(temperature);
 		}
 		if (!Double.isNaN(humidity)) {
-			cond.setLaunchHumidity(humidity);
+			cond.setLaunchRelativeHumidity(humidity);
 		}
 
 		if ("isa".equals(model)) {
