@@ -332,6 +332,30 @@ public class OpenRocketSaverTest {
 		assertEquals(Simulation.Status.LOADED, rocketDocLoaded.getSimulations().get(2).getStatus());
 		assertEquals(Simulation.Status.OUTDATED, rocketDocLoaded.getSimulations().get(3).getStatus());
 	}
+
+	@Test
+	public void testAtmosphereHumiditySavedAndLoaded() {
+		Rocket rocket = TestRockets.makeEstesAlphaIII();
+		OpenRocketDocument rocketDoc = OpenRocketDocumentFactory.createDocumentFromRocket(rocket);
+
+		Simulation sim = new Simulation(rocket);
+		sim.getOptions().setISAAtmosphere(false);
+		sim.getOptions().setLaunchTemperature(280.0);
+		sim.getOptions().setLaunchPressure(95000.0);
+		sim.getOptions().setLaunchRelativeHumidity(0.55);
+		sim.setFlightConfigurationId(TestRockets.TEST_FCID_0);
+		rocketDoc.addSimulation(sim);
+
+		File file = saveRocket(rocketDoc, new StorageOptions());
+		OpenRocketDocument rocketDocLoaded = loadRocket(file.getPath());
+
+		assertEquals(1, rocketDocLoaded.getSimulations().size());
+		Simulation loadedSim = rocketDocLoaded.getSimulations().get(0);
+		assertFalse(loadedSim.getOptions().isISAAtmosphere());
+		assertEquals(0.55, loadedSim.getOptions().getLaunchRelativeHumidity(), 1e-12);
+		assertEquals(280.0, loadedSim.getOptions().getLaunchTemperature(), 1e-12);
+		assertEquals(95000.0, loadedSim.getOptions().getLaunchPressure(), 1e-9);
+	}
 	
 	////////////////////////////////
 	// Tests for File Version 1.11 //
