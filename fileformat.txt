@@ -82,8 +82,8 @@ The following file format versions exist:
       Added gravity model settings (<gravity model="{wgs or constant}">) to simulation conditions.
       Added drag and stability lookup CSV tables (<draglookup> and <stabilitylookup>)
       to simulation conditions. These elements support both:
-      - A "file" attribute containing the path to the CSV file
-      - Embedded <row> elements containing the actual CSV data row by row
+        - A "file" attribute containing the path to the CSV file
+        - Embedded <row> elements containing the actual CSV data row by row
       Format: <draglookupcsv file="path/to/file.csv">
                <row>Mach,AoA,Cd</row>
                <row>0.30,0,0.35</row>
@@ -93,3 +93,4 @@ The following file format versions exist:
       are embedded, the file path is used to load from disk (backward compatible).
       Embedded thrust curve motor data (<thrustcurvepoint> and <standarddelays>)
       into <motor> elements so designs are self-contained when sharing custom motors.
+      Added <baserelativehumidity> to the atmosphere model in simulation conditions.

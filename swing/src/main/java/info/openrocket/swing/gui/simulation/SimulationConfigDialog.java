@@ -286,14 +286,14 @@ public class SimulationConfigDialog extends JDialog {
 
 			}
 		});
-		topPanel.add(field, "growx, wrap");
+		topPanel.add(field, "growx, pushx");
 
 		//// Flight selector
 		//// Flight configuration:
 		JLabel label = new JLabel(trans.get("simedtdlg.lbl.Flightcfg"));
 		//// Select the motor configuration to use.
 		label.setToolTipText(trans.get("simedtdlg.lbl.ttip.Flightcfg"));
-		topPanel.add(label, "growx 0, gapright para");
+		topPanel.add(label, "gapleft para, growx 0, gapright para");
 
 		final Rocket rkt = document.getRocket();
 		final FlightConfiguration config = rkt.getFlightConfiguration(simulationList[0].getFlightConfigurationId());
@@ -311,7 +311,7 @@ public class SimulationConfigDialog extends JDialog {
 				simulationList[0].setFlightConfigurationId( id );
 			}
 		});
-		topPanel.add(configComboBox, "span");
+		topPanel.add(configComboBox, "growx, pushx, wrap");
 
 		//// Display current simulation status
 		JLabel statusLabel = new JLabel(trans.get("simpanel.col.Status") + ":");
@@ -326,9 +326,7 @@ public class SimulationConfigDialog extends JDialog {
 				ColorConversion.formatHTMLColor(statusColor, statusText) +
 				"</html>"
 		);
-		topPanel.add(simStatus);
-
-		topPanel.add(new JPanel(), "growx, wrap");
+		topPanel.add(simStatus, "span 3, wrap");
 
 		contentPanel.add(topPanel, "growx, height pref, wrap");
 	}

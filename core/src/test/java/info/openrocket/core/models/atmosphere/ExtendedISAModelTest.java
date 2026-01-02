@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.provider.CsvSource;
+import info.openrocket.core.util.ModID;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -15,14 +16,32 @@ public class ExtendedISAModelTest {
 	private ExtendedISAModel altitudeModel;
 	private ExtendedISAModel interpolatedAltitudeModel;
 
+	private static class LinearHumidityInterpolatingModel extends InterpolatingAtmosphericModel {
+		@Override
+		protected double getMaxAltitude() {
+			return 1000;
+		}
+
+		@Override
+		protected AtmosphericConditions getExactConditions(double altitude) {
+			double relativeHumidity = Math.max(0, Math.min(1, altitude / 1000.0));
+			return new AtmosphericConditions(288.15, 101325.0, relativeHumidity);
+		}
+
+		@Override
+		public ModID getModID() {
+			return ModID.ZERO;
+		}
+	}
+
 	@BeforeEach
 	void setUp() {
 		standardModel = new ExtendedISAModel();
-		customModel = new ExtendedISAModel(278.15, 100000.0); // Custom conditions
+		customModel = new ExtendedISAModel(278.15, 100000.0, 0); // Custom conditions
 		// Create model for a launch site at 1000m with specific conditions
-		altitudeModel = new ExtendedISAModel(1000.0, 281.15, 89876.0);
+		altitudeModel = new ExtendedISAModel(1000.0, 281.15, 89876.0, 0);
 		// Create model for a launch site at 2750m (between 2500m and 3000m layers)
-		interpolatedAltitudeModel = new ExtendedISAModel(2750.0, 271.15, 72500.0);
+		interpolatedAltitudeModel = new ExtendedISAModel(2750.0, 271.15, 72500.0, 0);
 	}
 
 	@Test
@@ -121,27 +140,27 @@ public class ExtendedISAModelTest {
 	void testEdgeCases() {
 		// Test negative altitude
 		assertDoesNotThrow(() ->
-				new ExtendedISAModel(-100.0, 288.15, 101325.0)
+				new ExtendedISAModel(-100.0, 288.15, 101325.0, 0.0)
 		);
 
 		// Test zero pressure
 		assertThrows(IllegalArgumentException.class, () ->
-				new ExtendedISAModel(1000.0, 288.15, 0.0)
+				new ExtendedISAModel(1000.0, 288.15, 0.0, 0.0)
 		);
 
 		// Test zero temperature
 		assertThrows(IllegalArgumentException.class, () ->
-				new ExtendedISAModel(1000.0, 0.0, 101325.0)
+				new ExtendedISAModel(1000.0, 0.0, 101325.0, 0.0)
 		);
 
 		// Test negative pressure
 		assertThrows(IllegalArgumentException.class, () ->
-				new ExtendedISAModel(1000.0, 288.15, -1000.0)
+				new ExtendedISAModel(1000.0, 288.15, -1000.0, 0.0)
 		);
 
 		// Test negative temperature
 		assertThrows(IllegalArgumentException.class, () ->
-				new ExtendedISAModel(1000.0, -273.15, 101325.0)
+				new ExtendedISAModel(1000.0, -273.15, 101325.0, 0.0)
 		);
 	}
 
@@ -149,7 +168,7 @@ public class ExtendedISAModelTest {
 	@DisplayName("Should throw exception for launch sites above 11km")
 	void testTooHighLaunchSite() {
 		assertThrows(IllegalArgumentException.class, () ->
-				new ExtendedISAModel(12000.0, 220.0, 25000.0)
+				new ExtendedISAModel(12000.0, 220.0, 25000.0, 0.0)
 		);
 	}
 
@@ -212,7 +231,7 @@ public class ExtendedISAModelTest {
 	})
 	@DisplayName("Should handle various launch site conditions correctly")
 	void testVariousLaunchSites(double altitude, double temperature, double pressure) {
-		ExtendedISAModel model = new ExtendedISAModel(altitude, temperature, pressure);
+		ExtendedISAModel model = new ExtendedISAModel(altitude, temperature, pressure, 0);
 		AtmosphericConditions conditions = model.getConditions(altitude);
 
 		assertEquals(temperature, conditions.getTemperature(), 0.01);
@@ -243,5 +262,46 @@ public class ExtendedISAModelTest {
 		double pressureRatio = conditions2500.getPressure() / conditions2000.getPressure();
 		assertTrue(pressureRatio < 1.0, "Pressure should decrease with altitude");
 		assertTrue(pressureRatio > 0.9, "Pressure shouldn't decrease too rapidly over 500m");
+	}
+
+	@Test
+	@DisplayName("Model should return provided non-zero humidity at sea level")
+	void testNonZeroHumidityAtSeaLevel() {
+		ExtendedISAModel humidModel = new ExtendedISAModel(288.15, 101325.0, 0.65);
+		AtmosphericConditions conditions = humidModel.getConditions(0);
+		assertEquals(0.65, conditions.getRelativeHumidity(), 1e-12);
+	}
+
+	@Test
+	@DisplayName("Humidity should affect derived properties (gas constant and density)")
+	void testHumidityAffectsDerivedProperties() {
+		ExtendedISAModel humidModel = new ExtendedISAModel(288.15, 101325.0, 0.80);
+
+		AtmosphericConditions dry = standardModel.getConditions(0);
+		AtmosphericConditions humid = humidModel.getConditions(0);
+
+		assertEquals(dry.getTemperature(), humid.getTemperature(), 1e-9);
+		assertEquals(dry.getPressure(), humid.getPressure(), 1e-6);
+		assertTrue(humid.getGasConstant() > dry.getGasConstant(), "Humid air should have higher gas constant");
+		assertTrue(humid.getDensity() < dry.getDensity(), "Humid air should have lower density at same P/T");
+	}
+
+	@Test
+	@DisplayName("Should validate relative humidity bounds in constructor")
+	void testRelativeHumidityBounds() {
+		assertThrows(IllegalArgumentException.class, () -> new ExtendedISAModel(288.15, 101325.0, -0.01));
+		assertThrows(IllegalArgumentException.class, () -> new ExtendedISAModel(288.15, 101325.0, 1.01));
+		assertDoesNotThrow(() -> new ExtendedISAModel(288.15, 101325.0, 0.0));
+		assertDoesNotThrow(() -> new ExtendedISAModel(288.15, 101325.0, 1.0));
+	}
+
+	@Test
+	@DisplayName("InterpolatingAtmosphericModel should interpolate relative humidity")
+	void testInterpolatedRelativeHumidity() {
+		InterpolatingAtmosphericModel model = new LinearHumidityInterpolatingModel();
+
+		assertEquals(0.0, model.getConditions(0).getRelativeHumidity(), 1e-12);
+		assertEquals(0.25, model.getConditions(250).getRelativeHumidity(), 1e-12);
+		assertEquals(0.5, model.getConditions(500).getRelativeHumidity(), 1e-12);
 	}
 }
