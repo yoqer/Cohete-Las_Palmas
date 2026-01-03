@@ -256,6 +256,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			final CustomClickCountListener clickCountListener = new CustomClickCountListener();
 			private Point mousePressedLoc = null;
 			private double originalFigureRotation = 0;
+			private boolean dragPanning = false;
+			private boolean dragRotating = false;
 
 			@Override
 			public void mouseClicked(MouseEvent event) {
@@ -267,13 +269,43 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (is3d) {
 					return;
 				}
-				mousePressedLoc = e.getPoint();
-				originalFigureRotation = figure.getRotation();
+				dragPanning = shouldPanOnDrag(e);
+				dragRotating = shouldRotateOnDrag(e);
+				mousePressedLoc = dragRotating ? e.getPoint() : null;
+				originalFigureRotation = dragRotating ? figure.getRotation() : 0;
+				if (dragPanning) {
+					super.mousePressed(e);
+				}
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				if (dragPanning) {
+					super.mouseDragged(e);
+					return;
+				}
+				if (dragRotating) {
+					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				}
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				super.mouseReleased(e);
+				dragPanning = false;
+				dragRotating = false;
+				mousePressedLoc = null;
+			}
+
+			private boolean shouldPanOnDrag(MouseEvent e) {
+				if (SwingUtilities.isMiddleMouseButton(e) || SwingUtilities.isRightMouseButton(e)) {
+					return true;
+				}
+				return SwingUtilities.isLeftMouseButton(e) && rotationControl.isDragRotationLocked();
+			}
+
+			private boolean shouldRotateOnDrag(MouseEvent e) {
+				return SwingUtilities.isLeftMouseButton(e) && !rotationControl.isDragRotationLocked();
 			}
 		};
 		scrollPane.getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
