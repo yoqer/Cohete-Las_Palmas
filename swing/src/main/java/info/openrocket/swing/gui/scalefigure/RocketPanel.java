@@ -711,77 +711,85 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		// Check for double-click.
 		// If the shift/meta key is not pressed and the component was not already selected, ignore the double click and treat it as a single click
-		if (clickCount == 2) {
-			if (!selectedComponents.isEmpty() && (event.isShiftDown() || event.isMetaDown())) {
-				List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
-				RocketComponent component = selectedComponents.get(selectedComponents.size() - 1);
-				component.clearConfigListeners();
+		if (clickCount >= 2) {
+			handleDoubleComponentClick(clicked, event, selectedComponents);
+		} else if (clickCount == 1) {
+			handleSingleComponentClick(clicked, event, selectedComponents);
+		}
+	}
 
-				// Make sure the clicked component is selected
-				for (RocketComponent c : clicked) {
-					if (!selectedComponents.contains(c)) {
-						TreePath path = ComponentTreeModel.makeTreePath(c);
-						paths.add(path);
-						selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
-						selectedComponents = Arrays.stream(selectionModel.getSelectionPaths())
-								.map(c1 -> (RocketComponent) c1.getLastPathComponent()).toList();
-						component = c;
-						break;
-					}
-				}
+	private void handleDoubleComponentClick(RocketComponent[] clicked, MouseEvent event, List<RocketComponent> selectedComponents) {
+		// Multi-component edit if shift/meta key is pressed
+		if (!selectedComponents.isEmpty() && (event.isShiftDown() || event.isMetaDown())) {
+			List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
+			RocketComponent component = selectedComponents.get(selectedComponents.size() - 1);
+			component.clearConfigListeners();
 
-				// Multi-component edit if shift/meta key is pressed
-				for (RocketComponent c : selectedComponents) {
-					if (c == component) continue;
-					c.clearConfigListeners();
-					component.addConfigListener(c);
+			// Make sure the clicked component is selected
+			for (RocketComponent c : clicked) {
+				if (!selectedComponents.contains(c)) {
+					TreePath path = ComponentTreeModel.makeTreePath(c);
+					paths.add(path);
+					selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
+					selectedComponents = Arrays.stream(selectionModel.getSelectionPaths())
+							.map(c1 -> (RocketComponent) c1.getLastPathComponent()).toList();
+					component = c;
+					break;
 				}
-				ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this), document, component);
 			}
-			// Normal double click (no shift or meta key)
-			else {
-				if (!selectedComponents.contains(clicked[0])) {
-					clickCount = 1;
-				} else {
-					TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
-					selectionModel.setSelectionPath(path);        // Revert to single selection
-					RocketComponent component = (RocketComponent) path.getLastPathComponent();
 
-					ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this),
-							document, component);
-					return;
-				}
+			// Multi-component edit if shift/meta key is pressed
+			for (RocketComponent c : selectedComponents) {
+				if (c == component) continue;
+				c.clearConfigListeners();
+				component.addConfigListener(c);
+			}
+			ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this), document, component);
+		}
+		// Normal double click (no shift or meta key)
+		else {
+			// If the clicked component is not in the selection, treat it as a single click
+			if (!selectedComponents.contains(clicked[0])) {
+				handleSingleComponentClick(clicked, event, selectedComponents);
+			}
+			// Open the configuration dialog for the first clicked component
+			else {
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);        // Revert to single selection
+				RocketComponent component = (RocketComponent) path.getLastPathComponent();
+
+				ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this),
+						document, component);
 			}
 		}
+	}
 
-
-		if (clickCount == 1) {
-			// If the shift-button is held, add a newly clicked component to the selection path
-			if (event.isShiftDown() || event.isMetaDown()) {
-				List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
-				for (int i = 0; i < clicked.length; i++) {
-					if (!selectedComponents.contains(clicked[i])) {
-						TreePath path = ComponentTreeModel.makeTreePath(clicked[i]);
-						paths.add(path);
-						break;
-					}
-					// If all the clicked components are already in the selection, then deselect an object
-					if (i == clicked.length - 1) {
-						paths.removeIf(path -> path.getLastPathComponent() == clicked[0]);
-					}
+	private void handleSingleComponentClick(RocketComponent[] clicked, MouseEvent event, List<RocketComponent> selectedComponents) {
+		// If the shift-button is held, add a newly clicked component to the selection path
+		if (event.isShiftDown() || event.isMetaDown()) {
+			List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
+			for (int i = 0; i < clicked.length; i++) {
+				if (!selectedComponents.contains(clicked[i])) {
+					TreePath path = ComponentTreeModel.makeTreePath(clicked[i]);
+					paths.add(path);
+					break;
 				}
-				try {
-					selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
-				} catch (Exception e) {
-					System.out.println(e);
+				// If all the clicked components are already in the selection, then deselect an object
+				if (i == clicked.length - 1) {
+					paths.removeIf(path -> path.getLastPathComponent() == clicked[0]);
 				}
 			}
-			// Single click, so set the selection to the first clicked component
-			else {
-				if (!selectedComponents.contains(clicked[0])) {
-					TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
-					selectionModel.setSelectionPath(path);
-				}
+			try {
+				selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
+			} catch (Exception e) {
+				System.out.println(e);
+			}
+		}
+		// Single click, so set the selection to the first clicked component
+		else {
+			if (!selectedComponents.contains(clicked[0])) {
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);
 			}
 		}
 	}
