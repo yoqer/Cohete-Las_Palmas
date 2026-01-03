@@ -37,6 +37,7 @@ public class ScaleSelector {
 	private final JComboBox<String> scaleSelectorCombo;
 	private final JButton zoomOutButton;
 	private final JButton zoomInButton;
+	private final JButton zoomFitButton;
 
 	public ScaleSelector(ScaleScrollPane scroll) {
 		this.scrollPane = scroll;
@@ -114,13 +115,24 @@ public class ScaleSelector {
 				update();
 			}
 		});
+
+		// Zoom fit button
+		zoomFitButton = new IconButton(Icons.ZOOM_RESET);
+		zoomFitButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				scrollPane.setFitting(true);
+				update();
+			}
+		});
 	}
 
 	public JPanel getAsPanel() {
-		JPanel panel = new JPanel(new MigLayout("insets 0", "[][]0[]", "[]"));
+		JPanel panel = new JPanel(new MigLayout("insets 0", "[][]0[]0[]", "[]"));
 		panel.add(zoomOutButton);
 		panel.add(scaleSelectorCombo, "wmin 120lp, growx");
 		panel.add(zoomInButton);
+		panel.add(zoomFitButton);
 
 		return panel;
 	}
@@ -135,6 +147,10 @@ public class ScaleSelector {
 
 	public JButton getZoomInButton() {
 		return zoomInButton;
+	}
+
+	public JButton getZoomFitButton() {
+		return zoomFitButton;
 	}
 
 	private void setZoomText() {
@@ -179,6 +195,7 @@ public class ScaleSelector {
 		zoomInButton.setEnabled(b);
 		scaleSelectorCombo.setEnabled(b);
 		zoomOutButton.setEnabled(b);
+		zoomFitButton.setEnabled(b);
 	}
 
 	public void update(){
