@@ -750,7 +750,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		else {
 			// If the clicked component is not in the selection, treat it as a single click
 			if (!selectedComponents.contains(clicked[0])) {
-				handleSingleComponentClick(clicked, event, selectedComponents);
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);
 			}
 			// Open the configuration dialog for the first clicked component
 			else {
