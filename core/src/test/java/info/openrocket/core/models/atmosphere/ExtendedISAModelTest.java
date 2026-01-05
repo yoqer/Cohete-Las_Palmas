@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 public class ExtendedISAModelTest {
+	private static final double ISA_GRAVITY = 9.80665;
 	private ExtendedISAModel standardModel;
 	private ExtendedISAModel customModel;
 	private ExtendedISAModel altitudeModel;
@@ -115,11 +116,24 @@ public class ExtendedISAModelTest {
 		AtmosphericConditions conditions500 = altitudeModel.getConditions(500.0);
 		AtmosphericConditions conditions0 = altitudeModel.getConditions(0.0);
 
+		double launchTemperature = 281.15;
+		double launchPressure = 89876.0;
+		double geopotentialLaunch = 999.8427120469674;
+		double layer1Alt = 11000.0;
+		double layer1Temp = 216.65;
+		double tempRate = (layer1Temp - launchTemperature) / (layer1Alt - geopotentialLaunch);
+		double seaLevelTemp = launchTemperature - tempRate * geopotentialLaunch;
+		double seaLevelPressure = calculatePressure(0, seaLevelTemp, geopotentialLaunch, launchTemperature, launchPressure);
+
+		double geopotential500 = 499.9606749190611;
+		double expectedTemp500 = seaLevelTemp + tempRate * geopotential500;
+		double expectedPressure500 = calculatePressure(geopotential500, expectedTemp500, 0, seaLevelTemp, seaLevelPressure);
+
 		// Should return launch site conditions for any altitude below launch site
-		assertEquals(284.375, conditions500.getTemperature(), 0.01);
-		assertEquals(95472.8, conditions500.getPressure(), 0.01);
-		assertEquals(287.6, conditions0.getTemperature(), 0.01);
-		assertEquals(101349.04, conditions0.getPressure(), 0.01);
+		assertEquals(expectedTemp500, conditions500.getTemperature(), 0.01);
+		assertEquals(expectedPressure500, conditions500.getPressure(), 0.01);
+		assertEquals(seaLevelTemp, conditions0.getTemperature(), 0.01);
+		assertEquals(seaLevelPressure, conditions0.getPressure(), 0.01);
 	}
 
 	@Test
@@ -303,5 +317,56 @@ public class ExtendedISAModelTest {
 		assertEquals(0.0, model.getConditions(0).getRelativeHumidity(), 1e-12);
 		assertEquals(0.25, model.getConditions(250).getRelativeHumidity(), 1e-12);
 		assertEquals(0.5, model.getConditions(500).getRelativeHumidity(), 1e-12);
+	}
+
+	@Test
+	@DisplayName("Geometric altitude should be converted to geopotential for ISA temperature")
+	void testGeopotentialConversionForTemperature() {
+		double geometricAltitude = 32000.0;
+		double geopotentialAltitude = 31839.71865615363;
+		double expectedTemp = expectedISATemperature(geopotentialAltitude);
+
+		AtmosphericConditions conditions = standardModel.getConditions(geometricAltitude);
+		assertEquals(expectedTemp, conditions.getTemperature(), 0.03);
+	}
+
+	@Test
+	@DisplayName("Maximum allowed altitude should be based on geometric altitude")
+	void testMaximumAllowedAltitudeUsesGeometric() {
+		double expected = 11018.064362274883;
+		assertEquals(expected, ExtendedISAModel.getMaximumAllowedAltitude(), 1e-6);
+	}
+
+	private static double expectedISATemperature(double geopotentialAltitude) {
+		if (geopotentialAltitude <= 11000.0) {
+			return 288.15 - 0.0065 * geopotentialAltitude;
+		}
+		if (geopotentialAltitude <= 20000.0) {
+			return 216.65;
+		}
+		if (geopotentialAltitude <= 32000.0) {
+			return 216.65 + 0.001 * (geopotentialAltitude - 20000.0);
+		}
+		if (geopotentialAltitude <= 47000.0) {
+			return 228.65 + 0.0028 * (geopotentialAltitude - 32000.0);
+		}
+		if (geopotentialAltitude <= 51000.0) {
+			return 270.65;
+		}
+		if (geopotentialAltitude <= 71000.0) {
+			return 270.65 - 0.0028 * (geopotentialAltitude - 51000.0);
+		}
+		if (geopotentialAltitude <= 84852.0) {
+			return 214.65 - 0.0020 * (geopotentialAltitude - 71000.0);
+		}
+		return 186.95;
+	}
+
+	private static double calculatePressure(double alt1, double temp1, double alt2, double temp2, double press2) {
+		double tempRate = (temp2 - temp1) / (alt2 - alt1);
+		if (Math.abs(tempRate) > 0.000001) {
+			return press2 / Math.pow(1 + (alt2 - alt1) * tempRate / temp1, -ISA_GRAVITY / (tempRate * AtmosphericConditions.R));
+		}
+		return press2 / Math.exp(-(alt2 - alt1) * ISA_GRAVITY / (AtmosphericConditions.R * temp1));
 	}
 }
