@@ -145,7 +145,12 @@ public class Icons {
 	public static final Icon SAVE_DECAL = loadIcon(
 			"pix/icons/lucide/file-image.svg",
 			"pix/icons/Painting-Transparent-PNG_16.png",
-			"Save decal image");
+			"Save decal image",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xFAC132, "OR.icons.imageSun",
+					0x2F6536, "OR.icons.imageMountain"
+			));
 	public static final Icon FILE_PRINT = loadIcon(
 			"pix/icons/lucide/printer.svg",
 			"pix/icons/print-design.specs.png",
@@ -175,11 +180,18 @@ public class Icons {
 	public static final Icon FILE_CLOSE = loadIcon(
 			"pix/icons/lucide/circle-x.svg",
 			"pix/icons/document-close.png",
-			"Close document");
+			"Close document",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xc80000, "OR.icons.red"
+			));
 	public static final Icon FILE_QUIT = loadIcon(
 			"pix/icons/lucide/power.svg",
 			"pix/icons/application-exit.png",
-			"Quit OpenRocket");
+			"Quit OpenRocket",
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.red"
+			));
 	public static final Icon EDIT_UNDO = loadIcon(
 			"pix/icons/lucide/undo.svg",
 			"pix/icons/edit-undo.png",
@@ -221,7 +233,11 @@ public class Icons {
 	public static final Icon EDIT_PASTE = loadIcon(
 			"pix/icons/lucide/clipboard-paste.svg",
 			"pix/icons/edit-paste.png",
-			"Paste");
+			"Paste",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xc80000, "OR.icons.import"
+			));
 	public static final Icon EDIT_DUPLICATE = loadIcon(
 			"pix/icons/lucide/copy-plus.svg",
 			"pix/icons/edit-duplicate.png",
@@ -238,7 +254,11 @@ public class Icons {
 	public static final Icon EDIT_SCALE = loadIcon(
 			"pix/icons/lucide/scaling.svg",
 			"pix/icons/edit-scale.png",
-			"Scale");
+			"Scale",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 	public static final Icon MORE_OPTIONS = loadSvgIcon(
 			"pix/icons/lucide/ellipsis-vertical.svg",
 			"More options");
@@ -259,7 +279,9 @@ public class Icons {
 			"New image",
 			Map.of(
 					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
-					0x499C54, "OR.icons.plus"
+					0xFAC132, "OR.icons.imageSun",
+					0x499C54, "OR.icons.plus",
+					0x2F6536, "OR.icons.imageMountain"
 			));
 
 	public static final Icon SIM_RUN = loadIcon(

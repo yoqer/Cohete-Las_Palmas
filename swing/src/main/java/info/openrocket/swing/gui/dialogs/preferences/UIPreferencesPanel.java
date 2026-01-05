@@ -164,7 +164,6 @@ public class UIPreferencesPanel extends PreferencesPanel {
 				UITheme.Theme t = selection.get();
 				preferences.setUITheme(t);
 				t.applyTheme();
-				previewPanel.updateTheme(t);
 			}
 		});
 
