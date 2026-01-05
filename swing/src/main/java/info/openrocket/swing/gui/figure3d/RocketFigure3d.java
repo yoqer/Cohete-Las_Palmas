@@ -266,7 +266,11 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 			
 			@Override
 			public void mouseClicked(final MouseEvent e) {
-				pickPoint = new Point(lastX, canvas.getHeight() - lastY);
+				// Store the click point in AWT (top-left origin) coordinates and convert to
+				// OpenGL surface coordinates during rendering.  This is important on HiDPI
+				// displays (notably macOS Retina), where component coordinates and the GL
+				// drawable surface size can differ.
+				pickPoint = e.getPoint();
 				pickEvent = e;
 				internalRepaint();
 			}
@@ -319,8 +323,9 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 			gl.glDisable(GL.GL_MULTISAMPLE);
 			gl.glDisable(GLLightingFunc.GL_LIGHTING);
 			
+			final Point surfacePickPoint = toSurfacePickPoint(drawable, pickPoint);
 			final RocketComponent picked = rr.pick(drawable, configuration,
-					pickPoint, pickEvent.isShiftDown() ? selection : null);
+					surfacePickPoint, pickEvent.isShiftDown() ? selection : null);
 			if (csl != null) {
 				final MouseEvent e = pickEvent;
 				SwingUtilities.invokeLater(new Runnable() {
@@ -356,6 +361,39 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 		// GLJPanel with GLSL Flipper relies on this:
 		gl.glFrontFace(GL.GL_CCW);
 		
+	}
+
+	/**
+	 * Convert an AWT component coordinate (origin at top-left, in Swing "user space")
+	 * to an OpenGL drawable surface coordinate (origin at bottom-left, in pixel space).
+	 *
+	 * macOS HiDPI (Retina) is a common case where {@code canvas.getWidth()/getHeight()}
+	 * differ from {@code drawable.getSurfaceWidth()/getSurfaceHeight()}.
+	 */
+	private Point toSurfacePickPoint(final GLAutoDrawable drawable, final Point awtPoint) {
+		if (awtPoint == null || canvas == null) {
+			return awtPoint;
+		}
+
+		final int componentWidth = canvas.getWidth();
+		final int componentHeight = canvas.getHeight();
+		final int surfaceWidth = drawable.getSurfaceWidth();
+		final int surfaceHeight = drawable.getSurfaceHeight();
+
+		if (componentWidth <= 0 || componentHeight <= 0 || surfaceWidth <= 0 || surfaceHeight <= 0) {
+			return awtPoint;
+		}
+
+		final double scaleX = (double) surfaceWidth / (double) componentWidth;
+		final double scaleY = (double) surfaceHeight / (double) componentHeight;
+
+		final int x = (int) Math.floor((awtPoint.x + 0.5) * scaleX);
+		final int yTop = (int) Math.floor((awtPoint.y + 0.5) * scaleY);
+		final int y = surfaceHeight - 1 - yTop;
+
+		return new Point(
+				MathUtil.clamp(x, 0, surfaceWidth - 1),
+				MathUtil.clamp(y, 0, surfaceHeight - 1));
 	}
 	
 	/**
