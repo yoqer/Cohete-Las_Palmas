@@ -414,10 +414,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		JButton zoomOutButton = scaleSelector.getZoomOutButton();
 		JComboBox<String> scaleSelectorCombo = scaleSelector.getScaleSelectorCombo();
 		JButton zoomInButton = scaleSelector.getZoomInButton();
+		JButton zoomFitButton = scaleSelector.getZoomFitButton();
 		ribbon.add(zoomOutButton, "gapleft para, cell 1 1");
 		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Zoom")), "cell 2 0, spanx 2");
 		ribbon.add(scaleSelectorCombo, "cell 2 1");
-		ribbon.add(zoomInButton, "cell 3 1");
+		ribbon.add(zoomInButton, "cell 3 1, split 2");
+		ribbon.add(zoomFitButton, "cell 3 1");
 
 		// Show CG/CP
 		JCheckBox showCGCP = new JCheckBox();
