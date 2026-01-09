@@ -166,10 +166,15 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_CG_LOCATION = newType(trans.get("FlightDataType.TYPE_CG_LOCATION"), "Cg",
 			UnitGroup.UNITS_LENGTH,
 			FlightDataTypeGroup.STABILITY, 1);
-	//// Stability margin calibers
-	public static final FlightDataType TYPE_STABILITY = newType(trans.get("FlightDataType.TYPE_STABILITY"), "S",
-			UnitGroup.UNITS_COEFFICIENT,
-			FlightDataTypeGroup.STABILITY, 2);
+
+    //// Stability margin
+    public static final FlightDataType TYPE_STABILITY = newType(
+            trans.get("FlightDataType.TYPE_STABILITY"),
+            "S",
+            UnitGroup.UNITS_STABILITY_SELECT_PLOT,
+            FlightDataTypeGroup.STABILITY,
+            2
+    );
 
 	// Characteristic numbers
 	//// Mach number
