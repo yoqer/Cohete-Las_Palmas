@@ -74,6 +74,7 @@ public class UnitGroup {
 	public static final UnitGroup UNITS_ROLL;
 	public static final UnitGroup UNITS_TEMPERATURE;
 	public static final UnitGroup UNITS_PRESSURE;
+	public static final UnitGroup UNITS_SHEAR_MODULUS;
 	public static final UnitGroup UNITS_RELATIVE;
 	public static final UnitGroup UNITS_ROUGHNESS;
 
@@ -294,6 +295,11 @@ public class UnitGroup {
 		UNITS_PRESSURE.addUnit(new FixedPrecisionUnit("psi", 0.01, 6894.75729));
 		UNITS_PRESSURE.addUnit(new GeneralUnit(1, "Pa"));
 
+		UNITS_SHEAR_MODULUS = new UnitGroup();
+		UNITS_SHEAR_MODULUS.addUnit(new GeneralUnit(1, "Pa"));
+		UNITS_SHEAR_MODULUS.addUnit(new GeneralUnit(1.0e9, "GPa"));
+		UNITS_SHEAR_MODULUS.addUnit(new GeneralUnit(6.89475729e6, "ksi"));
+
 		UNITS_RELATIVE = new UnitGroup();
 		UNITS_RELATIVE.addUnit(new FixedPrecisionUnit("" + ZWSP, 0.01, 1.0));
 		UNITS_RELATIVE.addUnit(new GeneralUnit(0.01, "%"));
@@ -350,6 +356,7 @@ public class UnitGroup {
 		map.put("ROLL", UNITS_ROLL);
 		map.put("TEMPERATURE", UNITS_TEMPERATURE);
 		map.put("PRESSURE", UNITS_PRESSURE);
+		map.put("SHEAR_MODULUS", UNITS_SHEAR_MODULUS);
 		map.put("RELATIVE", UNITS_RELATIVE);
 		map.put("ROUGHNESS", UNITS_ROUGHNESS);
 		map.put("COEFFICIENT", UNITS_COEFFICIENT);
@@ -415,6 +422,7 @@ public class UnitGroup {
 		UNITS_LATITUDE.setDefaultUnit(DEGREE + " " + trans.get("CompassRose.lbl.north"));
 		UNITS_LONGITUDE.setDefaultUnit(DEGREE + " " + trans.get("CompassRose.lbl.east"));
 		UNITS_PRESSURE.setDefaultUnit("mbar");
+		UNITS_SHEAR_MODULUS.setDefaultUnit("GPa");
 		UNITS_RELATIVE.setDefaultUnit("%");
 		UNITS_ROUGHNESS.setDefaultUnit(MICRO + "m");
 		UNITS_STROKE_WIDTH.setDefaultUnit("mm");
@@ -445,6 +453,7 @@ public class UnitGroup {
 		UNITS_LATITUDE.setDefaultUnit(DEGREE + " " + trans.get("CompassRose.lbl.north"));
 		UNITS_LONGITUDE.setDefaultUnit(DEGREE + " " + trans.get("CompassRose.lbl.east"));
 		UNITS_PRESSURE.setDefaultUnit("mbar");
+		UNITS_SHEAR_MODULUS.setDefaultUnit("ksi");
 		UNITS_RELATIVE.setDefaultUnit("%");
 		UNITS_ROUGHNESS.setDefaultUnit("mil");
 		UNITS_STROKE_WIDTH.setDefaultUnit("mil");
@@ -484,6 +493,7 @@ public class UnitGroup {
 		UNITS_ROLL.setDefaultUnit(1);
 		UNITS_TEMPERATURE.setDefaultUnit(1);
 		UNITS_PRESSURE.setDefaultUnit(0);
+		UNITS_SHEAR_MODULUS.setDefaultUnit(1);
 		UNITS_RELATIVE.setDefaultUnit(1);
 		UNITS_ROUGHNESS.setDefaultUnit(0);
 		UNITS_COEFFICIENT.setDefaultUnit(0);
