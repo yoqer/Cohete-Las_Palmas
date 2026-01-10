@@ -428,8 +428,12 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 									flightConditions.getAtmosphericConditions().getMachSpeed());
 			}
 
-			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF,
-					computeDampingMomentCoefficient(status, dataBranch));
+				// Damping moment “coefficient” (Cdm) is stored both as a total and split into aerodynamic and
+				// propulsive contributions for easier analysis.
+				DampingMomentComponents dampingMoment = computeDampingMomentCoefficientComponents(status, dataBranch);
+				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF, dampingMoment.total);
+				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC, dampingMoment.aerodynamic);
+				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE, dampingMoment.propulsive);
 			
 			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
@@ -465,32 +469,36 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		/**
 		 * Calculate the damping moment coefficient (Cdm).
-		 *  Note: despite the name, this quantity has units of angular momentum (e.g. N·m·s / kg·m²/s),
-		 * 	and is intended for post-processing/analysis (mirrors the former example sim extension).
-		 * 	See peak of flight issue 195, October 23, 2007 for more information about the calculation.
+		 * Note: despite the name, this quantity has units of angular momentum (e.g. N·m·s / kg·m²/s),
+		 * and is intended for post-processing/analysis (mirrors the former example sim extension).
+		 * See peak of flight issue 195, October 23, 2007 for more information about the calculation.
 		 * <p>
-		 * 	This is computed from:
-		 * 	- a propulsive/jet damping part based on the time-derivative of motor mass, and
-		 * 	- an aerodynamic part based on component-wise force analysis (CNa and Cp distance to CG).
+		 * The aerodynamic and propulsive contributions are also stored separately as
+		 * {@code FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC} and
+		 * {@code FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE}.
+		 * <p>
+		 * This is computed from:
+		 * - a propulsive/jet damping part based on the time-derivative of motor mass, and
+		 * - an aerodynamic part based on component-wise force analysis (CNa and Cp distance to CG).
 		 * @param status the simulation status
 		 * @param dataBranch the flight data branch
 		 * @return the damping moment coefficient, or NaN if it cannot be computed
 		 */
-		private double computeDampingMomentCoefficient(SimulationStatus status, FlightDataBranch dataBranch) {
+		private DampingMomentComponents computeDampingMomentCoefficientComponents(SimulationStatus status,
+				FlightDataBranch dataBranch) {
 			if (flightConditions == null || rocketMass == null) {
-				return Double.NaN;
+				return DampingMomentComponents.nan();
 			}
 
 			// Keep ground/landed values consistent with other aero-derived quantities that are not computed.
 			// (When the rocket is on the ground, FlightConditions.AOA is set to NaN by landedValues().)
 			if (Double.isNaN(flightConditions.getAOA())) {
-				return Double.NaN;
+				return DampingMomentComponents.nan();
 			}
 
-			double c2A = computeAerodynamicDampingMomentCoefficient(status, dataBranch);
-			double c2R = computePropulsiveDampingMomentCoefficient(status, dataBranch);
-
-			return c2A + c2R;
+			double aerodynamic = computeAerodynamicDampingMomentCoefficient(status, dataBranch);
+			double propulsive = computePropulsiveDampingMomentCoefficient(status, dataBranch);
+			return new DampingMomentComponents(aerodynamic + propulsive, aerodynamic, propulsive);
 		}
 
 		/**
@@ -604,6 +612,20 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			// But we want the angle clockwise from North (positive y-axis)
 			double angle = Math.atan2(windVector.getX(), windVector.getY());
 			return MathUtil.reduce2Pi(angle);
+		}
+
+		/**
+		 * Damping moment coefficient components.
+		 * @param total the total damping moment coefficient
+		 * @param aerodynamic the aerodynamic component
+		 * @param propulsive the propulsive component
+		 */
+		private record DampingMomentComponents(double total, double aerodynamic, double propulsive) {
+			private static final DampingMomentComponents NAN = new DampingMomentComponents(Double.NaN, Double.NaN, Double.NaN);
+
+			private static DampingMomentComponents nan() {
+				return NAN;
+			}
 		}
 	}
 }

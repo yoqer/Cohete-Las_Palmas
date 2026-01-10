@@ -258,6 +258,16 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF = newType(
 			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF"), "Cdm", UnitGroup.UNITS_ANGULAR_MOMENTUM,
 			FlightDataTypeGroup.COEFFICIENTS, 9);
+	//// Damping moment coefficient (aerodynamic part)
+	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC"), "Cdm_aero",
+			UnitGroup.UNITS_ANGULAR_MOMENTUM,
+			FlightDataTypeGroup.COEFFICIENTS, 10);
+	//// Damping moment coefficient (propulsive part)
+	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE"), "Cdm_prop",
+			UnitGroup.UNITS_ANGULAR_MOMENTUM,
+			FlightDataTypeGroup.COEFFICIENTS, 11);
 
 	//// Coriolis acceleration
 	public static final FlightDataType TYPE_CORIOLIS_ACCELERATION = newType(
@@ -358,6 +368,8 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 			TYPE_PITCH_DAMPING_MOMENT_COEFF,
 			TYPE_YAW_DAMPING_MOMENT_COEFF,
 			TYPE_DAMPING_MOMENT_COEFF,
+			TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC,
+			TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE,
 			TYPE_CORIOLIS_ACCELERATION,
 			TYPE_REFERENCE_LENGTH,
 			TYPE_REFERENCE_AREA,
