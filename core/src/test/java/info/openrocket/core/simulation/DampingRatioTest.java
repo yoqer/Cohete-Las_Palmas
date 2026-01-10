@@ -58,7 +58,7 @@ public class DampingRatioTest extends BaseTestCase {
 		assertEquals(time.size(), zeta.size());
 		assertFalse(zeta.isEmpty());
 
-		// At t=0 the rocket is still on the launch rod, so ζ is intentionally not computed.
+		// At t=0 the rocket is still on the launch rod, so zeta is intentionally not computed.
 		assertTrue(Double.isNaN(zeta.get(0)), "Expected NaN at t=0 (still on launch rod)");
 
 		boolean foundFinite = false;
