@@ -438,6 +438,8 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 			dataBranch.setValue(FlightDataType.TYPE_DAMPING_RATIO,
 					computeDampingRatio(status, dampingMoment.total, correctiveMomentCoefficient));
+			dataBranch.setValue(FlightDataType.TYPE_NATURAL_FREQUENCY,
+					computeNaturalFrequency(status, correctiveMomentCoefficient));
 
 			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
@@ -684,8 +686,36 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				return Double.NaN;
 			}
 
-			return dampingMomentCoefficient / denominator;
-		}
+				return dampingMomentCoefficient / denominator;
+			}
+
+			/**
+			 * Calculate the natural frequency (wn), i.e. how fast the rocket oscillates.
+			 * See peak of flight issue 196, November 06, 2007 for more information about the calculation.
+			 * @param correctiveMomentCoefficient Ccm
+			 * @return wn (rad/s), or NaN if it cannot be computed
+			 */
+			private double computeNaturalFrequency(SimulationStatus status, double correctiveMomentCoefficient) {
+				if (!status.isLaunchRodCleared()) {
+					return 0.0;
+				}
+
+				if (rocketMass == null || Double.isNaN(correctiveMomentCoefficient)) {
+					return Double.NaN;
+				}
+
+				double longitudinalInertia = rocketMass.getLongitudinalInertia();
+				if (longitudinalInertia <= 0) {
+					return Double.NaN;
+				}
+
+				double ratio = correctiveMomentCoefficient / longitudinalInertia;
+				if (Double.isNaN(ratio) || ratio < 0) {
+					return Double.NaN;
+				}
+
+				return Math.sqrt(ratio);
+			}
 
 		/**
 		 * Calculate the wind direction in the horizontal (X-Y) plane
