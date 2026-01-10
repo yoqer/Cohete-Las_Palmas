@@ -437,7 +437,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF, correctiveMomentCoefficient);
 
 			dataBranch.setValue(FlightDataType.TYPE_DAMPING_RATIO,
-					computeDampingRatio(dampingMoment.total, correctiveMomentCoefficient));
+					computeDampingRatio(status, dampingMoment.total, correctiveMomentCoefficient));
 
 			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
@@ -495,9 +495,13 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				return DampingMomentComponents.nan();
 			}
 
+			if (!status.isLaunchRodCleared()) {
+				return new DampingMomentComponents(0.0, 0.0, 0.0);
+			}
+
 			// Keep ground/landed values consistent with other aero-derived quantities that are not computed.
 			// (When the rocket is on the ground, FlightConditions.AOA is set to NaN by landedValues().)
-			if (Double.isNaN(flightConditions.getAOA()) || !status.isLaunchRodCleared()) {
+			if (Double.isNaN(flightConditions.getAOA())) {
 				return DampingMomentComponents.nan();
 			}
 
@@ -624,7 +628,11 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				return Double.NaN;
 			}
 
-			if (Double.isNaN(flightConditions.getAOA()) || !status.isLaunchRodCleared()) {
+			if (!status.isLaunchRodCleared()) {
+				return 0.0;
+			}
+
+			if (Double.isNaN(flightConditions.getAOA())) {
 				return Double.NaN;
 			}
 
@@ -642,12 +650,21 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		/**
 		 * Calculate the damping ratio (zeta), a dimensionless measure of stability.
 		 * See peak of flight issue 197, November 20, 2007 for more information about the calculation.
+		 * @param status the simulation status
 		 * @param dampingMomentCoefficient    Cdm
 		 * @param correctiveMomentCoefficient Ccm
 		 * @return zeta, or NaN if it cannot be computed (e.g. missing inputs, unstable lever arm, zero inertia)
 		 */
-		private double computeDampingRatio(double dampingMomentCoefficient, double correctiveMomentCoefficient) {
-			if (rocketMass == null || Double.isNaN(dampingMomentCoefficient) || Double.isNaN(correctiveMomentCoefficient)) {
+		private double computeDampingRatio(SimulationStatus status, double dampingMomentCoefficient, double correctiveMomentCoefficient) {
+			if (rocketMass == null) {
+				return Double.NaN;
+			}
+
+			if (!status.isLaunchRodCleared()) {
+				return 0.0;
+			}
+
+			if (Double.isNaN(dampingMomentCoefficient) || Double.isNaN(correctiveMomentCoefficient)) {
 				return Double.NaN;
 			}
 
