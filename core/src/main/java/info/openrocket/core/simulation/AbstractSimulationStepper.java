@@ -32,13 +32,13 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	private final MutableCoordinate tempVelocity = new MutableCoordinate();
 	private final MutableCoordinate tempRotation = new MutableCoordinate();
-	
+
 	/*
 	 * calculate acceleration at a given point in time
 	 *
 	 */
 	abstract void calculateAcceleration(SimulationStatus status, DataStore store) throws SimulationException;
-	
+
 	/**
 	 * Calculate the flight conditions for the current rocket status.
 	 * Listeners can override these if necessary.
@@ -48,7 +48,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 	 */
 	protected void calculateFlightConditions(SimulationStatus status, DataStore store)
 			throws SimulationException {
-		
+
 		// Call pre listeners, allow complete override
 		store.flightConditions = SimulationListenerHelper.firePreFlightConditions(
 				status);
@@ -63,7 +63,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		AtmosphericConditions atmosphere = modelAtmosphericConditions(status);
 		store.flightConditions = new FlightConditions(status.getConfiguration());
 		store.flightConditions.setAtmosphericConditions(atmosphere);
-		
+
 
 		//// Local wind speed and direction
 		store.windVelocity = modelWindVelocity(status);
@@ -81,7 +81,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			store.thetaRotation = Rotation2D.ID;
 			store.flightConditions.setTheta(0);
 		}
-		
+
 		double velocity = airSpeed.length();
 		store.flightConditions.setVelocity(velocity);
 		if (velocity > 0.01) {
@@ -97,7 +97,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		rot.set(status.getRocketRotationVelocity());
 		status.getRocketOrientationQuaternion().invRotateInPlace(rot);
 		store.thetaRotation.invRotateZInPlace(rot);
-		
+
 		store.flightConditions.setRollRate(rot.getZ());
 		if (len < 0.001) {
 			store.flightConditions.setPitchRate(0);
@@ -123,10 +123,10 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	/**
 	 * Compute the atmospheric conditions, allowing listeners to override.
-	 * 
-	 * @param status	the simulation status
-	 * @return			the atmospheric conditions to use
-	 * @throws SimulationException	if a listener throws SimulationException
+	 *
+	 * @param status the simulation status
+	 * @throws SimulationException if a listener throws SimulationException
+	 * @return            the atmospheric conditions to use
 	 */
 	protected AtmosphericConditions modelAtmosphericConditions(SimulationStatus status) throws SimulationException {
 		AtmosphericConditions conditions;
@@ -140,7 +140,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		// Compute conditions
 		double altitude = status.getRocketPosition().getZ() + status.getSimulationConditions().getLaunchSite().getAltitude();
 		conditions = status.getSimulationConditions().getAtmosphericModel().getConditions(altitude);
-		
+
 		// Call post-listener
 		conditions = SimulationListenerHelper.firePostAtmosphericModel(status, conditions);
 
@@ -152,10 +152,10 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	/**
 	 * Compute the wind to use, allowing listeners to override.
-	 * 
-	 * @param status	the simulation status
-	 * @return			the wind conditions to use
-	 * @throws SimulationException	if a listener throws SimulationException
+	 *
+	 * @param status the simulation status
+	 * @throws SimulationException if a listener throws SimulationException
+	 * @return            the wind conditions to use
 	 */
 	protected CoordinateIF modelWindVelocity(SimulationStatus status) throws SimulationException {
 		CoordinateIF wind;
@@ -181,10 +181,10 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	/**
 	 * Compute the gravity to use, allowing listeners to override.
-	 * 
-	 * @param status	the simulation status
-	 * @return			the gravitational acceleration to use
-	 * @throws SimulationException	if a listener throws SimulationException
+	 *
+	 * @param status the simulation status
+	 * @throws SimulationException if a listener throws SimulationException
+	 * @return            the gravitational acceleration to use
 	 */
 	protected double modelGravity(SimulationStatus status) throws SimulationException {
 		double gravity;
@@ -208,10 +208,10 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	/**
 	 * Compute the mass data to use, allowing listeners to override.
-	 * 
-	 * @param status	the simulation status
-	 * @return			the mass data to use
-	 * @throws SimulationException	if a listener throws SimulationException
+	 *
+	 * @param status the simulation status
+	 * @throws SimulationException if a listener throws SimulationException
+	 * @return            the mass data to use
 	 */
 	protected RigidBody calculateStructureMass(SimulationStatus status) throws SimulationException {
 		RigidBody structureMass;
@@ -245,7 +245,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		motorMass = MassCalculator.calculateMotor(status);
 
-				
+
 		// Call post-listener
 		motorMass = SimulationListenerHelper.firePostMassCalculation(status, motorMass);
 
@@ -258,34 +258,34 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 	/**
 	 * Check that the provided value is not NaN.
-	 * 
-	 * @param d					the double value to check.
-	 * @throws BugException		if the value is NaN.
+	 *
+	 * @param d the double value to check.
+	 * @throws BugException if the value is NaN.
 	 */
 	protected void checkNaN(double d, String var) {
 		if (Double.isNaN(d)) {
 			throw new BugException("Simulation resulted in not-a-number (NaN) value for " + var + ", please report a bug.");
 		}
 	}
-	
+
 	/**
 	 * Check that the provided coordinate is not NaN.
-	 * 
-	 * @param c					the coordinate value to check.
-	 * @throws BugException		if the value is NaN.
+	 *
+	 * @param c the coordinate value to check.
+	 * @throws BugException if the value is NaN.
 	 */
 	protected void checkNaN(CoordinateIF c, String var) {
 		if (c.isNaN()) {
 			throw new BugException("Simulation resulted in not-a-number (NaN) value for " + var + ", please report a bug, c=" + c);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Check that the provided quaternion is not NaN.
-	 * 
-	 * @param q					the quaternion value to check.
-	 * @throws BugException		if the value is NaN.
+	 *
+	 * @param q the quaternion value to check.
+	 * @throws BugException if the value is NaN.
 	 */
 	protected void checkNaN(Quaternion q, String var) {
 		if (q.isNaN()) {
@@ -307,7 +307,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		flightConditions.setRollRate(0);
 		flightConditions.setPitchRate(0);
 		flightConditions.setYawRate(0);
-		
+
 		// note most of our forces don't end up getting set, so they're all NaN.
 		AerodynamicForces forces = new AerodynamicForces();
 		forces.setCD(Double.NaN);
@@ -319,19 +319,19 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		RigidBody structureMassData = calculateStructureMass(status);
 		store.motorMass = calculateMotorMass(status);
-		store.rocketMass = structureMassData.add( store.motorMass );
+		store.rocketMass = structureMassData.add(store.motorMass);
 		store.gravity = modelGravity(status);
 		store.thrustForce = 0.0;
 		store.dragForce = 0.0;
 		store.coriolisAcceleration = Coordinate.ZERO;
-		
+
 		store.accelerationData = new AccelerationData(Coordinate.ZERO, Coordinate.ZERO, null, null,
-													  new Quaternion());
+				new Quaternion());
 
 		status.setRocketPosition(new Coordinate(status.getRocketPosition().getX(), status.getRocketPosition().getY(), 0));
 		status.setRocketVelocity(Coordinate.ZERO);
 	}
-		
+
 	/*
 	 * The DataStore holds calculated data to be used in computing a simulation step.
 	 * It is saved to the FlightDataBranch at the beginning of the time step, and one
@@ -342,21 +342,21 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 	 * step, since the contents change over the course of a step.
 	 */
 	protected static class DataStore {
-	
+
 		public double timeStep = Double.NaN;
-		
+
 		public AccelerationData accelerationData;
-		
+
 		public FlightConditions flightConditions;
-		
+
 		public RigidBody rocketMass;
-		
+
 		public RigidBody motorMass;
-		
+
 		public CoordinateIF coriolisAcceleration;
 
 		public CoordinateIF launchRodDirection = null;
-		
+
 		// set by calculateFlightConditions and calculateAcceleration:
 		public AerodynamicForces forces;
 		public CoordinateIF windVelocity = new Coordinate(Double.NaN, Double.NaN, Double.NaN);
@@ -364,33 +364,33 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		public double thrustForce = Double.NaN;
 		public double dragForce = Double.NaN;
 		public double lateralPitchRate = Double.NaN;
-		
+
 		public Rotation2D thetaRotation;
 
 		void storeData(SimulationStatus status) {
-		
+
 			FlightDataBranch dataBranch = status.getFlightDataBranch();
 
 			dataBranch.setValue(FlightDataType.TYPE_THRUST_FORCE, thrustForce);
 			dataBranch.setValue(FlightDataType.TYPE_GRAVITY, gravity);
 			dataBranch.setValue(FlightDataType.TYPE_DRAG_FORCE, dragForce);
-		
+
 			dataBranch.setValue(FlightDataType.TYPE_WIND_VELOCITY, windVelocity.length());
 			dataBranch.setValue(FlightDataType.TYPE_WIND_DIRECTION, getWindDirection(windVelocity));
 			dataBranch.setValue(FlightDataType.TYPE_TIME_STEP, timeStep);
-			
+
 			if (null != coriolisAcceleration) {
 				dataBranch.setValue(FlightDataType.TYPE_CORIOLIS_ACCELERATION, coriolisAcceleration.length());
 			}
-			
+
 			if (null != accelerationData) {
 				dataBranch.setValue(FlightDataType.TYPE_ACCELERATION_XY,
-									MathUtil.hypot(accelerationData.getLinearAccelerationWC().getX(), accelerationData.getLinearAccelerationWC().getY()));
-				
+						MathUtil.hypot(accelerationData.getLinearAccelerationWC().getX(), accelerationData.getLinearAccelerationWC().getY()));
+
 				dataBranch.setValue(FlightDataType.TYPE_ACCELERATION_TOTAL, accelerationData.getLinearAccelerationWC().length());
 				dataBranch.setValue(FlightDataType.TYPE_ACCELERATION_Z, accelerationData.getLinearAccelerationWC().getZ());
 			}
-			
+
 			if (null != rocketMass) {
 				double weight = rocketMass.getMass() * gravity;
 				dataBranch.setValue(FlightDataType.TYPE_THRUST_WEIGHT_RATIO, thrustForce / weight);
@@ -399,53 +399,53 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				dataBranch.setValue(FlightDataType.TYPE_LONGITUDINAL_INERTIA, rocketMass.getLongitudinalInertia());
 				dataBranch.setValue(FlightDataType.TYPE_ROTATIONAL_INERTIA, rocketMass.getRotationalInertia());
 			}
-			
+
 			if (null != motorMass) {
 				dataBranch.setValue(FlightDataType.TYPE_MOTOR_MASS, motorMass.getMass());
 			}
-			
-				if (null != flightConditions) {
-					double Re = (flightConditions.getVelocity() *
-								 status.getConfiguration().getLengthAerodynamic() /
-								 flightConditions.getAtmosphericConditions().getKinematicViscosity());
-					dataBranch.setValue(FlightDataType.TYPE_REYNOLDS_NUMBER, Re);
-					dataBranch.setValue(FlightDataType.TYPE_MACH_NUMBER, flightConditions.getMach());
-					dataBranch.setValue(FlightDataType.TYPE_REFERENCE_LENGTH, flightConditions.getRefLength());
-					dataBranch.setValue(FlightDataType.TYPE_REFERENCE_AREA, flightConditions.getRefArea());
 
-					dataBranch.setValue(FlightDataType.TYPE_PITCH_RATE, flightConditions.getPitchRate());
-					dataBranch.setValue(FlightDataType.TYPE_YAW_RATE, flightConditions.getYawRate());
-					dataBranch.setValue(FlightDataType.TYPE_ROLL_RATE, flightConditions.getRollRate());
+			if (null != flightConditions) {
+				double Re = (flightConditions.getVelocity() *
+						status.getConfiguration().getLengthAerodynamic() /
+						flightConditions.getAtmosphericConditions().getKinematicViscosity());
+				dataBranch.setValue(FlightDataType.TYPE_REYNOLDS_NUMBER, Re);
+				dataBranch.setValue(FlightDataType.TYPE_MACH_NUMBER, flightConditions.getMach());
+				dataBranch.setValue(FlightDataType.TYPE_REFERENCE_LENGTH, flightConditions.getRefLength());
+				dataBranch.setValue(FlightDataType.TYPE_REFERENCE_AREA, flightConditions.getRefArea());
 
-					dataBranch.setValue(FlightDataType.TYPE_AOA, flightConditions.getAOA());
-					dataBranch.setValue(FlightDataType.TYPE_AIR_TEMPERATURE,
-										flightConditions.getAtmosphericConditions().getTemperature());
-					dataBranch.setValue(FlightDataType.TYPE_AIR_PRESSURE,
-										flightConditions.getAtmosphericConditions().getPressure());
-					dataBranch.setValue(FlightDataType.TYPE_AIR_DENSITY,
+				dataBranch.setValue(FlightDataType.TYPE_PITCH_RATE, flightConditions.getPitchRate());
+				dataBranch.setValue(FlightDataType.TYPE_YAW_RATE, flightConditions.getYawRate());
+				dataBranch.setValue(FlightDataType.TYPE_ROLL_RATE, flightConditions.getRollRate());
+
+				dataBranch.setValue(FlightDataType.TYPE_AOA, flightConditions.getAOA());
+				dataBranch.setValue(FlightDataType.TYPE_AIR_TEMPERATURE,
+						flightConditions.getAtmosphericConditions().getTemperature());
+				dataBranch.setValue(FlightDataType.TYPE_AIR_PRESSURE,
+						flightConditions.getAtmosphericConditions().getPressure());
+				dataBranch.setValue(FlightDataType.TYPE_AIR_DENSITY,
 						flightConditions.getAtmosphericConditions().getDensity());
-					dataBranch.setValue(FlightDataType.TYPE_SPEED_OF_SOUND,
-										flightConditions.getAtmosphericConditions().getMachSpeed());
-				}
+				dataBranch.setValue(FlightDataType.TYPE_SPEED_OF_SOUND,
+						flightConditions.getAtmosphericConditions().getMachSpeed());
+			}
 
-				// Damping moment “coefficient” (Cdm) is stored both as a total and split into aerodynamic and
-				// propulsive contributions for easier analysis.
-				DampingMomentComponents dampingMoment = computeDampingMomentCoefficientComponents(status, dataBranch);
-				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF, dampingMoment.total);
-				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC, dampingMoment.aerodynamic);
-				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE, dampingMoment.propulsive);
+			// Damping moment “coefficient” (Cdm) is stored both as a total and split into aerodynamic and
+			// propulsive contributions for easier analysis.
+			DampingMomentComponents dampingMoment = computeDampingMomentCoefficientComponents(status, dataBranch);
+			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF, dampingMoment.total);
+			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC, dampingMoment.aerodynamic);
+			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE, dampingMoment.propulsive);
 
-				dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF,
-						computeCorrectiveMomentCoefficient(status));
-				
-				if (null != forces) {
+			dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF,
+					computeCorrectiveMomentCoefficient(status));
+
+			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
 				dataBranch.setValue(FlightDataType.TYPE_AXIAL_DRAG_COEFF, forces.getCDaxial());
 				dataBranch.setValue(FlightDataType.TYPE_FRICTION_DRAG_COEFF, forces.getFrictionCD());
 				dataBranch.setValue(FlightDataType.TYPE_PRESSURE_DRAG_COEFF, forces.getPressureCD());
 				dataBranch.setValue(FlightDataType.TYPE_BASE_DRAG_COEFF, forces.getBaseCD());
 			}
-			
+
 			if (status.isLaunchRodCleared() && null != forces) {
 				if (null != forces.getCP()) {
 					dataBranch.setValue(FlightDataType.TYPE_CP_LOCATION, forces.getCP().getX());
@@ -455,17 +455,17 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				dataBranch.setValue(FlightDataType.TYPE_ROLL_MOMENT_COEFF, forces.getCroll());
 				dataBranch.setValue(FlightDataType.TYPE_ROLL_FORCING_COEFF, forces.getCrollForce());
 				dataBranch.setValue(FlightDataType.TYPE_ROLL_DAMPING_COEFF, forces.getCrollDamp());
-				dataBranch.setValue(FlightDataType.TYPE_PITCH_DAMPING_MOMENT_COEFF,	forces.getPitchDampingMoment());
-				
+				dataBranch.setValue(FlightDataType.TYPE_PITCH_DAMPING_MOMENT_COEFF, forces.getPitchDampingMoment());
+
 				if (null != rocketMass && null != flightConditions) {
 					if (null != forces.getCP()) {
 						dataBranch.setValue(FlightDataType.TYPE_STABILITY,
-											(forces.getCP().getX() - rocketMass.getCM().getX()) / flightConditions.getRefLength());
+								(forces.getCP().getX() - rocketMass.getCM().getX()) / flightConditions.getRefLength());
 					}
 					dataBranch.setValue(FlightDataType.TYPE_PITCH_MOMENT_COEFF,
-										forces.getCm() - forces.getCN() * rocketMass.getCM().getX() / flightConditions.getRefLength());
+							forces.getCm() - forces.getCN() * rocketMass.getCM().getX() / flightConditions.getRefLength());
 					dataBranch.setValue(FlightDataType.TYPE_YAW_MOMENT_COEFF,
-										forces.getCyaw() - forces.getCside() * rocketMass.getCM().getX() / flightConditions.getRefLength());
+							forces.getCyaw() - forces.getCside() * rocketMass.getCM().getX() / flightConditions.getRefLength());
 				}
 			}
 		}
@@ -483,12 +483,13 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		 * This is computed from:
 		 * - a propulsive/jet damping part based on the time-derivative of motor mass, and
 		 * - an aerodynamic part based on component-wise force analysis (CNa and Cp distance to CG).
-		 * @param status the simulation status
+		 *
+		 * @param status     the simulation status
 		 * @param dataBranch the flight data branch
 		 * @return the damping moment coefficient, or NaN if it cannot be computed
 		 */
 		private DampingMomentComponents computeDampingMomentCoefficientComponents(SimulationStatus status,
-				FlightDataBranch dataBranch) {
+																				  FlightDataBranch dataBranch) {
 			if (flightConditions == null || rocketMass == null) {
 				return DampingMomentComponents.nan();
 			}
@@ -506,7 +507,8 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		/**
 		 * Compute the aerodynamic part of the damping moment coefficient.
-		 * @param status the simulation status
+		 *
+		 * @param status     the simulation status
 		 * @param dataBranch the flight data branch
 		 * @return the aerodynamic part of the damping moment coefficient
 		 */
@@ -526,8 +528,8 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 					continue;
 				}
 
-				double cna = componentForces.getCP().getWeight();	// TODO: replace with getCNa() when available
-				double z = componentForces.getCP().getX();			// Distance from rocket tip to component CP
+				double cna = componentForces.getCP().getWeight();    // TODO: replace with getCNa() when available
+				double z = componentForces.getCP().getX();            // Distance from rocket tip to component CP
 				aerodynamicPart += cna * MathUtil.pow2(z - cg);
 			}
 
@@ -541,7 +543,8 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		/**
 		 * Compute the propulsive/jet part of the damping moment coefficient.
-		 * @param status the simulation status
+		 *
+		 * @param status     the simulation status
 		 * @param dataBranch the flight data branch
 		 * @return the propulsive part of the damping moment coefficient
 		 */
@@ -571,6 +574,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 		/**
 		 * Estimate the motor mass time-derivative using the last two points in the data branch.
 		 * Returns NaN when insufficient history exists (e.g. at t=0), or when dt is invalid.
+		 *
 		 * @param dataBranch the flight data branch
 		 * @return the motor mass time-derivative, or NaN if it cannot be computed
 		 */
@@ -602,7 +606,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			// double[] coeff = interp.interpolator(y);
 			// double dt = .01;
 			// mdot = (interp.eval(x[4], coeff) - interp.eval(x[4]-dt, coeff))/dt;
-			return (motorMass.get(n - 1) - motorMass.get(n - 2)) / dt;	// Note: peak of flight mentions gram/s, but we use kg/s
+			return (motorMass.get(n - 1) - motorMass.get(n - 2)) / dt;    // Note: peak of flight mentions gram/s, but we use kg/s
 		}
 
 		/**
@@ -636,6 +640,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		/**
 		 * Calculate the wind direction in the horizontal (X-Y) plane
+		 *
 		 * @param windVector The wind vector as a Coordinate object
 		 * @return The angle in radians, where 0 is North, Pi/2 is East, etc.
 		 */
@@ -648,9 +653,10 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		/**
 		 * Damping moment coefficient components.
-		 * @param total the total damping moment coefficient
+		 *
+		 * @param total       the total damping moment coefficient
 		 * @param aerodynamic the aerodynamic component
-		 * @param propulsive the propulsive component
+		 * @param propulsive  the propulsive component
 		 */
 		private record DampingMomentComponents(double total, double aerodynamic, double propulsive) {
 			private static final DampingMomentComponents NAN = new DampingMomentComponents(Double.NaN, Double.NaN, Double.NaN);
