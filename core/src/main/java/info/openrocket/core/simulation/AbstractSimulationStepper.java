@@ -599,7 +599,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			// double[] coeff = interp.interpolator(y);
 			// double dt = .01;
 			// mdot = (interp.eval(x[4], coeff) - interp.eval(x[4]-dt, coeff))/dt;
-			return (motorMass.get(n - 2) - motorMass.get(n - 1)) / dt;	// Note: peak of flight mentions gram/s, but we use kg/s
+			return (motorMass.get(n - 1) - motorMass.get(n - 2)) / dt;	// Note: peak of flight mentions gram/s, but we use kg/s
 		}
 
 		/**
