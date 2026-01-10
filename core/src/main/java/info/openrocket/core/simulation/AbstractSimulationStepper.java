@@ -428,15 +428,16 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 						flightConditions.getAtmosphericConditions().getMachSpeed());
 			}
 
-			// Damping moment “coefficient” (Cdm) is stored both as a total and split into aerodynamic and
-			// propulsive contributions for easier analysis.
 			DampingMomentComponents dampingMoment = computeDampingMomentCoefficientComponents(status, dataBranch);
 			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF, dampingMoment.total);
 			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC, dampingMoment.aerodynamic);
 			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE, dampingMoment.propulsive);
 
-			dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF,
-					computeCorrectiveMomentCoefficient(status));
+			double correctiveMomentCoefficient = computeCorrectiveMomentCoefficient(status);
+			dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF, correctiveMomentCoefficient);
+
+			dataBranch.setValue(FlightDataType.TYPE_DAMPING_RATIO,
+					computeDampingRatio(dampingMoment.total, correctiveMomentCoefficient));
 
 			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
@@ -636,6 +637,37 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			double cg = rocketMass.getCM().getX();
 
 			return 0.5 * rho * MathUtil.pow2(v) * ar * cna * (cp - cg);
+		}
+
+		/**
+		 * Calculate the damping ratio (zeta), a dimensionless measure of stability.
+		 * See peak of flight issue 197, November 20, 2007 for more information about the calculation.
+		 * @param dampingMomentCoefficient    Cdm
+		 * @param correctiveMomentCoefficient Ccm
+		 * @return zeta, or NaN if it cannot be computed (e.g. missing inputs, unstable lever arm, zero inertia)
+		 */
+		private double computeDampingRatio(double dampingMomentCoefficient, double correctiveMomentCoefficient) {
+			if (rocketMass == null || Double.isNaN(dampingMomentCoefficient) || Double.isNaN(correctiveMomentCoefficient)) {
+				return Double.NaN;
+			}
+
+			double longitudinalInertia = rocketMass.getLongitudinalInertia();
+			if (longitudinalInertia <= 0) {
+				return Double.NaN;
+			}
+
+			// For a stable rocket Ccm > 0 (CP behind CG).  If the product is non-positive, ζ is undefined.
+			double product = correctiveMomentCoefficient * longitudinalInertia;
+			if (Double.isNaN(product) || product <= 0) {
+				return Double.NaN;
+			}
+
+			double denominator = 2.0 * Math.sqrt(product);
+			if (Double.isNaN(denominator) || denominator <= 0) {
+				return Double.NaN;
+			}
+
+			return dampingMomentCoefficient / denominator;
 		}
 
 		/**

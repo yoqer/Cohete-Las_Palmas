@@ -33,7 +33,7 @@ public class CorrectiveMomentCoefficientTest extends BaseTestCase {
 	@Test
 	public void testCorrectiveMomentCoefficientTypeIsDefined() {
 		assertSame(UnitGroup.UNITS_MOMENT, FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF.getUnitGroup());
-		assertEquals("C1", FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF.getSymbol());
+		assertEquals("Ccm", FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF.getSymbol());
 
 		List<FlightDataType> allTypes = Arrays.asList(FlightDataType.ALL_TYPES);
 		assertTrue(allTypes.contains(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF));
@@ -54,20 +54,20 @@ public class CorrectiveMomentCoefficientTest extends BaseTestCase {
 		simulation.getOptions().setRandomSeed(0xC0FFEE);
 		simulation.getOptions().setSimulationStepperMethodChoice(stepperMethod);
 
-		// Capture the inputs used to compute C1 (rho, V, Ar, CNa, CP, CG) at stored data points.
+		// Capture the inputs used to compute Ccm (rho, V, Ar, CNa, CP, CG) at stored data points.
 		CorrectiveMomentCaptureListener captureListener = new CorrectiveMomentCaptureListener();
 		simulation.simulate(captureListener);
 
 		FlightDataBranch branch = simulation.getSimulatedData().getBranch(0);
 		assertNotNull(branch);
 
-		List<Double> c1 = branch.get(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF);
-		assertNotNull(c1);
-		assertFalse(c1.isEmpty());
+		List<Double> ccm = branch.get(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF);
+		assertNotNull(ccm);
+		assertFalse(ccm.isEmpty());
 
 		boolean foundFinite = false;
-		for (int i = 0; i < c1.size(); i++) {
-			double actual = c1.get(i);
+		for (int i = 0; i < ccm.size(); i++) {
+			double actual = ccm.get(i);
 			if (Double.isNaN(actual)) {
 				continue;
 			}
@@ -76,22 +76,22 @@ public class CorrectiveMomentCoefficientTest extends BaseTestCase {
 			assertNotNull(inputs.flightConditions(), "Missing captured flight conditions for index " + i);
 			assertNotNull(inputs.forces(), "Missing captured aerodynamic forces for index " + i);
 			assertNotNull(inputs.rocketMass(), "Missing captured rocket mass for index " + i);
-			assertTrue(inputs.launchRodCleared(), "Expected launch rod cleared for finite C1 at index " + i);
+			assertTrue(inputs.launchRodCleared(), "Expected launch rod cleared for finite Ccm at index " + i);
 
-			double expected = computeExpectedC1(inputs);
-			assertFalse(Double.isNaN(expected), "Expected a finite C1 value at index " + i);
+			double expected = computeExpectedCcm(inputs);
+			assertFalse(Double.isNaN(expected), "Expected a finite Ccm value at index " + i);
 			assertEquals(expected, actual, TOLERANCE);
 			foundFinite = true;
 		}
 
-		assertTrue(foundFinite, "Expected at least one finite C1 value");
+		assertTrue(foundFinite, "Expected at least one finite Ccm value");
 	}
 
 	/**
-	 * Compute the expected C1 value using the same formula as the simulation code:
-	 * C1 = (rho/2) * V^2 * Ar * CNa * (CP - CG).
+	 * Compute the expected Ccm value using the same formula as the simulation code:
+	 * Ccm = (rho/2) * V^2 * Ar * CNa * (CP - CG).
 	 */
-	private static double computeExpectedC1(Inputs inputs) {
+	private static double computeExpectedCcm(Inputs inputs) {
 		// Mirror gating in AbstractSimulationStepper.computeCorrectiveMomentCoefficient.
 		if (!inputs.launchRodCleared || inputs.flightConditions == null || inputs.rocketMass == null ||
 				inputs.forces == null || inputs.forces.getCP() == null) {

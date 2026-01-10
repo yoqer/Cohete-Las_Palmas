@@ -170,6 +170,10 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_STABILITY = newType(trans.get("FlightDataType.TYPE_STABILITY"), "S",
 			UnitGroup.UNITS_COEFFICIENT,
 			FlightDataTypeGroup.STABILITY, 2);
+	//// Damping ratio
+	public static final FlightDataType TYPE_DAMPING_RATIO = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_RATIO"), "\u03b6", UnitGroup.UNITS_COEFFICIENT,
+			FlightDataTypeGroup.STABILITY, 3);
 
 	// Characteristic numbers
 	//// Mach number
@@ -373,6 +377,7 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 			TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC,
 			TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE,
 			TYPE_CORRECTIVE_MOMENT_COEFF,
+			TYPE_DAMPING_RATIO,
 			TYPE_CORIOLIS_ACCELERATION,
 			TYPE_REFERENCE_LENGTH,
 			TYPE_REFERENCE_AREA,
