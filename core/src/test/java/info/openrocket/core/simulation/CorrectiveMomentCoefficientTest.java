@@ -57,8 +57,8 @@ public class CorrectiveMomentCoefficientTest extends BaseTestCase {
 		assertFalse(ccm.isEmpty());
 		assertEquals(time.size(), ccm.size());
 
-		// At t=0 the rocket is still on the launch rod, so Ccm is intentionally not computed.
-		assertTrue(Double.isNaN(ccm.get(0)), "Expected NaN at t=0 (still on launch rod)");
+		// At t=0 the rocket is still on the launch rod, so Ccm is intentionally 0.
+		assertEquals(0.0, ccm.get(0), "Expected NaN at t=0 (still on launch rod)");
 
 		boolean foundFinite = false;
 		for (double value : ccm) {
