@@ -656,7 +656,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				return Double.NaN;
 			}
 
-			// For a stable rocket Ccm > 0 (CP behind CG).  If the product is non-positive, ζ is undefined.
+			// For a stable rocket Ccm > 0 (CP behind CG).  If the product is non-positive, zeta is undefined.
 			double product = correctiveMomentCoefficient * longitudinalInertia;
 			if (Double.isNaN(product) || product <= 0) {
 				return Double.NaN;
