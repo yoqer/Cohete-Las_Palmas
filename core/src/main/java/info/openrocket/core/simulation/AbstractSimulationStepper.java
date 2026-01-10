@@ -1,5 +1,9 @@
 package info.openrocket.core.simulation;
 
+import java.util.List;
+import java.util.Map;
+
+import info.openrocket.core.aerodynamics.AerodynamicCalculator;
 import info.openrocket.core.util.Coordinate;
 import info.openrocket.core.util.CoordinateIF;
 import org.slf4j.Logger;
@@ -7,9 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import info.openrocket.core.aerodynamics.AerodynamicForces;
 import info.openrocket.core.aerodynamics.FlightConditions;
+import info.openrocket.core.motor.MotorConfiguration;
 import info.openrocket.core.masscalc.MassCalculator;
 import info.openrocket.core.masscalc.RigidBody;
 import info.openrocket.core.models.atmosphere.AtmosphericConditions;
+import info.openrocket.core.rocketcomponent.FlightConfiguration;
+import info.openrocket.core.rocketcomponent.RocketComponent;
 import info.openrocket.core.simulation.exception.SimulationException;
 import info.openrocket.core.simulation.listeners.SimulationListenerHelper;
 import info.openrocket.core.util.BugException;
@@ -420,6 +427,9 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				dataBranch.setValue(FlightDataType.TYPE_SPEED_OF_SOUND,
 									flightConditions.getAtmosphericConditions().getMachSpeed());
 			}
+
+			dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF,
+					computeDampingMomentCoefficient(status, dataBranch));
 			
 			if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
@@ -451,6 +461,137 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 										forces.getCyaw() - forces.getCside() * rocketMass.getCM().getX() / flightConditions.getRefLength());
 				}
 			}
+		}
+
+		/**
+		 * Calculate the damping moment coefficient (Cdm).
+		 *  Note: despite the name, this quantity has units of angular momentum (e.g. N·m·s / kg·m²/s),
+		 * 	and is intended for post-processing/analysis (mirrors the former example sim extension).
+		 * 	See peak of flight issue 195, October 23, 2007 for more information about the calculation.
+		 * <p>
+		 * 	This is computed from:
+		 * 	- a propulsive/jet damping part based on the time-derivative of motor mass, and
+		 * 	- an aerodynamic part based on component-wise force analysis (CNa and Cp distance to CG).
+		 * @param status the simulation status
+		 * @param dataBranch the flight data branch
+		 * @return the damping moment coefficient, or NaN if it cannot be computed
+		 */
+		private double computeDampingMomentCoefficient(SimulationStatus status, FlightDataBranch dataBranch) {
+			if (flightConditions == null || rocketMass == null) {
+				return Double.NaN;
+			}
+
+			// Keep ground/landed values consistent with other aero-derived quantities that are not computed.
+			// (When the rocket is on the ground, FlightConditions.AOA is set to NaN by landedValues().)
+			if (Double.isNaN(flightConditions.getAOA())) {
+				return Double.NaN;
+			}
+
+			double c2A = computeAerodynamicDampingMomentCoefficient(status, dataBranch);
+			double c2R = computePropulsiveDampingMomentCoefficient(status, dataBranch);
+
+			return c2A + c2R;
+		}
+
+		/**
+		 * Compute the aerodynamic part of the damping moment coefficient.
+		 * @param status the simulation status
+		 * @param dataBranch the flight data branch
+		 * @return the aerodynamic part of the damping moment coefficient
+		 */
+		private double computeAerodynamicDampingMomentCoefficient(SimulationStatus status, FlightDataBranch dataBranch) {
+			double aerodynamicPart = 0;
+			double cg = rocketMass.getCM().getX();
+			AerodynamicCalculator aerocalc = status.getSimulationConditions().getAerodynamicCalculator();
+			Map<RocketComponent, AerodynamicForces> forceAnalysis = aerocalc.getForceAnalysis(status.getConfiguration(),
+					flightConditions, null);
+			for (Map.Entry<RocketComponent, AerodynamicForces> entry : forceAnalysis.entrySet()) {
+				RocketComponent comp = entry.getKey();
+				if (comp == null || !comp.isAerodynamic()) {
+					continue;
+				}
+				AerodynamicForces componentForces = entry.getValue();
+				if (componentForces == null || componentForces.getCP() == null) {
+					continue;
+				}
+
+				double cna = componentForces.getCP().getWeight();	// TODO: replace with getCNa() when available
+				double z = componentForces.getCP().getX();			// Distance from rocket tip to component CP
+				aerodynamicPart += cna * MathUtil.pow2(z - cg);
+			}
+
+			double v = flightConditions.getVelocity();
+			double rho = flightConditions.getAtmosphericConditions().getDensity();
+			double ar = flightConditions.getRefArea();
+			aerodynamicPart = 0.5 * rho * v * ar * aerodynamicPart;
+
+			return aerodynamicPart;
+		}
+
+		/**
+		 * Compute the propulsive/jet part of the damping moment coefficient.
+		 * @param status the simulation status
+		 * @param dataBranch the flight data branch
+		 * @return the propulsive part of the damping moment coefficient
+		 */
+		private double computePropulsiveDampingMomentCoefficient(SimulationStatus status, FlightDataBranch dataBranch) {
+			// mdot := d(motor mass)/dt, estimated using the last two stored points.
+			// Avoids reaching into motor internals.
+			double mdot = computeMotorMassDerivative(dataBranch);
+			if (Double.isNaN(mdot)) {
+				return 0;
+			}
+
+			double cg = rocketMass.getCM().getX();
+
+			// Find the furthest-aft nozzle location in the current configuration, measured from the rocket tip.
+			double nozzleDistance = 0;
+			FlightConfiguration config = status.getConfiguration();
+			for (MotorConfiguration inst : config.getActiveMotors()) {
+				double x = inst.getX() + inst.getMotor().getLaunchCGx();
+				if (x > nozzleDistance) {
+					nozzleDistance = x;
+				}
+			}
+
+			return mdot * MathUtil.pow2(nozzleDistance - cg);
+		}
+
+		/**
+		 * Estimate the motor mass time-derivative using the last two points in the data branch.
+		 * Returns NaN when insufficient history exists (e.g. at t=0), or when dt is invalid.
+		 * @param dataBranch the flight data branch
+		 * @return the motor mass time-derivative, or NaN if it cannot be computed
+		 */
+		private static double computeMotorMassDerivative(FlightDataBranch dataBranch) {
+			List<Double> motorMass = dataBranch.get(FlightDataType.TYPE_MOTOR_MASS);
+			List<Double> time = dataBranch.get(FlightDataType.TYPE_TIME);
+			if (motorMass == null || time == null) {
+				return Double.NaN;
+			}
+
+			// Check that we have enough samples
+			int n = Math.min(motorMass.size(), time.size());
+			if (n < 2) {
+				return Double.NaN;
+			}
+
+			double dt = time.get(n - 1) - time.get(n - 2);
+			if (!(dt > 0)) {
+				return Double.NaN;
+			}
+
+			// This isn't as accurate as I would like
+			// Using polynomial interpolator for derivative. Doesn't help much
+			// double[] x = { time.get(len-5), time.get(len-4), time.get(len-3),
+			// time.get(len-2), time.get(len-1) };
+			// double[] y = { mpAll.get(len-5), mpAll.get(len-4), mpAll.get(len-3),
+			// mpAll.get(len-2), mpAll.get(len-1) };
+			// PolyInterpolator interp = new PolyInterpolator(x);
+			// double[] coeff = interp.interpolator(y);
+			// double dt = .01;
+			// mdot = (interp.eval(x[4], coeff) - interp.eval(x[4]-dt, coeff))/dt;
+			return (motorMass.get(n - 1) - motorMass.get(n - 2)) / dt;	// Note: peak of flight mentions gram/s, but we use kg/s
 		}
 
 		/**
