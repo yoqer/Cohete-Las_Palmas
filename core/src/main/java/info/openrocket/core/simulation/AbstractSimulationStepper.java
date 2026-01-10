@@ -404,29 +404,29 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				dataBranch.setValue(FlightDataType.TYPE_MOTOR_MASS, motorMass.getMass());
 			}
 			
-			if (null != flightConditions) {
-				double Re = (flightConditions.getVelocity() *
-							 status.getConfiguration().getLengthAerodynamic() /
-							 flightConditions.getAtmosphericConditions().getKinematicViscosity());
-				dataBranch.setValue(FlightDataType.TYPE_REYNOLDS_NUMBER, Re);
-				dataBranch.setValue(FlightDataType.TYPE_MACH_NUMBER, flightConditions.getMach());
-				dataBranch.setValue(FlightDataType.TYPE_REFERENCE_LENGTH, flightConditions.getRefLength());
-				dataBranch.setValue(FlightDataType.TYPE_REFERENCE_AREA, flightConditions.getRefArea());
-				
-				dataBranch.setValue(FlightDataType.TYPE_PITCH_RATE, flightConditions.getPitchRate());
-				dataBranch.setValue(FlightDataType.TYPE_YAW_RATE, flightConditions.getYawRate());
-				dataBranch.setValue(FlightDataType.TYPE_ROLL_RATE, flightConditions.getRollRate());
-				
-				dataBranch.setValue(FlightDataType.TYPE_AOA, flightConditions.getAOA());
-				dataBranch.setValue(FlightDataType.TYPE_AIR_TEMPERATURE,
-									flightConditions.getAtmosphericConditions().getTemperature());
-				dataBranch.setValue(FlightDataType.TYPE_AIR_PRESSURE,
-									flightConditions.getAtmosphericConditions().getPressure());
-				dataBranch.setValue(FlightDataType.TYPE_AIR_DENSITY,
+				if (null != flightConditions) {
+					double Re = (flightConditions.getVelocity() *
+								 status.getConfiguration().getLengthAerodynamic() /
+								 flightConditions.getAtmosphericConditions().getKinematicViscosity());
+					dataBranch.setValue(FlightDataType.TYPE_REYNOLDS_NUMBER, Re);
+					dataBranch.setValue(FlightDataType.TYPE_MACH_NUMBER, flightConditions.getMach());
+					dataBranch.setValue(FlightDataType.TYPE_REFERENCE_LENGTH, flightConditions.getRefLength());
+					dataBranch.setValue(FlightDataType.TYPE_REFERENCE_AREA, flightConditions.getRefArea());
+
+					dataBranch.setValue(FlightDataType.TYPE_PITCH_RATE, flightConditions.getPitchRate());
+					dataBranch.setValue(FlightDataType.TYPE_YAW_RATE, flightConditions.getYawRate());
+					dataBranch.setValue(FlightDataType.TYPE_ROLL_RATE, flightConditions.getRollRate());
+
+					dataBranch.setValue(FlightDataType.TYPE_AOA, flightConditions.getAOA());
+					dataBranch.setValue(FlightDataType.TYPE_AIR_TEMPERATURE,
+										flightConditions.getAtmosphericConditions().getTemperature());
+					dataBranch.setValue(FlightDataType.TYPE_AIR_PRESSURE,
+										flightConditions.getAtmosphericConditions().getPressure());
+					dataBranch.setValue(FlightDataType.TYPE_AIR_DENSITY,
 						flightConditions.getAtmosphericConditions().getDensity());
-				dataBranch.setValue(FlightDataType.TYPE_SPEED_OF_SOUND,
-									flightConditions.getAtmosphericConditions().getMachSpeed());
-			}
+					dataBranch.setValue(FlightDataType.TYPE_SPEED_OF_SOUND,
+										flightConditions.getAtmosphericConditions().getMachSpeed());
+				}
 
 				// Damping moment “coefficient” (Cdm) is stored both as a total and split into aerodynamic and
 				// propulsive contributions for easier analysis.
@@ -434,8 +434,11 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF, dampingMoment.total);
 				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC, dampingMoment.aerodynamic);
 				dataBranch.setValue(FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE, dampingMoment.propulsive);
-			
-			if (null != forces) {
+
+				dataBranch.setValue(FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF,
+						computeCorrectiveMomentCoefficient(status));
+				
+				if (null != forces) {
 				dataBranch.setValue(FlightDataType.TYPE_DRAG_COEFF, forces.getCD());
 				dataBranch.setValue(FlightDataType.TYPE_AXIAL_DRAG_COEFF, forces.getCDaxial());
 				dataBranch.setValue(FlightDataType.TYPE_FRICTION_DRAG_COEFF, forces.getFrictionCD());
@@ -492,7 +495,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 			// Keep ground/landed values consistent with other aero-derived quantities that are not computed.
 			// (When the rocket is on the ground, FlightConditions.AOA is set to NaN by landedValues().)
-			if (Double.isNaN(flightConditions.getAOA())) {
+			if (Double.isNaN(flightConditions.getAOA()) || !status.isLaunchRodCleared()) {
 				return DampingMomentComponents.nan();
 			}
 
@@ -600,6 +603,35 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			// double dt = .01;
 			// mdot = (interp.eval(x[4], coeff) - interp.eval(x[4]-dt, coeff))/dt;
 			return (motorMass.get(n - 1) - motorMass.get(n - 2)) / dt;	// Note: peak of flight mentions gram/s, but we use kg/s
+		}
+
+		/**
+		 * Calculate the corrective moment coefficient (Ccm).
+		 * <p>
+		 * Despite the name, this quantity has units of torque (N·m).
+		 * See peak of flight issue 193, September 25, 2007 for more information about the calculation.
+		 *
+		 * @param status the simulation status
+		 * @return Ccm, or NaN if it cannot be computed (e.g. on the ground/rail)
+		 */
+		private double computeCorrectiveMomentCoefficient(SimulationStatus status) {
+			if (flightConditions == null || rocketMass == null || forces == null || forces.getCP() == null) {
+				return Double.NaN;
+			}
+
+			if (Double.isNaN(flightConditions.getAOA()) || !status.isLaunchRodCleared()) {
+				return Double.NaN;
+			}
+
+			double rho = flightConditions.getAtmosphericConditions().getDensity();
+			double v = flightConditions.getVelocity();
+			double ar = flightConditions.getRefArea();
+
+			double cna = forces.getCP().getWeight(); // TODO: replace with getCNa() when available
+			double cp = forces.getCP().getX();
+			double cg = rocketMass.getCM().getX();
+
+			return 0.5 * rho * MathUtil.pow2(v) * ar * cna * (cp - cg);
 		}
 
 		/**
