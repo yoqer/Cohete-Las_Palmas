@@ -100,6 +100,8 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import info.openrocket.swing.gui.theme.UITheme;
 
+import static info.openrocket.core.preferences.DocumentPreferences.PREF_SHOW_WARNINGS;
+
 
 /**
  * A JPanel that contains a RocketFigure and buttons to manipulate the figure.
@@ -520,12 +522,13 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		//// Show warnings
 		this.showWarnings = new JCheckBox(trans.get("RocketPanel.check.showWarnings"));
-		showWarnings.setSelected(true);
+		showWarnings.setSelected(document.getDocumentPreferences().getBoolean(PREF_SHOW_WARNINGS, true));
 		showWarnings.setToolTipText(trans.get("RocketPanel.check.showWarnings.ttip"));
 		bottomRow.add(showWarnings, "pushx, right");
 		showWarnings.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
+				document.getDocumentPreferences().putBoolean(PREF_SHOW_WARNINGS, showWarnings.isSelected());
 				updateExtras();
 				updateFigures();
 			}
