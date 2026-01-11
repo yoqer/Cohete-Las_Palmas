@@ -123,6 +123,7 @@ public class SwingPreferences extends ApplicationPreferences {
 		}
 		PREFNODE = root.node(NODENAME);
 		fillDefaultComponentColors();
+		UITheme.Theme.addUIThemeChangeListener(this::updateColors);
 	}
 
 	private void fillDefaultComponentColors() {
@@ -513,8 +514,6 @@ public class SwingPreferences extends ApplicationPreferences {
 	}
 
 	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
-		// Refresh defaults to pick up the current theme each time
-		fillDefaultComponentColors();
 		String color = get("componentColors", c, DEFAULT_COLORS);
 		if (color == null)
 			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
