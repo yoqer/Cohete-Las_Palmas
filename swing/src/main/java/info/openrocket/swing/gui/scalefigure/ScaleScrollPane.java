@@ -142,7 +142,7 @@ public class ScaleScrollPane extends JScrollPane
 	}
 
 	public static void updateColors() {
-		textColor = GUIUtil.getUITheme().getTextColor();
+		textColor = UITheme.getColor(UITheme.Keys.TEXT);
 	}
 	
 	public AbstractScaleFigure getFigure() {

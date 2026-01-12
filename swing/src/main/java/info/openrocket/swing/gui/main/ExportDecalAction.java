@@ -65,7 +65,7 @@ public abstract class ExportDecalAction {
 	}
 	
 	static int openChooserDialog(Window parent, SaveFileChooser chooser, List<DecalImage> selectedDecals) {
-		File dir = ((SwingPreferences) Application.getPreferences()).getDefaultDirectory();
+		File dir = Application.getPreferences().getDefaultDirectory();
 		List<String> names = new ArrayList<>();
 		for (DecalImage decal : selectedDecals) {
 			names.add(new File(decal.getName()).getName());
@@ -85,7 +85,7 @@ public abstract class ExportDecalAction {
 			if (file == null) {
 				file = new File(chooser.getCurrentDirectory(), new File(decal.getName()).getName());
 			}
-			((SwingPreferences) Application.getPreferences()).setDefaultDirectory(chooser.getCurrentDirectory());
+			Application.getPreferences().setDefaultDirectory(chooser.getCurrentDirectory());
 			if (!FileHelper.confirmWrite(file, parent)) {
 				return false;
 			}
@@ -97,7 +97,7 @@ public abstract class ExportDecalAction {
 				targetDirectory = chooser.getCurrentDirectory();
 			}
 			if (ensureDirectory(parent, targetDirectory)) {
-				((SwingPreferences) Application.getPreferences()).setDefaultDirectory(targetDirectory);
+				Application.getPreferences().setDefaultDirectory(targetDirectory);
 				return exportMultiple(parent, selectedDecals, targetDirectory, prompter);
 			}
 		}

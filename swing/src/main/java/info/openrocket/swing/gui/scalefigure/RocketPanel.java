@@ -108,6 +108,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
+import info.openrocket.swing.gui.theme.UITheme;
 
 
 /**
@@ -271,6 +272,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			final CustomClickCountListener clickCountListener = new CustomClickCountListener();
 			private Point mousePressedLoc = null;
 			private double originalFigureRotation = 0;
+			private boolean dragPanning = false;
+			private boolean dragRotating = false;
 
 			@Override
 			public void mouseClicked(MouseEvent event) {
@@ -280,12 +283,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
-					
+
 					// Try to snap, but don't process normal click regardless of whether snap occurred
 					caliperManager.handleSnapModeMouseClicked(x, y, (p) -> screenToModel(p.x, p.y));
 					return;  // Always return - don't process normal click behavior in snap mode
 				}
-				
+
 				clickCountListener.click();
 				handleMouseClick(event, clickCountListener.getClickCount());
 			}
@@ -294,25 +297,31 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (is3d) {
 					return;
 				}
-				
+
 				// In snap mode, disable normal mouse press behavior (component selection, etc.)
 				if (caliperManager != null && caliperManager.isSnapModeActive()) {
 					return;  // Don't process normal mouse press in snap mode
 				}
-				
-				mousePressedLoc = e.getPoint();
-				originalFigureRotation = figure.getRotation();
-				
+
+				dragPanning = shouldPanOnDrag(e);
+				dragRotating = shouldRotateOnDrag(e);
+				mousePressedLoc = dragRotating ? e.getPoint() : null;
+				originalFigureRotation = dragRotating ? figure.getRotation() : 0;
+
 				// Check if clicking on a caliper handle
 				if (caliperManager != null && e.getButton() == MouseEvent.BUTTON1) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
-					
+
 					if (caliperManager.handleMousePressed(x, y, (p) -> screenToModel(p.x, p.y))) {
 						return;
 					}
+				}
+
+				if (dragPanning) {
+					super.mousePressed(e);
 				}
 			}
 
@@ -322,7 +331,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				if (caliperManager != null && caliperManager.isSnapModeActive()) {
 					return;  // Don't process rotation dragging in snap mode
 				}
-				
+
 				// Try to handle caliper dragging
 				// Note: We don't check e.getButton() here because getButton() returns NOBUTTON
 				// during drag events on most platforms (especially Windows). The button was
@@ -332,23 +341,43 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
-					
+
 					if (caliperManager.handleMouseDragged(x, y, (p) -> screenToModel(p.x, p.y), e.isShiftDown())) {
 						return;
 					}
 				}
-				
-				handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+
+				if (dragPanning) {
+					super.mouseDragged(e);
+					return;
+				}
+				if (dragRotating) {
+					handleMouseDragged(e, mousePressedLoc, originalFigureRotation);
+				}
 			}
-			
+
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				if (caliperManager != null) {
 					caliperManager.handleMouseReleased();
 				}
+				dragPanning = false;
+				dragRotating = false;
+				mousePressedLoc = null;
 				super.mouseReleased(e);
 			}
-			
+
+			private boolean shouldPanOnDrag(MouseEvent e) {
+				if (SwingUtilities.isMiddleMouseButton(e) || SwingUtilities.isRightMouseButton(e)) {
+					return true;
+				}
+				return SwingUtilities.isLeftMouseButton(e) && rotationControl.isDragRotationLocked();
+			}
+
+			private boolean shouldRotateOnDrag(MouseEvent e) {
+				return SwingUtilities.isLeftMouseButton(e) && !rotationControl.isDragRotationLocked();
+			}
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				if (caliperManager != null && !is3d) {
@@ -356,7 +385,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					Point p1 = getViewport().getViewPosition();
 					int x = p0.x + p1.x;
 					int y = p0.y + p1.y;
-					
+
 					// Handle snap mode mouse move first
 					if (caliperManager.isSnapModeActive()) {
 						caliperManager.handleSnapModeMouseMoved(x, y, (p) -> screenToModel(p.x, p.y));
@@ -365,7 +394,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					}
 				}
 			}
-			
+
 			@Override
 			public void mouseExited(MouseEvent e) {
 				// Clear hover state when mouse leaves
@@ -373,7 +402,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					caliperManager.handleMouseExited();
 				}
 			}
-			
+
 			/**
 			 * Convert screen coordinates to model coordinates.
 			 */
@@ -381,7 +410,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				return figure.screenToModel(screenX, screenY);
 			}
 		};
-		
+
 		// Add keyboard action for Escape key to exit snap mode
 		// Use WHEN_IN_FOCUSED_WINDOW so it works regardless of which component has focus
 		// Register on the root pane once the component hierarchy is established
@@ -408,7 +437,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				}
 			}
 		});
-		
+
 		scrollPane.getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
 		scrollPane.setFitting(true);
 
@@ -425,7 +454,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 						scrollPane.requestFocusInWindow();
 					}
 				});
-		
+
 		// Set info message updater for caliper manager
 		if (caliperManager != null) {
 			caliperManager.setInfoMessageUpdater((messageKey) -> {
@@ -496,7 +525,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			caliperManager.onSwitchTo3D();
 		}
 		is3d = true;
-		
+
 		figureHolder.remove(scrollPane);
 		figureHolder.add(figure3d, BorderLayout.CENTER);
 		rotationControl.setEnabled(false);
@@ -512,16 +541,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (!is3d)
 			return;
 		is3d = false;
-		
+
 		if (caliperManager != null) {
 			caliperManager.onSwitchTo2D();
 		}
-		
+
 		figureHolder.remove(figure3d);
 		figureHolder.add(scrollPane, BorderLayout.CENTER);
 		rotationControl.setEnabled(true);
 		scaleSelector.setEnabled(true);
-		
+
 		scrollPane.revalidate();
 		scrollPane.repaint();
 		revalidate();
@@ -603,10 +632,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		JButton zoomOutButton = scaleSelector.getZoomOutButton();
 		JComboBox<String> scaleSelectorCombo = scaleSelector.getScaleSelectorCombo();
 		JButton zoomInButton = scaleSelector.getZoomInButton();
+		JButton zoomFitButton = scaleSelector.getZoomFitButton();
 		ribbon.add(zoomOutButton, "gapleft para, cell 1 1");
 		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Zoom")), "cell 2 0, spanx 2");
 		ribbon.add(scaleSelectorCombo, "cell 2 1");
-		ribbon.add(zoomInButton, "cell 3 1");
+		ribbon.add(zoomInButton, "cell 3 1, split 2");
+		ribbon.add(zoomFitButton, "cell 3 1");
 
 		// Show CG/CP
 		JCheckBox showCGCP = new JCheckBox();
@@ -864,7 +895,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperManager != null && caliperManager.isSnapModeActive()) {
 			return;
 		}
-		
+
 		// Check if click is on a caliper indicator (before checking components)
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
 			Point clickPoint = event.getPoint();
@@ -876,16 +907,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				double scale = figure.getAbsoluteScale();
 				transform.translate(origin.x, origin.y);
 				transform.scale(scale, -scale); // Y is inverted
-				
+
 				// Create screenToModel function
-				java.util.function.Function<Point, java.awt.geom.Point2D.Double> screenToModelFunc = 
+				java.util.function.Function<Point, java.awt.geom.Point2D.Double> screenToModelFunc =
 						(p) -> figure.screenToModel(p.x, p.y);
-				
+
 				// Check vertical caliper lines
 				if (caliperManager.getMode() == CaliperManager.CaliperMode.VERTICAL) {
 					info.openrocket.swing.gui.figureelements.CaliperLine cal1Line = caliperManager.getCaliper1Line();
 					info.openrocket.swing.gui.figureelements.CaliperLine cal2Line = caliperManager.getCaliper2Line();
-					
+
 					if (cal1Line != null) {
 						double screenX = cal1Line.getScreenX(transform);
 						java.awt.geom.Rectangle2D.Double bounds = cal1Line.getIndicatorBounds(screenX, visibleRect);
@@ -894,7 +925,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 							return; // Handled, don't process component click
 						}
 					}
-					
+
 					if (cal2Line != null) {
 						double screenX = cal2Line.getScreenX(transform);
 						java.awt.geom.Rectangle2D.Double bounds = cal2Line.getIndicatorBounds(screenX, visibleRect);
@@ -907,7 +938,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					// Check horizontal caliper lines
 					info.openrocket.swing.gui.figureelements.HorizontalCaliperLine cal1Line = caliperManager.getCaliper1HorizontalLine();
 					info.openrocket.swing.gui.figureelements.HorizontalCaliperLine cal2Line = caliperManager.getCaliper2HorizontalLine();
-					
+
 					if (cal1Line != null) {
 						double screenY = cal1Line.getScreenY(transform);
 						java.awt.geom.Rectangle2D.Double bounds = cal1Line.getIndicatorBounds(screenY, visibleRect);
@@ -916,7 +947,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 							return; // Handled, don't process component click
 						}
 					}
-					
+
 					if (cal2Line != null) {
 						double screenY = cal2Line.getScreenY(transform);
 						java.awt.geom.Rectangle2D.Double bounds = cal2Line.getIndicatorBounds(screenY, visibleRect);
@@ -928,7 +959,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				}
 			}
 		}
-		
+
 		// Get the component that is clicked on
 		Point p0 = event.getPoint();
 		Point p1 = scrollPane.getViewport().getViewPosition();
@@ -982,77 +1013,86 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		// Check for double-click.
 		// If the shift/meta key is not pressed and the component was not already selected, ignore the double click and treat it as a single click
-		if (clickCount == 2) {
-			if (!selectedComponents.isEmpty() && (event.isShiftDown() || event.isMetaDown())) {
-				List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
-				RocketComponent component = selectedComponents.get(selectedComponents.size() - 1);
-				component.clearConfigListeners();
+		if (clickCount >= 2) {
+			handleDoubleComponentClick(clicked, event, selectedComponents);
+		} else if (clickCount == 1) {
+			handleSingleComponentClick(clicked, event, selectedComponents);
+		}
+	}
 
-				// Make sure the clicked component is selected
-				for (RocketComponent c : clicked) {
-					if (!selectedComponents.contains(c)) {
-						TreePath path = ComponentTreeModel.makeTreePath(c);
-						paths.add(path);
-						selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
-						selectedComponents = Arrays.stream(selectionModel.getSelectionPaths())
-								.map(c1 -> (RocketComponent) c1.getLastPathComponent()).toList();
-						component = c;
-						break;
-					}
-				}
+	private void handleDoubleComponentClick(RocketComponent[] clicked, MouseEvent event, List<RocketComponent> selectedComponents) {
+		// Multi-component edit if shift/meta key is pressed
+		if (!selectedComponents.isEmpty() && (event.isShiftDown() || event.isMetaDown())) {
+			List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
+			RocketComponent component = selectedComponents.get(selectedComponents.size() - 1);
+			component.clearConfigListeners();
 
-				// Multi-component edit if shift/meta key is pressed
-				for (RocketComponent c : selectedComponents) {
-					if (c == component) continue;
-					c.clearConfigListeners();
-					component.addConfigListener(c);
+			// Make sure the clicked component is selected
+			for (RocketComponent c : clicked) {
+				if (!selectedComponents.contains(c)) {
+					TreePath path = ComponentTreeModel.makeTreePath(c);
+					paths.add(path);
+					selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
+					selectedComponents = Arrays.stream(selectionModel.getSelectionPaths())
+							.map(c1 -> (RocketComponent) c1.getLastPathComponent()).toList();
+					component = c;
+					break;
 				}
-				ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this), document, component);
 			}
-			// Normal double click (no shift or meta key)
-			else {
-				if (!selectedComponents.contains(clicked[0])) {
-					clickCount = 1;
-				} else {
-					TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
-					selectionModel.setSelectionPath(path);        // Revert to single selection
-					RocketComponent component = (RocketComponent) path.getLastPathComponent();
 
-					ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this),
-							document, component);
-					return;
-				}
+			// Multi-component edit if shift/meta key is pressed
+			for (RocketComponent c : selectedComponents) {
+				if (c == component) continue;
+				c.clearConfigListeners();
+				component.addConfigListener(c);
+			}
+			ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this), document, component);
+		}
+		// Normal double click (no shift or meta key)
+		else {
+			// If the clicked component is not in the selection, treat it as a single click
+			if (!selectedComponents.contains(clicked[0])) {
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);
+			}
+			// Open the configuration dialog for the first clicked component
+			else {
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);        // Revert to single selection
+				RocketComponent component = (RocketComponent) path.getLastPathComponent();
+
+				ComponentConfigDialog.showDialog(SwingUtilities.getWindowAncestor(this),
+						document, component);
 			}
 		}
+	}
 
-
-		if (clickCount == 1) {
-			// If the shift-button is held, add a newly clicked component to the selection path
-			if (event.isShiftDown() || event.isMetaDown()) {
-				List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
-				for (int i = 0; i < clicked.length; i++) {
-					if (!selectedComponents.contains(clicked[i])) {
-						TreePath path = ComponentTreeModel.makeTreePath(clicked[i]);
-						paths.add(path);
-						break;
-					}
-					// If all the clicked components are already in the selection, then deselect an object
-					if (i == clicked.length - 1) {
-						paths.removeIf(path -> path.getLastPathComponent() == clicked[0]);
-					}
+	private void handleSingleComponentClick(RocketComponent[] clicked, MouseEvent event, List<RocketComponent> selectedComponents) {
+		// If the shift-button is held, add a newly clicked component to the selection path
+		if (event.isShiftDown() || event.isMetaDown()) {
+			List<TreePath> paths = new ArrayList<>(Arrays.asList(selectionModel.getSelectionPaths()));
+			for (int i = 0; i < clicked.length; i++) {
+				if (!selectedComponents.contains(clicked[i])) {
+					TreePath path = ComponentTreeModel.makeTreePath(clicked[i]);
+					paths.add(path);
+					break;
 				}
-				try {
-					selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
-				} catch (Exception e) {
-					System.out.println(e);
+				// If all the clicked components are already in the selection, then deselect an object
+				if (i == clicked.length - 1) {
+					paths.removeIf(path -> path.getLastPathComponent() == clicked[0]);
 				}
 			}
-			// Single click, so set the selection to the first clicked component
-			else {
-				if (!selectedComponents.contains(clicked[0])) {
-					TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
-					selectionModel.setSelectionPath(path);
-				}
+			try {
+				selectionModel.setSelectionPaths(paths.toArray(new TreePath[0]));
+			} catch (Exception e) {
+				System.out.println(e);
+			}
+		}
+		// Single click, so set the selection to the first clicked component
+		else {
+			if (!selectedComponents.contains(clicked[0])) {
+				TreePath path = ComponentTreeModel.makeTreePath(clicked[0]);
+				selectionModel.setSelectionPath(path);
 			}
 		}
 	}
@@ -1072,6 +1112,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		double newRotation = originalRotation - rotationOffset;
 		// Ensure the rotation is within the range [0, 2*PI]
 		newRotation = (newRotation + 2 * Math.PI) % (2 * Math.PI);
+
+		// Apply snapping if Shift key is pressed
+		if (event.isShiftDown()) {
+			newRotation = ViewRotationControl.snapRotation(newRotation);
+		}
+
 		figure.setRotation(newRotation);
 	}
 
@@ -1178,7 +1224,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				((figure.getCurrentViewType() == RocketPanel.VIEW_TYPE.TopView) || (figure.getCurrentViewType() == RocketPanel.VIEW_TYPE.SideView))) {
 			extraCP.setPosition(cpx, cpy);
 			extraCG.setPosition(cgx, cgy);
-			
+
 			// Update CG/CP positions in CaliperManager for snap targets
 			if (caliperManager != null) {
 				caliperManager.setCGPosition(cgx, cgy);
@@ -1191,7 +1237,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		} else {
 			extraCP.setPosition(Double.NaN, Double.NaN);
 			extraCG.setPosition(Double.NaN, Double.NaN);
-			
+
 			// Clear CG/CP positions in CaliperManager
 			if (caliperManager != null) {
 				caliperManager.setCGPosition(Double.NaN, Double.NaN);
@@ -1448,26 +1494,26 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperManager != null) {
 			caliperManager.loadCaliperStateForView(getCurrentViewType());
 		}
-		
+
 		updateExtras();
 		updateCaliperElements();
 	}
-	
+
 	/**
 	 * Updates the caliper elements in the figure based on caliperEnabled state.
 	 */
 	void updateCaliperElements() {
 		figure.clearRelativeExtra();
 		figure.clearAbsoluteExtra();
-		
+
 		// Check if we're in snap mode or dragging
 		boolean inSnapMode = caliperManager != null && caliperManager.isSnapModeActive() && !is3d;
 		boolean isDragging = caliperManager != null && caliperManager.isDragging() && !is3d;
-		
+
 		// Always show CP and CG carets (even in snap mode or when dragging)
 		figure.addRelativeExtra(extraCP);
 		figure.addRelativeExtra(extraCG);
-		
+
 		if (inSnapMode) {
 			// In snap mode: show snap mode message instead of RocketInfo
 			Integer activeCaliper = caliperManager.getActiveSnapCaliper();
@@ -1481,10 +1527,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			figure.addAbsoluteExtra(extraText);
 		}
 		// When dragging, don't show RocketInfo (but CP/CG are still shown above)
-		
+
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
 			caliperManager.updateCaliperElements();
-			
+
 			// Add snap target highlights
 			if (inSnapMode) {
 				// If always show is enabled (debug mode), show all snap targets
@@ -1505,7 +1551,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					}
 				}
 			}
-			
+
 			// Show shift-drag snapped target highlight (even when not in explicit snap mode)
 			CaliperSnapTarget shiftDragTarget = caliperManager.getShiftDragSnappedTarget();
 			if (shiftDragTarget != null) {
@@ -1521,7 +1567,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		//figure3d.addRelativeExtra(extraCG);
 		figure3d.addAbsoluteExtra(extraText);
 	}
-	
+
 
 	/**
 	 * Capture a preview image of the rocket in the specified view type and size.
@@ -1699,7 +1745,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		BufferedImage canvas = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D canvasGraphics = canvas.createGraphics();
 		try {
-			canvasGraphics.setColor(GUIUtil.getUITheme().getBackgroundColor());
+			canvasGraphics.setColor(UITheme.getColor(UITheme.Keys.BACKGROUND));
 			canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
 			int x = (canvasWidth - scaledWidth) / 2;
 			int y = (canvasHeight - scaledHeight) / 2;
@@ -1782,7 +1828,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			return defaultRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 		}
 	}
-	
+
 	/**
 	 * Open the caliper dialog, positioned above the ribbon.
 	 * If the dialog is already open, just bring it to front.
@@ -1791,7 +1837,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperManager == null || ribbon == null) {
 			return;
 		}
-		
+
 		// Create dialog if it doesn't exist
 		if (caliperDialog == null) {
 			Window parentWindow = SwingUtilities.getWindowAncestor(this);
@@ -1799,14 +1845,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			// Enable window position memory
 			GUIUtil.rememberWindowPosition(caliperDialog);
 		}
-		
+
 		// Center dialog to BasicFrame (only if position is not remembered)
 		Point savedPosition = ((SwingPreferences) Application.getPreferences()).getWindowPosition(caliperDialog.getClass());
 		if (savedPosition == null) {
 			// No saved position, center to BasicFrame
 			caliperDialog.setLocationRelativeTo(basicFrame);
 		}
-		
+
 		// Restore to normal size when opening
 		caliperDialog.restore();
 		caliperDialog.setVisible(true);

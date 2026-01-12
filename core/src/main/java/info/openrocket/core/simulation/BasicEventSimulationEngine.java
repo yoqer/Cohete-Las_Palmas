@@ -127,7 +127,20 @@ public class BasicEventSimulationEngine implements SimulationEngine {
 				flightData.addBranch(dataBranch);
 
 				log.info(">>Starting simulation of branch: " + currentStatus.getFlightDataBranch().getName());
-				simulateLoop(simulationConditions);
+				
+				SimulationException branchException = null;
+				try {
+					SimulationListenerHelper.fireStartSimulationBranch(currentStatus);
+					simulateLoop(simulationConditions);
+				} catch (SimulationException e) {
+					branchException = e;
+					// Exception will propagate after finally block executes
+				} finally {
+					SimulationListenerHelper.fireEndSimulationBranch(currentStatus, branchException);
+					if (branchException != null) {
+						throw branchException;
+					}
+				}
 				
 				dataBranch.immute();
 				log.info(String.format("<<Finished simulating branch: %s    curTime:%s    finTime:%s",
@@ -768,6 +781,9 @@ public class BasicEventSimulationEngine implements SimulationEngine {
 	private FlightData computeCoastTime() throws SimulationException {
 		try {
 			SimulationConditions conds = currentStatus.getSimulationConditions().clone();
+			// Clear user listeners - nested simulation should only use system listeners
+			// to avoid triggering user listeners twice (once for main sim, once for nested)
+			conds.getSimulationListenerList().removeIf(listener -> !listener.isSystemListener());
 			conds.getSimulationListenerList().add(OptimumCoastListener.INSTANCE);
 			BasicEventSimulationEngine coastEngine = new BasicEventSimulationEngine();
 		

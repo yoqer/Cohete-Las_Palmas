@@ -144,7 +144,7 @@ public class DesignPreferencesPanel extends PreferencesPanel {
 				}
 			}
 		});
-		this.add(showMarkers, "wrap para, growx, spanx");
+		this.add(showMarkers, "wrap, growx, spanx");
 
 		// // Open caliper tool in minimized mode
 		final JCheckBox caliperOpenMinimized = new JCheckBox(
