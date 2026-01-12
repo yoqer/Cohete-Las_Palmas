@@ -459,7 +459,9 @@ class DocumentConfig {
 		setters.put("Parachute:linecount", new IntSetter(
 				Reflection.findMethod(Parachute.class, "setLineCount", int.class)));
 		setters.put("Parachute:linelength", new DoubleSetter(
-				Reflection.findMethod(Parachute.class, "setLineLength", double.class)));
+				Reflection.findMethod(Parachute.class, "setLineLength", double.class),
+				"auto",
+				Reflection.findMethod(Parachute.class, "setLineLengthAutomatic", boolean.class)));
 		setters.put("Parachute:linematerial", new MaterialSetter(
 				Reflection.findMethod(Parachute.class, "setLineMaterial", Material.class),
 				Material.Type.LINE));
