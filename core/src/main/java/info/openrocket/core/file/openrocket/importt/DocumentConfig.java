@@ -429,7 +429,9 @@ class DocumentConfig {
 
 		// ShockCord
 		setters.put("ShockCord:cordlength", new DoubleSetter(
-				Reflection.findMethod(ShockCord.class, "setCordLength", double.class)));
+				Reflection.findMethod(ShockCord.class, "setCordLength", double.class),
+				"auto",
+				Reflection.findMethod(ShockCord.class, "setCordLengthAutomatic", boolean.class)));
 		setters.put("ShockCord:material", new MaterialSetter(
 				Reflection.findMethod(ShockCord.class, "setMaterial", Material.class),
 				Material.Type.LINE));
