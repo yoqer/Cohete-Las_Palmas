@@ -199,6 +199,10 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 
 	private PinkNoiseWindModel averageWindModel = null;
 
+	// Default component colors. This is filled by SwingPreferences, but defined here so it can be used by code
+	// in the core module.
+	protected final HashMap<Class<?>, String> DEFAULT_COLORS = new HashMap<>();
+
 
 	/*
 	 * ******************************************************************************************
@@ -1845,6 +1849,19 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 		static {
 			DEFAULT_LINE_STYLES.put(RocketComponent.class, LineStyle.SOLID.name());
 			DEFAULT_LINE_STYLES.put(MassObject.class, LineStyle.DASHED.name());
+		}
+	}
+
+	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
+		String color = get("componentColors", c, DEFAULT_COLORS);
+		if (color == null)
+			return ORColor.fromAWTColor(Color.BLACK);
+
+		ORColor clr = parseColor(color);
+		if (clr != null) {
+			return clr;
+		} else {
+			return ORColor.fromAWTColor(Color.BLACK);
 		}
 	}
 	

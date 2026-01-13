@@ -242,6 +242,7 @@ public class UITheme {
 
         // Static method to notify all listeners
         static void notifyUIThemeChangeListeners() {
+            ((SwingPreferences) Application.getPreferences()).updateColors();
             Iterator<WeakReference<Runnable>> it = themeChangeListeners.iterator();
             while (it.hasNext()) {
                 WeakReference<Runnable> ref = it.next();

@@ -7,12 +7,10 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -84,8 +82,6 @@ public class SwingPreferences extends ApplicationPreferences {
 		list.add(new Locale("uk", "UA"));
 		SUPPORTED_LOCALES = Collections.unmodifiableList(list);
 	}
-
-	private final HashMap<Class<?>, String> DEFAULT_COLORS = new HashMap<>();
 	
 	
 	/**
@@ -123,6 +119,7 @@ public class SwingPreferences extends ApplicationPreferences {
 		}
 		PREFNODE = root.node(NODENAME);
 		fillDefaultComponentColors();
+		UITheme.Theme.addUIThemeChangeListener(this::updateColors);
 	}
 
 	private void fillDefaultComponentColors() {
@@ -512,20 +509,7 @@ public class SwingPreferences extends ApplicationPreferences {
 		putBoolean(UPDATE_ROCKET_WHILE_DRAGGING_POINT, update);
 	}
 
-	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
-		// Refresh defaults to pick up the current theme each time
-		fillDefaultComponentColors();
-		String color = get("componentColors", c, DEFAULT_COLORS);
-		if (color == null)
-			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
-
-		ORColor clr = parseColor(color);
-		if (clr != null) {
-			return clr;
-		} else {
-			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
-		}
-	}
+	// getDefaultColor is in ApplicationPreferences
 
 	public final void setDefaultColor(Class<? extends RocketComponent> c, ORColor color) {
 		if (color == null)
