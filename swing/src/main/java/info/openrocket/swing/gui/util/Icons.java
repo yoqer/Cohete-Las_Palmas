@@ -353,7 +353,14 @@ public class Icons {
 					0x2d2dbd, "OR.icons.zoomFit"
 			));
 
-	public static final Icon RULER = loadImageIcon("pix/icons/ruler.png", "Ruler");
+	public static final Icon RULER = loadIcon(
+			"pix/icons/lucide/ruler-dimension-line.svg",
+			"pix/icons/ruler.png",
+			"Ruler",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0xFAC132, "OR.colors.yellow"
+			));
 	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
 	
 	public static final Icon PREFERENCES = loadIcon(
