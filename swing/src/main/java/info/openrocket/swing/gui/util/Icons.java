@@ -399,17 +399,17 @@ public class Icons {
 			"Favorite");
 
 	public static final Icon WARNING_LOW = loadIcon(
-			"pix/icons/lucide/info.svg",
+			"pix/icons/lucide/info-filled.svg",
 			"pix/icons/warning_low.png",
 			"Informational",
 			"OR.icons.warning.low");
 	public static final Icon WARNING_NORMAL = loadIcon(
-			"pix/icons/lucide/triangle-alert.svg",
+			"pix/icons/lucide/triangle-alert-filled.svg",
 			"pix/icons/warning_normal.png",
 			"Warning",
 			"OR.icons.warning.normal");
 	public static final Icon WARNING_HIGH = loadIcon(
-			"pix/icons/lucide/circle-alert.svg",
+			"pix/icons/lucide/circle-alert-filled.svg",
 			"pix/icons/warning_high.png",
 			"Critical",
 			"OR.icons.warning.high");
