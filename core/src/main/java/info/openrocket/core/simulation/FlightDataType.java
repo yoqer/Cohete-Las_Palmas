@@ -170,6 +170,14 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_STABILITY = newType(trans.get("FlightDataType.TYPE_STABILITY"), "S",
 			UnitGroup.UNITS_COEFFICIENT,
 			FlightDataTypeGroup.STABILITY, 2);
+	//// Damping ratio
+	public static final FlightDataType TYPE_DAMPING_RATIO = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_RATIO"), "\u03b6", UnitGroup.UNITS_COEFFICIENT,
+			FlightDataTypeGroup.STABILITY, 3);
+	//// Natural frequency
+	public static final FlightDataType TYPE_NATURAL_FREQUENCY = newType(
+			trans.get("FlightDataType.TYPE_NATURAL_FREQUENCY"), "\u03c9n", UnitGroup.UNITS_ROLL,
+			FlightDataTypeGroup.STABILITY, 4);
 
 	// Characteristic numbers
 	//// Mach number
@@ -252,6 +260,24 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 	public static final FlightDataType TYPE_YAW_DAMPING_MOMENT_COEFF = newType(
 			trans.get("FlightDataType.TYPE_YAW_DAMPING_MOMENT_COEFF"), "C\u03b6\u03a8", UnitGroup.UNITS_COEFFICIENT,
 			FlightDataTypeGroup.COEFFICIENTS, 8);
+	//// Damping moment coefficient
+	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF"), "Cdm", UnitGroup.UNITS_ANGULAR_MOMENTUM,
+			FlightDataTypeGroup.COEFFICIENTS, 9);
+	//// Damping moment coefficient (aerodynamic part)
+	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC"), "Cdm_aero",
+			UnitGroup.UNITS_ANGULAR_MOMENTUM,
+			FlightDataTypeGroup.COEFFICIENTS, 10);
+	//// Damping moment coefficient (propulsive part)
+	public static final FlightDataType TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE = newType(
+			trans.get("FlightDataType.TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE"), "Cdm_prop",
+			UnitGroup.UNITS_ANGULAR_MOMENTUM,
+			FlightDataTypeGroup.COEFFICIENTS, 11);
+	//// Corrective moment coefficient
+	public static final FlightDataType TYPE_CORRECTIVE_MOMENT_COEFF = newType(
+			trans.get("FlightDataType.TYPE_CORRECTIVE_MOMENT_COEFF"), "Ccm", UnitGroup.UNITS_MOMENT,
+			FlightDataTypeGroup.COEFFICIENTS, 12);
 
 	//// Coriolis acceleration
 	public static final FlightDataType TYPE_CORIOLIS_ACCELERATION = newType(
@@ -351,6 +377,12 @@ public class FlightDataType implements Comparable<FlightDataType>, Groupable<Fli
 			TYPE_ROLL_DAMPING_COEFF,
 			TYPE_PITCH_DAMPING_MOMENT_COEFF,
 			TYPE_YAW_DAMPING_MOMENT_COEFF,
+			TYPE_DAMPING_MOMENT_COEFF,
+			TYPE_DAMPING_MOMENT_COEFF_AERODYNAMIC,
+			TYPE_DAMPING_MOMENT_COEFF_PROPULSIVE,
+			TYPE_CORRECTIVE_MOMENT_COEFF,
+			TYPE_DAMPING_RATIO,
+			TYPE_NATURAL_FREQUENCY,
 			TYPE_CORIOLIS_ACCELERATION,
 			TYPE_REFERENCE_LENGTH,
 			TYPE_REFERENCE_AREA,

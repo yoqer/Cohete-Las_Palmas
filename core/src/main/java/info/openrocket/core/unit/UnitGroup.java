@@ -83,7 +83,9 @@ public class UnitGroup {
 
 	public static final UnitGroup UNITS_ENERGY;
 	public static final UnitGroup UNITS_POWER;
+	public static final UnitGroup UNITS_MOMENT;
 	public static final UnitGroup UNITS_MOMENTUM;
+	public static final UnitGroup UNITS_ANGULAR_MOMENTUM;
 	public static final UnitGroup UNITS_VOLTAGE;
 	public static final UnitGroup UNITS_CURRENT;
 
@@ -120,8 +122,23 @@ public class UnitGroup {
 		UNITS_POWER.addUnit(new GeneralUnit(1.0e-7, "ergs"));
 		UNITS_POWER.addUnit(new GeneralUnit(745.699872, "hp"));
 
+		UNITS_MOMENT = new UnitGroup();
+		UNITS_MOMENT.addUnit(new GeneralUnit(0.01, "N" + DOT + "cm"));
+		UNITS_MOMENT.addUnit(new GeneralUnit(1, "N" + DOT + "m"));
+		UNITS_MOMENT.addUnit(new GeneralUnit(0.112984829, "lbf" + DOT + "in"));
+		UNITS_MOMENT.addUnit(new GeneralUnit(1.35581795, "lbf" + DOT + "ft"));
+
 		UNITS_MOMENTUM = new UnitGroup();
 		UNITS_MOMENTUM.addUnit(new GeneralUnit(1, "kg" + DOT + "m/s"));
+
+		UNITS_ANGULAR_MOMENTUM = new UnitGroup();
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(0.0001, "kg" + DOT + "cm" + SQUARED + "/s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(1, "kg" + DOT + "m" + SQUARED + "/s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(1, "N" + DOT + "m" + DOT + "s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(1.82899783e-5, "oz" + DOT + "in" + SQUARED + "/s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(0.000292639653, "lb" + DOT + "in" + SQUARED + "/s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(0.0421401101, "lb" + DOT + "ft" + SQUARED + "/s"));
+		UNITS_ANGULAR_MOMENTUM.addUnit(new GeneralUnit(1.35581795, "lbf" + DOT + "ft" + DOT + "s"));
 
 		UNITS_VOLTAGE = new UnitGroup();
 		UNITS_VOLTAGE.addUnit(new GeneralUnit(1.0e-3, "mV"));
@@ -279,6 +296,7 @@ public class UnitGroup {
 		UNITS_ROLL.addUnit(new GeneralUnit(1, "rad/s"));
 		UNITS_ROLL.addUnit(new GeneralUnit(Math.PI / 180, DEGREE + "/s"));
 		UNITS_ROLL.addUnit(new GeneralUnit(2 * Math.PI, "r/s"));
+		UNITS_ROLL.addUnit(new GeneralUnit(2 * Math.PI, "Hz"));
 		UNITS_ROLL.addUnit(new GeneralUnit(2 * Math.PI / 60, "rpm"));
 
 		UNITS_TEMPERATURE = new UnitGroup();
@@ -366,7 +384,9 @@ public class UnitGroup {
 		map.put("CURRENT", UNITS_CURRENT);
 		map.put("ENERGY", UNITS_ENERGY);
 		map.put("POWER", UNITS_POWER);
+		map.put("MOMENT", UNITS_MOMENT);
 		map.put("MOMENTUM", UNITS_MOMENTUM);
+		map.put("ANGULAR_MOMENTUM", UNITS_ANGULAR_MOMENTUM);
 		map.put("FREQUENCY", UNITS_FREQUENCY);
 		map.put("WINDSPEED", UNITS_WINDSPEED);
 		map.put("LATITUDE", UNITS_LATITUDE);
@@ -383,6 +403,7 @@ public class UnitGroup {
 		simap.put("kg m^2", UNITS_INERTIA);
 		simap.put("kg/m^3", UNITS_DENSITY_BULK);
 		simap.put("N", UNITS_FORCE);
+		simap.put("N m", UNITS_MOMENT);
 		simap.put("Ns", UNITS_IMPULSE);
 		simap.put("s", UNITS_LONG_TIME);
 		simap.put("Pa", UNITS_PRESSURE);
@@ -391,6 +412,7 @@ public class UnitGroup {
 		simap.put("J", UNITS_ENERGY);
 		simap.put("W", UNITS_POWER);
 		simap.put("kg m/s", UNITS_MOMENTUM);
+		simap.put("kg m^2/s", UNITS_ANGULAR_MOMENTUM);
 		simap.put("Hz", UNITS_FREQUENCY);
 		simap.put("K", UNITS_TEMPERATURE);
 
@@ -408,6 +430,8 @@ public class UnitGroup {
 		UNITS_ACCELERATION.setDefaultUnit("m/s" + SQUARED);
 		UNITS_MASS.setDefaultUnit("g");
 		UNITS_INERTIA.setDefaultUnit("kg" + DOT + "m" + SQUARED);
+		UNITS_ANGULAR_MOMENTUM.setDefaultUnit("kg" + DOT + "m" + SQUARED + "/s");
+		UNITS_MOMENT.setDefaultUnit("N" + DOT + "m");
 		UNITS_ANGLE.setDefaultUnit("" + DEGREE);
 		UNITS_DENSITY_BULK.setDefaultUnit("g/cm" + CUBED);
 		UNITS_DENSITY_SURFACE.setDefaultUnit("g/m" + SQUARED);
@@ -439,6 +463,8 @@ public class UnitGroup {
 		UNITS_ACCELERATION.setDefaultUnit("ft/s" + SQUARED);
 		UNITS_MASS.setDefaultUnit("oz");
 		UNITS_INERTIA.setDefaultUnit("lb" + DOT + "ft" + SQUARED);
+		UNITS_ANGULAR_MOMENTUM.setDefaultUnit("lb" + DOT + "ft" + SQUARED + "/s");
+		UNITS_MOMENT.setDefaultUnit("lbf" + DOT + "in");
 		UNITS_ANGLE.setDefaultUnit("" + DEGREE);
 		UNITS_DENSITY_BULK.setDefaultUnit("oz/in" + CUBED);
 		UNITS_DENSITY_SURFACE.setDefaultUnit("oz/ft" + SQUARED);
@@ -463,7 +489,9 @@ public class UnitGroup {
 		UNITS_NONE.setDefaultUnit(0);
 		UNITS_ENERGY.setDefaultUnit(0);
 		UNITS_POWER.setDefaultUnit(1);
+		UNITS_MOMENT.setDefaultUnit(1);
 		UNITS_MOMENTUM.setDefaultUnit(0);
+		UNITS_ANGULAR_MOMENTUM.setDefaultUnit(1);
 		UNITS_VOLTAGE.setDefaultUnit(1);
 		UNITS_CURRENT.setDefaultUnit(1);
 		UNITS_LENGTH.setDefaultUnit(1);
