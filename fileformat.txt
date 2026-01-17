@@ -94,3 +94,4 @@ The following file format versions exist:
       Embedded thrust curve motor data (<thrustcurvepoint> and <standarddelays>)
       into <motor> elements so designs are self-contained when sharing custom motors.
       Added <baserelativehumidity> to the atmosphere model in simulation conditions.
+      Support 'auto' line length for parachute and shock cord.
