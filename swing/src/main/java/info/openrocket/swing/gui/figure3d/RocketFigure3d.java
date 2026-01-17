@@ -43,6 +43,7 @@ import info.openrocket.swing.gui.theme.UITheme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.jogamp.opengl.util.awt.AWTGLReadBufferUtil;
 import com.jogamp.opengl.util.awt.Overlay;
 
 import info.openrocket.core.document.OpenRocketDocument;
@@ -775,5 +776,37 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 
 	public void setDrawCarets(boolean drawCarets) {
 		this.drawCarets = drawCarets;
+	}
+
+	/**
+	 * Captures the current 3D view as a BufferedImage.
+	 * This method renders the current state of the 3D canvas to an image.
+	 *
+	 * @return a BufferedImage containing the current 3D view, or null if capture fails
+	 */
+	public BufferedImage captureImage() {
+		if (canvas == null) {
+			return null;
+		}
+
+		// Use GLAutoDrawable to get the actual surface dimensions (important for HiDPI displays)
+		GLAutoDrawable drawable = (GLAutoDrawable) canvas;
+		int surfaceWidth = drawable.getSurfaceWidth();
+		int surfaceHeight = drawable.getSurfaceHeight();
+		if (surfaceWidth <= 0 || surfaceHeight <= 0) {
+			return null;
+		}
+
+		// Use AWTGLReadBufferUtil to read the framebuffer - works for both GLJPanel and GLCanvas
+		final BufferedImage[] result = new BufferedImage[1];
+		
+		drawable.invoke(true, glDrawable -> {
+			GL2 gl = glDrawable.getGL().getGL2();
+			AWTGLReadBufferUtil readBufferUtil = new AWTGLReadBufferUtil(glDrawable.getGLProfile(), true);
+			result[0] = readBufferUtil.readPixelsToBufferedImage(gl, true);
+			return true;
+		});
+		
+		return result[0];
 	}
 }

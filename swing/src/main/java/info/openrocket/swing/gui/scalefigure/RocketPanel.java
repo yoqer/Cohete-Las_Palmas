@@ -44,7 +44,8 @@ import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.simulation.SimulationWorker;
-import info.openrocket.swing.gui.util.GUIUtil;
+import info.openrocket.swing.gui.util.FileHelper;
+import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.utils.CustomClickCountListener;
 import net.miginfocom.swing.MigLayout;
@@ -56,8 +57,11 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JViewport;
@@ -72,10 +76,16 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -84,6 +94,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -522,11 +533,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		infoMessage = new StyledLabel(trans.get("RocketPanel.lbl.infoMessage"), -3);
 		bottomRow.add(infoMessage);
 
+		//// Screenshot button
+		JButton screenshotButton = new JButton(Icons.SCREENSHOT);
+		screenshotButton.setToolTipText(trans.get("RocketPanel.btn.captureDesignView.ttip"));
+		screenshotButton.addActionListener(e -> showCaptureDesignViewDialog());
+		bottomRow.add(screenshotButton, "pushx, right, gapright unrel");
+
 		//// Show warnings
 		this.showWarnings = new JCheckBox(trans.get("RocketPanel.check.showWarnings"));
 		showWarnings.setSelected(document.getDocumentPreferences().getBoolean(PREF_SHOW_WARNINGS, true));
 		showWarnings.setToolTipText(trans.get("RocketPanel.check.showWarnings.ttip"));
-		bottomRow.add(showWarnings, "pushx, right");
+		bottomRow.add(showWarnings);
 		showWarnings.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
@@ -1227,12 +1244,13 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 * @return the captured image, or null if 3D preview is requested
 	 */
 	public BufferedImage capturePreviewImage(VIEW_TYPE viewType, int targetWidth, int minHeight, int maxHeight) {
-		// TODO: implement 3D preview capture
-		if (viewType.is3d) {
-			return null;
-		}
+		final BufferedImage source;
 
-		BufferedImage source = create2DPreviewFigure(viewType, targetWidth, minHeight, maxHeight);
+		if (viewType.is3d) {
+			source = create3DPreviewFigure(viewType, targetWidth, minHeight, maxHeight);
+		} else {
+			source = create2DPreviewFigure(viewType, targetWidth, minHeight, maxHeight);
+		}
 		return scaleForPreview(source, targetWidth, minHeight, maxHeight);
 	}
 
@@ -1258,6 +1276,152 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		doc.getDefaultStorageOptions().setPreviewImage(png);
 		return true;
+	}
+
+	/**
+	 * Shows a dialog asking the user where to save the design view screenshot.
+	 */
+	private void showCaptureDesignViewDialog() {
+		JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
+				trans.get("RocketPanel.dlg.captureDesignView.title"), Dialog.ModalityType.APPLICATION_MODAL);
+		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+		JPanel panel = new JPanel(new MigLayout("fill, ins 15", "[grow]", "[]15[]"));
+
+		// Where would you like to save the design view screenshot to?
+		JLabel messageLabel = new JLabel(trans.get("RocketPanel.dlg.captureDesignView.message"));
+		panel.add(messageLabel, "wrap");
+
+		JPanel buttonPanel = new JPanel(new MigLayout("ins 0", "[grow][grow]", "[]"));
+
+		// Save to file
+		JButton saveToFileButton = new JButton(trans.get("RocketPanel.btn.saveToFile"), Icons.FILE_SAVE);
+		saveToFileButton.addActionListener(e -> {
+			dialog.dispose();
+			saveDesignViewToFile();
+		});
+		buttonPanel.add(saveToFileButton, "grow");
+
+		// Copy to clipboard
+		JButton copyToClipboardButton = new JButton(trans.get("RocketPanel.btn.copyToClipboard"), Icons.EDIT_COPY);
+		copyToClipboardButton.addActionListener(e -> {
+			dialog.dispose();
+			copyDesignViewToClipboard();
+		});
+		buttonPanel.add(copyToClipboardButton, "grow");
+
+		panel.add(buttonPanel, "growx");
+
+		dialog.add(panel);
+		dialog.pack();
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
+	}
+
+	private BufferedImage captureViewScreenshot() {
+		int width = figureHolder.getWidth();
+		int height = figureHolder.getHeight();
+		BufferedImage image = capturePreviewImage(currentViewType, width, height, height);
+		if (image == null) {
+			JOptionPane.showMessageDialog(this,
+					"Failed to capture design view image.",
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+
+		return image;
+	}
+
+	/**
+	 * Saves the current design view to a file selected by the user.
+	 */
+	private void saveDesignViewToFile() {
+		BufferedImage image = captureViewScreenshot();
+		if (image == null) {
+			return;
+		}
+
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setDialogTitle(trans.get("RocketPanel.dlg.captureDesignView.title"));
+		fileChooser.setFileFilter(FileHelper.PNG_FILTER);
+		fileChooser.setCurrentDirectory(Application.getPreferences().getDefaultDirectory());
+		
+		// Suggest a default filename based on the rocket name and view type
+		String rocketName = document.getRocket().getName();
+		if (rocketName == null || rocketName.isEmpty()) {
+			rocketName = "rocket";
+		}
+
+		// Sanitize filename
+		rocketName = rocketName.replaceAll("[^a-zA-Z0-9.-]", "_");
+		String viewTypeSuffix = "_" + currentViewType.toString();
+		viewTypeSuffix = viewTypeSuffix.replaceAll("[^a-zA-Z0-9.-]", "_");
+		fileChooser.setSelectedFile(new File(rocketName + viewTypeSuffix + ".png"));
+
+		int result = fileChooser.showSaveDialog(this);
+		if (result != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+
+		// Save the image
+		File file = fileChooser.getSelectedFile();
+		file = FileHelper.forceExtension(file, "png");
+		if (FileHelper.confirmWrite(file, RocketPanel.this)) {
+			Application.getPreferences().setDefaultDirectory(fileChooser.getCurrentDirectory());
+			try {
+				ImageIO.write(image, "png", file);
+			} catch (IOException ex) {
+				log.error("Failed to save design view image", ex);
+				JOptionPane.showMessageDialog(this,
+						"Failed to save image: " + ex.getMessage(),
+						"Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	/**
+	 * Copies the current design view to the system clipboard.
+	 */
+	private void copyDesignViewToClipboard() {
+		BufferedImage image = captureViewScreenshot();
+		if (image == null) {
+			return;
+		}
+
+		TransferableImage transferableImage = new TransferableImage(image);
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents(transferableImage, null);
+	}
+
+	/**
+	 * A Transferable implementation for copying images to the clipboard.
+	 */
+	private static class TransferableImage implements Transferable {
+		private final BufferedImage image;
+
+		public TransferableImage(BufferedImage image) {
+			this.image = image;
+		}
+
+		@Override
+		public DataFlavor[] getTransferDataFlavors() {
+			return new DataFlavor[] { DataFlavor.imageFlavor };
+		}
+
+		@Override
+		public boolean isDataFlavorSupported(DataFlavor flavor) {
+			return DataFlavor.imageFlavor.equals(flavor);
+		}
+
+		@Override
+		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+			if (!isDataFlavorSupported(flavor)) {
+				throw new UnsupportedFlavorException(flavor);
+			}
+			return image;
+		}
 	}
 
 	/**
@@ -1325,6 +1489,16 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			g2.dispose();
 		}
 		return raw;
+	}
+
+	private BufferedImage create3DPreviewFigure(VIEW_TYPE viewType, int targetWidth, int minHeight, int maxHeight) {
+		// Only capture if we're currently in 3D mode
+		if (currentViewType != viewType) {
+			return null;
+		}
+
+		// Capture the current 3D view
+		return figure3d.captureImage();
 	}
 
 	/**
