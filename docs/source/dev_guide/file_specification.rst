@@ -257,6 +257,7 @@ Most components share these common attributes:
    * ``type``: (bulk, surface, line)
    * ``density``: Material density
    * ``group``: Material category
+   * ``shearModulus``: In-plane shear modulus in Pa (optional)
 
 Position and Offset Attributes:
 
@@ -1035,10 +1036,15 @@ The ``<docprefs>`` section contains document-wide settings, including material d
 
     <docprefs>
         <docmaterials>
-            <material>BULK|My Custom Material 1|680.0|Custom</material>
-            <material>BULK|My Custom Metal|0.0018|Metals</material>
+            <material>BULK|My Custom Material 1|680.0|1.2E9|Custom</material>
+            <material>BULK|My Custom Metal|0.0018|7.5E10|Metals</material>
         </docmaterials>
     </docprefs>
+
+Material string format:
+
+- ``{type}|{name}|{density}|{inPlaneShearModulus}|{group}``
+- Older files may omit ``inPlaneShearModulus`` and store ``{type}|{name}|{density}|{group}``
 
 ----
 
@@ -1107,6 +1113,7 @@ The ``<Materials>`` section defines materials used within the component database
        <Material UnitsOfMeasure="g/cm3">
            <Name>Material Name</Name>
            <Density>0.0</Density>
+           <ShearModulus>0.0</ShearModulus>
            <Type>BULK</Type>
            <Group>MaterialGroup</Group>
        </Material>
@@ -1121,6 +1128,7 @@ Material properties:
 
 - ``Type``: Material type (`BULK`, `SURFACE`, or `LINE`)
 - ``Group``: Material group for categorization (optional)
+- ``ShearModulus``: In-plane shear modulus in Pa (optional, defaults to 0.0 when omitted)
 
 Components
 ----------
