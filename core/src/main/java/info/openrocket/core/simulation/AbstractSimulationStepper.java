@@ -452,6 +452,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 			if (status.isLaunchRodCleared() && null != forces) {
 				if (null != forces.getCP()) {
 					dataBranch.setValue(FlightDataType.TYPE_CP_LOCATION, forces.getCP().getX());
+					dataBranch.setValue(FlightDataType.TYPE_CNA, forces.getCP().getWeight());
 				}
 				dataBranch.setValue(FlightDataType.TYPE_NORMAL_FORCE_COEFF, forces.getCN());
 				dataBranch.setValue(FlightDataType.TYPE_SIDE_FORCE_COEFF, forces.getCside());
