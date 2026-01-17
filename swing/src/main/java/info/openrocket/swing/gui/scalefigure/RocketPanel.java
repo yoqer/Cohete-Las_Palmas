@@ -706,7 +706,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// If no component is clicked, do nothing
 		if (clicked.length == 0) {
 			selectionModel.setSelectionPath(null);
-			ComponentConfigDialog.disposeDialog();
 			return;
 		}
 
@@ -742,7 +741,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		if (clicked == null || clicked.length == 0) {
 			selectionModel.setSelectionPaths(null);
-			ComponentConfigDialog.disposeDialog();
 			return;
 		}
 
@@ -1414,7 +1412,6 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (paths == null || paths.length == 0) {
 			figure.setSelection(null);
 			figure3d.setSelection(null);
-			ComponentConfigDialog.disposeDialog();
 			return;
 		}
 
