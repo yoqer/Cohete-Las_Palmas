@@ -479,6 +479,13 @@ public class Icons {
 			Map.of(
 					SVG_THEME_COLOR_RGB, "OR.icons.camera"
 			));
+	public static final Icon CONFIGURE_DISPLAY = loadSvgIcon(
+			"pix/icons/lucide/monitor-cog.svg",
+			"Configure Display",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 
 	// MANUFACTURERS ICONS
 	public static final Icon RASAERO = loadImageIcon("pix/icons/RASAero_16.png", "RASAero Icon");
