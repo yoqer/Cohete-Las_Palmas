@@ -170,6 +170,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	private boolean is3d;
 	private final RocketFigure figure;
 	private final RocketFigure3d figure3d;
+	private VIEW_TYPE currentViewType = VIEW_TYPE.getDefaultViewType();
 
 	private final ScaleScrollPane scrollPane;
 
@@ -428,6 +429,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				}
 
 				super.setSelectedItem(o);
+				currentViewType = v;
 				if (v.is3d) {
 					figure3d.setType(v.type);
 					go3D();
