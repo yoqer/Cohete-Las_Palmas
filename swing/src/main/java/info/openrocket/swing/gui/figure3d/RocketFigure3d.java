@@ -105,6 +105,7 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 	RocketRenderer rr = new FigureRenderer();
 
 	private static Color backgroundColor;
+	private Color customBackgroundColor = null;
 
 	static {
 		initColors();
@@ -133,6 +134,28 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 
 	public static void updateColors() {
 		backgroundColor = UITheme.getColor(UITheme.Keys.BACKGROUND);
+	}
+
+	/**
+	 * Get the current background color (custom or theme default).
+	 * @return the background color
+	 */
+	private Color getBackgroundColor() {
+		return customBackgroundColor != null ? customBackgroundColor : backgroundColor;
+	}
+
+	/**
+	 * Set a custom background color for this 3D figure. If null, uses the theme default.
+	 * @param color the custom background color, or null to use theme default
+	 */
+	public void setCustomBackgroundColor(Color color) {
+		this.customBackgroundColor = color;
+		if (canvas != null && canvas instanceof GLAutoDrawable) {
+			((GLAutoDrawable) canvas).invoke(true, drawable -> {
+				display(drawable);
+				return false;
+			});
+		}
 	}
 
 	public void flushTextureCaches() {
@@ -313,8 +336,9 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 		GL2 gl = drawable.getGL().getGL2();
 		GLU glu = new GLU();
 
-		gl.glClearColor(backgroundColor.getRed()/ 255.0f, backgroundColor.getGreen()/ 255.0f,
-				backgroundColor.getBlue()/ 255.0f, backgroundColor.getAlpha()/ 255.0f);
+		Color bgColor = getBackgroundColor();
+		gl.glClearColor(bgColor.getRed()/ 255.0f, bgColor.getGreen()/ 255.0f,
+				bgColor.getBlue()/ 255.0f, bgColor.getAlpha()/ 255.0f);
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
 		
 		setupView(gl, glu);
@@ -343,8 +367,8 @@ public class RocketFigure3d extends JPanel implements GLEventListener {
 			}
 			pickPoint = null;
 
-			gl.glClearColor(backgroundColor.getRed()/ 255.0f, backgroundColor.getGreen()/ 255.0f,
-					backgroundColor.getBlue()/ 255.0f, backgroundColor.getAlpha()/ 255.0f);
+			gl.glClearColor(bgColor.getRed()/ 255.0f, bgColor.getGreen()/ 255.0f,
+					bgColor.getBlue()/ 255.0f, bgColor.getAlpha()/ 255.0f);
 			gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
 
 			gl.glEnable(GL.GL_MULTISAMPLE);

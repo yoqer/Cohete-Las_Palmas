@@ -3,6 +3,7 @@ package info.openrocket.core.preferences;
 import info.openrocket.core.database.Database;
 import info.openrocket.core.material.Material;
 import info.openrocket.core.util.ChangeSource;
+import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.StateChangeListener;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,10 @@ public class DocumentPreferences implements ChangeSource, ORPreferences {
 	private final Database<Material> LINE_MATERIAL = new Database<>();
 
 	public static final String PREF_SHOW_WARNINGS = "RocketPanel.showWarnings";
+	public static final String PREF_2D_BACKGROUND_COLOR = "RocketPanel.2DBackgroundColor";
+	public static final String PREF_3D_BACKGROUND_COLOR = "RocketPanel.3DBackgroundColor";
+	public static final String PREF_2D_TEXT_COLOR = "RocketPanel.2DTextColor";
+	public static final String PREF_3D_TEXT_COLOR = "RocketPanel.3DTextColor";
 
 
 	@Override
