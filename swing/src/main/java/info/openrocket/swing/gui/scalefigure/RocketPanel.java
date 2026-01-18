@@ -1547,6 +1547,21 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		RocketFigure previewFigure = new RocketFigure(document.getRocket());
 		previewFigure.setType(viewType);
 		previewFigure.setDrawCarets(true);
+		
+		// Apply custom background color to preview figure
+		DocumentPreferences docPrefs = document.getDocumentPreferences();
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		Color docColor2D = docPrefs.getColor(DocumentPreferences.PREF_2D_BACKGROUND_COLOR, null);
+		Color defaultColor2D = swingPrefs.getDefault2DBackgroundColor();
+		Color color2D = docColor2D != null ? docColor2D : 
+			(defaultColor2D != null ? defaultColor2D : null);
+		previewFigure.setCustomBackgroundColor(color2D); // null means use theme default
+		
+		// Ensure text colors are correct for 2D view
+		if (extraText != null) {
+			extraText.set3DView(false); // 2D view
+		}
+		
 		previewFigure.addRelativeExtra(extraCP);
 		previewFigure.addRelativeExtra(extraCG);
 		previewFigure.addAbsoluteExtra(extraText);
@@ -1583,6 +1598,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Only capture if we're currently in 3D mode
 		if (currentViewType != viewType) {
 			return null;
+		}
+
+		// Ensure text colors are correct for 3D view before capture
+		if (extraText != null) {
+			extraText.set3DView(true); // 3D view
 		}
 
 		// Capture the current 3D view
