@@ -1028,7 +1028,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @param defaultValue
 	 * @return
 	 */
-	public final ORColor getColor(String key, ORColor defaultValue) {
+	public final ORColor getORColor(String key, ORColor defaultValue) {
 		ORColor c = parseColor(getString(key, null));
 		if (c == null) {
 			return defaultValue;
@@ -1079,8 +1079,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @return
 	 */
 	protected static String stringifyColor(ORColor color) {
-		String string = color.getRed() + "," + color.getGreen() + "," + color.getBlue();
-		return string;
+		return color.getRed() + "," + color.getGreen() + "," + color.getBlue();
 	}
 
 	/**
@@ -1397,7 +1396,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @return the stroke color for the SVG
 	 */
 	public Color getSVGStrokeColor() {
-		return getColor(SVG_STROKE_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
+		return getORColor(SVG_STROKE_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
 	}
 
 	/**
@@ -1451,7 +1450,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @return the crosshair color
 	 */
 	public Color getSVGCrosshairColor() {
-		return getColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(Color.GRAY)).toAWTColor();
+		return getORColor(SVG_CROSSHAIR_COLOR, ORColor.fromAWTColor(Color.GRAY)).toAWTColor();
 	}
 
 	/**
@@ -1507,7 +1506,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	 * @return the label color
 	 */
 	public Color getSVGLabelColor() {
-		return getColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
+		return getORColor(SVG_LABEL_COLOR, ORColor.fromAWTColor(Color.BLACK)).toAWTColor();
 	}
 
 	/**
@@ -1598,7 +1597,7 @@ public abstract class ApplicationPreferences implements ChangeSource, ORPreferen
 	}
 
 	public Color getTextureGenerationOutlineColor() {
-		return getColor(TEXTURE_GENERATION_OUTLINE_COLOR, new ORColor(0, 0, 0)).toAWTColor();
+		return getORColor(TEXTURE_GENERATION_OUTLINE_COLOR, new ORColor(0, 0, 0)).toAWTColor();
 	}
 
 	public void setTextureGenerationOutlineColor(Color color) {

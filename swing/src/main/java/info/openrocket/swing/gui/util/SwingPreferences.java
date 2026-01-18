@@ -673,7 +673,7 @@ public class SwingPreferences extends ApplicationPreferences {
 	 * disambiguate
 	 */
 	public Color getColor(String key, Color defaultValue) {
-		ORColor c = super.getColor(key, (ORColor) null);
+		ORColor c = super.getORColor(key, (ORColor) null);
 		if (c == null) {
 			return defaultValue;
 		}
