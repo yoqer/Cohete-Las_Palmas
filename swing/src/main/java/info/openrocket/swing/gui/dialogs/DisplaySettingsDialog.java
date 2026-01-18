@@ -4,6 +4,7 @@ import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.preferences.DocumentPreferences;
 import info.openrocket.core.startup.Application;
+import info.openrocket.swing.gui.scalefigure.RocketPanel;
 import info.openrocket.swing.gui.components.ColorChooserButton;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.util.GUIUtil;
@@ -80,10 +81,9 @@ public class DisplaySettingsDialog extends JDialog {
 		color2DButton = new ColorChooserButton(initial2DColor);
 		color2DButton.addColorPropertyChangeListener(e -> {
 			Color newColor = (Color) e.getNewValue();
-			saveColorIfDifferent(DocumentPreferences.PREF_2D_BACKGROUND_COLOR, newColor, 
-					UITheme.getColor(UITheme.Keys.BACKGROUND));
-			updateResetButtonState(reset2DBgButton, newColor,
-					prefs.getDefault2DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+			Color themeDefault = UITheme.getColor(UITheme.Keys.BACKGROUND);
+			saveColorIfDifferent(DocumentPreferences.PREF_2D_BACKGROUND_COLOR, newColor, themeDefault);
+			updateResetButtonState(reset2DBgButton, DocumentPreferences.PREF_2D_BACKGROUND_COLOR, newColor, themeDefault);
 			resetDefaultStateClickCount();
 			update2DView();
 		});
@@ -104,10 +104,9 @@ public class DisplaySettingsDialog extends JDialog {
 		textColor2DButton = new ColorChooserButton(initial2DTextColor);
 		textColor2DButton.addColorPropertyChangeListener(e -> {
 			Color newColor = (Color) e.getNewValue();
-			saveColorIfDifferent(DocumentPreferences.PREF_2D_TEXT_COLOR, newColor,
-					UITheme.getColor(UITheme.Keys.TEXT));
-			updateResetButtonState(reset2DTextButton, newColor,
-					prefs.getDefault2DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
+			Color themeDefault = UITheme.getColor(UITheme.Keys.TEXT);
+			saveColorIfDifferent(DocumentPreferences.PREF_2D_TEXT_COLOR, newColor, themeDefault);
+			updateResetButtonState(reset2DTextButton, DocumentPreferences.PREF_2D_TEXT_COLOR, newColor, themeDefault);
 			resetDefaultStateClickCount();
 			updateTextColors();
 		});
@@ -128,10 +127,9 @@ public class DisplaySettingsDialog extends JDialog {
 		color3DButton = new ColorChooserButton(initial3DColor);
 		color3DButton.addColorPropertyChangeListener(e -> {
 			Color newColor = (Color) e.getNewValue();
-			saveColorIfDifferent(DocumentPreferences.PREF_3D_BACKGROUND_COLOR, newColor, 
-					UITheme.getColor(UITheme.Keys.BACKGROUND));
-			updateResetButtonState(reset3DBgButton, newColor, 
-					prefs.getDefault3DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+			Color themeDefault = UITheme.getColor(UITheme.Keys.BACKGROUND);
+			saveColorIfDifferent(DocumentPreferences.PREF_3D_BACKGROUND_COLOR, newColor, themeDefault);
+			updateResetButtonState(reset3DBgButton, DocumentPreferences.PREF_3D_BACKGROUND_COLOR, newColor, themeDefault);
 			resetDefaultStateClickCount();
 			update3DView();
 		});
@@ -152,10 +150,9 @@ public class DisplaySettingsDialog extends JDialog {
 		textColor3DButton = new ColorChooserButton(initial3DTextColor);
 		textColor3DButton.addColorPropertyChangeListener(e -> {
 			Color newColor = (Color) e.getNewValue();
-			saveColorIfDifferent(DocumentPreferences.PREF_3D_TEXT_COLOR, newColor, 
-					UITheme.getColor(UITheme.Keys.TEXT));
-			updateResetButtonState(reset3DTextButton, newColor, 
-					prefs.getDefault3DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
+			Color themeDefault = UITheme.getColor(UITheme.Keys.TEXT);
+			saveColorIfDifferent(DocumentPreferences.PREF_3D_TEXT_COLOR, newColor, themeDefault);
+			updateResetButtonState(reset3DTextButton, DocumentPreferences.PREF_3D_TEXT_COLOR, newColor, themeDefault);
 			resetDefaultStateClickCount();
 			updateTextColors();
 		});
@@ -200,15 +197,15 @@ public class DisplaySettingsDialog extends JDialog {
 		
 		GUIUtil.setDisposableDialogOptions(this, okButton);
 		
-		// Initialize reset button states
-		updateResetButtonState(reset2DBgButton, color2DButton.getSelectedColor(), 
-				prefs.getDefault2DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
-		updateResetButtonState(reset3DBgButton, color3DButton.getSelectedColor(), 
-				prefs.getDefault3DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
-		updateResetButtonState(reset2DTextButton, textColor2DButton.getSelectedColor(), 
-				prefs.getDefault2DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
-		updateResetButtonState(reset3DTextButton, textColor3DButton.getSelectedColor(), 
-				prefs.getDefault3DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
+		// Initialize reset button states (check if current colors equal factory defaults)
+		updateResetButtonState(reset2DBgButton, DocumentPreferences.PREF_2D_BACKGROUND_COLOR, 
+				color2DButton.getSelectedColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+		updateResetButtonState(reset3DBgButton, DocumentPreferences.PREF_3D_BACKGROUND_COLOR, 
+				color3DButton.getSelectedColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+		updateResetButtonState(reset2DTextButton, DocumentPreferences.PREF_2D_TEXT_COLOR, 
+				textColor2DButton.getSelectedColor(), UITheme.getColor(UITheme.Keys.TEXT));
+		updateResetButtonState(reset3DTextButton, DocumentPreferences.PREF_3D_TEXT_COLOR, 
+				textColor3DButton.getSelectedColor(), UITheme.getColor(UITheme.Keys.TEXT));
 	}
 	
 	/**
@@ -237,34 +234,40 @@ public class DisplaySettingsDialog extends JDialog {
 	
 	/**
 	 * Create a reset button for a color chooser.
+	 * Resets to factory default (theme default), which means setting document preference to null.
 	 */
 	private JButton createResetButton(ColorChooserButton colorButton, String prefKey, 
 			Color defaultColor, Color themeDefault, Runnable updateAction) {
 		JButton resetButton = new JButton(Icons.RESET);
 		resetButton.setToolTipText(trans.get("RocketPanel.btn.reset.ttip"));
 		resetButton.addActionListener(e -> {
-			Color effectiveDefault = getEffectiveColor(null, defaultColor, themeDefault);
-			colorButton.setSelectedColor(effectiveDefault);
+			// Reset to factory default (UITheme color) by setting document preference to null
+			// Factory default is the theme default, not the application default
+			colorButton.setSelectedColor(themeDefault);
 			docPreferences.putColor(prefKey, null);
-			updateResetButtonState(resetButton, effectiveDefault, defaultColor, themeDefault);
-			updateAction.run();
+			// Update button state - should be disabled after reset (since we're at factory default)
+			updateResetButtonState(resetButton, prefKey, themeDefault, themeDefault);
+			// Force update the view with factory default (bypass SwingPreferences default)
+			forceUpdateView(prefKey, themeDefault, updateAction);
 		});
 		
-		// Set initial button state based on current color
+		// Set initial button state based on whether current color equals factory default
 		Color currentColor = colorButton.getSelectedColor();
-		updateResetButtonState(resetButton, currentColor, defaultColor, themeDefault);
+		updateResetButtonState(resetButton, prefKey, currentColor, themeDefault);
 		
 		return resetButton;
 	}
 	
 	/**
-	 * Update the reset button's enabled state based on whether the color is at default.
+	 * Update the reset button's enabled state.
+	 * Button is disabled when the current color equals the factory default (UITheme color).
+	 * Button is enabled when there's a custom color (document preference or application default).
 	 */
-	private void updateResetButtonState(JButton resetButton, Color currentColor, 
-			Color defaultColor, Color themeDefault) {
-		Color effectiveDefault = getEffectiveColor(null, defaultColor, themeDefault);
-		boolean isAtDefault = currentColor != null && currentColor.equals(effectiveDefault);
-		resetButton.setEnabled(!isAtDefault);
+	private void updateResetButtonState(JButton resetButton, String prefKey, Color currentColor, Color themeDefault) {
+		// Button is disabled if current color equals factory default (UITheme color)
+		// This includes cases where document pref is null but we're using factory default
+		boolean isAtFactoryDefault = currentColor != null && currentColor.equals(themeDefault);
+		resetButton.setEnabled(!isAtFactoryDefault);
 	}
 	
 	/**
@@ -398,6 +401,67 @@ public class DisplaySettingsDialog extends JDialog {
 				panel.updateTextColors();
 				panel.getFigure().repaint();
 				panel.getFigure3d().repaint();
+			}
+		}
+	}
+	
+	/**
+	 * Force update the view with factory default (bypassing SwingPreferences default).
+	 * Used when reset button is pressed to ensure we use theme default, not application default.
+	 */
+	private void forceUpdateView(String prefKey, Color themeDefault, Runnable updateAction) {
+		Window window = SwingUtilities.getWindowAncestor(this);
+		if (window != null) {
+			RocketPanel panel = findRocketPanel(window);
+			if (panel != null) {
+				// Force set to null (factory default) instead of using updateBackgroundColors()
+				// which would check SwingPreferences default
+				if (prefKey.equals(DocumentPreferences.PREF_2D_BACKGROUND_COLOR)) {
+					panel.getFigure().setCustomBackgroundColor(null); // null = factory default
+					panel.updateTextColors();
+					panel.getFigure().repaint();
+				} else if (prefKey.equals(DocumentPreferences.PREF_3D_BACKGROUND_COLOR)) {
+					panel.getFigure3d().setCustomBackgroundColor(null); // null = factory default
+					panel.updateTextColors();
+					panel.getFigure3d().repaint();
+				} else if (prefKey.equals(DocumentPreferences.PREF_2D_TEXT_COLOR) || 
+						   prefKey.equals(DocumentPreferences.PREF_3D_TEXT_COLOR)) {
+					// Force factory default by directly setting null for the reset view
+					// Get current effective colors for the other view to preserve it
+					DocumentPreferences docPrefs = panel.getDocument().getDocumentPreferences();
+					SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+					
+					Color textColor2D, textColor3D;
+					
+					if (prefKey.equals(DocumentPreferences.PREF_2D_TEXT_COLOR)) {
+						// Resetting 2D text color - get current 3D color to preserve it
+						Color doc3DTextColor = docPrefs.getColor(DocumentPreferences.PREF_3D_TEXT_COLOR, null);
+						Color default3DTextColor = swingPrefs.getDefault3DTextColor();
+						textColor3D = doc3DTextColor != null ? doc3DTextColor : 
+							(default3DTextColor != null ? default3DTextColor : null);
+						textColor2D = null; // Force factory default for 2D
+					} else {
+						// Resetting 3D text color - get current 2D color to preserve it
+						Color doc2DTextColor = docPrefs.getColor(DocumentPreferences.PREF_2D_TEXT_COLOR, null);
+						Color default2DTextColor = swingPrefs.getDefault2DTextColor();
+						textColor2D = doc2DTextColor != null ? doc2DTextColor : 
+							(default2DTextColor != null ? default2DTextColor : null);
+						textColor3D = null; // Force factory default for 3D
+					}
+					
+					// Preserve the current view state before setting colors
+					boolean currentIs3DView = panel.getExtraText().is3DView();
+					
+					// Set the colors directly (bypassing updateTextColors priority logic)
+					panel.getExtraText().setCustomTextColors(textColor2D, textColor3D);
+					// Restore view state (updateTextColors would do this, but we skip it to avoid overwriting colors)
+					panel.getExtraText().set3DView(currentIs3DView);
+					panel.getFigure().repaint();
+					panel.getFigure3d().repaint();
+				} else {
+					// Fallback to normal update
+					updateAction.run();
+				}
 			}
 		}
 	}
