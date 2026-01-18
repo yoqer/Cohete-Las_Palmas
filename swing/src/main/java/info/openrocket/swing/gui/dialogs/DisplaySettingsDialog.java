@@ -15,6 +15,7 @@ import info.openrocket.swing.gui.scalefigure.RocketPanel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.Color;
@@ -49,6 +50,9 @@ public class DisplaySettingsDialog extends JDialog {
 	private final Color original2DTextColor;
 	private final Color original3DTextColor;
 	
+	// Easter egg: track clicks when settings are already at default
+	private int defaultStateClickCount = 0;
+	
 	public DisplaySettingsDialog(Window parent, OpenRocketDocument document) {
 		super(parent, trans.get("RocketPanel.dlg.displaySettings.title"), Dialog.ModalityType.APPLICATION_MODAL);
 
@@ -80,6 +84,7 @@ public class DisplaySettingsDialog extends JDialog {
 					UITheme.getColor(UITheme.Keys.BACKGROUND));
 			updateResetButtonState(reset2DBgButton, newColor,
 					prefs.getDefault2DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+			resetDefaultStateClickCount();
 			update2DView();
 		});
 		panel.add(color2DButton, "growx");
@@ -103,6 +108,7 @@ public class DisplaySettingsDialog extends JDialog {
 					UITheme.getColor(UITheme.Keys.TEXT));
 			updateResetButtonState(reset2DTextButton, newColor,
 					prefs.getDefault2DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
+			resetDefaultStateClickCount();
 			updateTextColors();
 		});
 		panel.add(textColor2DButton, "growx");
@@ -126,6 +132,7 @@ public class DisplaySettingsDialog extends JDialog {
 					UITheme.getColor(UITheme.Keys.BACKGROUND));
 			updateResetButtonState(reset3DBgButton, newColor, 
 					prefs.getDefault3DBackgroundColor(), UITheme.getColor(UITheme.Keys.BACKGROUND));
+			resetDefaultStateClickCount();
 			update3DView();
 		});
 		panel.add(color3DButton, "growx");
@@ -149,6 +156,7 @@ public class DisplaySettingsDialog extends JDialog {
 					UITheme.getColor(UITheme.Keys.TEXT));
 			updateResetButtonState(reset3DTextButton, newColor, 
 					prefs.getDefault3DTextColor(), UITheme.getColor(UITheme.Keys.TEXT));
+			resetDefaultStateClickCount();
 			updateTextColors();
 		});
 		panel.add(textColor3DButton, "growx");
@@ -162,7 +170,7 @@ public class DisplaySettingsDialog extends JDialog {
 		JButton saveAsDefaultButton = new JButton(trans.get("RocketPanel.btn.saveAsDefault"));
 		saveAsDefaultButton.setToolTipText(trans.get("RocketPanel.btn.saveAsDefault.ttip"));
 		saveAsDefaultButton.addActionListener(e -> {
-			saveAsDefaults();
+			handleSaveAsDefault();
 		});
 		panel.add(saveAsDefaultButton, "span 3, split 2, right");
 		
@@ -257,6 +265,72 @@ public class DisplaySettingsDialog extends JDialog {
 		Color effectiveDefault = getEffectiveColor(null, defaultColor, themeDefault);
 		boolean isAtDefault = currentColor != null && currentColor.equals(effectiveDefault);
 		resetButton.setEnabled(!isAtDefault);
+	}
+	
+	/**
+	 * Handle the "Save as Default" button click with confirmation and easter egg.
+	 */
+	private void handleSaveAsDefault() {
+		// Check if settings are already at defaults (easter egg)
+		if (areSettingsAtDefault()) {
+			defaultStateClickCount++;
+			String message;
+			String title = trans.get("RocketPanel.dlg.saveAsDefault.alreadyDefault.title");
+			
+			if (defaultStateClickCount >= 3) {
+				message = trans.get("RocketPanel.dlg.saveAsDefault.alreadyDefault.funny");
+			} else {
+				message = trans.get("RocketPanel.dlg.saveAsDefault.alreadyDefault.message");
+			}
+			
+			JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		
+		// Show confirmation dialog
+		int result = JOptionPane.showConfirmDialog(this,
+				trans.get("RocketPanel.dlg.saveAsDefault.confirm.message"),
+				trans.get("RocketPanel.dlg.saveAsDefault.confirm.title"),
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE);
+		
+		if (result == JOptionPane.YES_OPTION) {
+			saveAsDefaults();
+			JOptionPane.showMessageDialog(this,
+					trans.get("RocketPanel.dlg.saveAsDefault.success.message"),
+					trans.get("RocketPanel.dlg.saveAsDefault.success.title"),
+					JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+	
+	/**
+	 * Check if all current settings are already at their default values.
+	 */
+	private boolean areSettingsAtDefault() {
+		Color themeBg = UITheme.getColor(UITheme.Keys.BACKGROUND);
+		Color themeText = UITheme.getColor(UITheme.Keys.TEXT);
+		
+		Color current2DBg = color2DButton.getSelectedColor();
+		Color current3DBg = color3DButton.getSelectedColor();
+		Color current2DText = textColor2DButton.getSelectedColor();
+		Color current3DText = textColor3DButton.getSelectedColor();
+		
+		Color default2DBg = getEffectiveColor(null, prefs.getDefault2DBackgroundColor(), themeBg);
+		Color default3DBg = getEffectiveColor(null, prefs.getDefault3DBackgroundColor(), themeBg);
+		Color default2DText = getEffectiveColor(null, prefs.getDefault2DTextColor(), themeText);
+		Color default3DText = getEffectiveColor(null, prefs.getDefault3DTextColor(), themeText);
+		
+		return current2DBg.equals(default2DBg) &&
+			   current3DBg.equals(default3DBg) &&
+			   current2DText.equals(default2DText) &&
+			   current3DText.equals(default3DText);
+	}
+	
+	/**
+	 * Reset the easter egg click count when settings change.
+	 */
+	private void resetDefaultStateClickCount() {
+		defaultStateClickCount = 0;
 	}
 	
 	/**
