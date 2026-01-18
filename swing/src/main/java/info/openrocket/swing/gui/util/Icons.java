@@ -388,6 +388,9 @@ public class Icons {
 			"pix/icons/lucide/refresh-ccw.svg",
 			"pix/icons/refresh.png",
 			"Refresh");
+	public static final Icon RESET = loadSvgIcon(
+			"pix/icons/lucide/rotate-cw.svg",
+			"Reset");
 	
 	public static final Icon NOT_FAVORITE = loadIcon(
 			"pix/icons/lucide/star-off.svg",
