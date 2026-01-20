@@ -388,6 +388,9 @@ public class Icons {
 			"pix/icons/lucide/refresh-ccw.svg",
 			"pix/icons/refresh.png",
 			"Refresh");
+	public static final Icon RESET = loadSvgIcon(
+			"pix/icons/lucide/rotate-cw.svg",
+			"Reset");
 	
 	public static final Icon NOT_FAVORITE = loadIcon(
 			"pix/icons/lucide/star-off.svg",
@@ -478,6 +481,13 @@ public class Icons {
 			"Screenshot",
 			Map.of(
 					SVG_THEME_COLOR_RGB, "OR.icons.camera"
+			));
+	public static final Icon CONFIGURE_DISPLAY = loadSvgIcon(
+			"pix/icons/lucide/monitor-cog.svg",
+			"Configure Display",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
 			));
 
 	// MANUFACTURERS ICONS

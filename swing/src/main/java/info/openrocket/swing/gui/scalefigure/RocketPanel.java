@@ -32,10 +32,12 @@ import info.openrocket.core.util.CoordinateIF;
 import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.ModID;
 import info.openrocket.core.util.StateChangeListener;
+import info.openrocket.core.preferences.DocumentPreferences;
 import info.openrocket.swing.gui.components.ConfigurationComboBox;
 import info.openrocket.swing.gui.components.StageSelector;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
+import info.openrocket.swing.gui.dialogs.DisplaySettingsDialog;
 import info.openrocket.swing.gui.figure3d.RocketFigure3d;
 import info.openrocket.swing.gui.figureelements.CGCaret;
 import info.openrocket.swing.gui.figureelements.CPCaret;
@@ -75,6 +77,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
@@ -263,6 +266,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figure = new RocketFigure(rkt);
 		figure3d = new RocketFigure3d(document);
 
+		// Set document-specific background colors if available
+		updateBackgroundColors();
+
 		figureHolder = new JPanel(new BorderLayout());
 
 		scrollPane = new ScaleScrollPane(figure) {
@@ -387,6 +393,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figureHolder.add(figure3d, BorderLayout.CENTER);
 		rotationControl.setEnabled(false);
 		scaleSelector.setEnabled(false);
+		
+		// Update text colors for 3D view
+		updateTextColors();
 
 		revalidate();
 		figureHolder.revalidate();
@@ -402,6 +411,10 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		figureHolder.add(scrollPane, BorderLayout.CENTER);
 		rotationControl.setEnabled(true);
 		scaleSelector.setEnabled(true);
+		
+		// Update text colors for 2D view
+		updateTextColors();
+		
 		scrollPane.revalidate();
 		scrollPane.repaint();
 		revalidate();
@@ -533,11 +546,17 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		infoMessage = new StyledLabel(trans.get("RocketPanel.lbl.infoMessage"), -3);
 		bottomRow.add(infoMessage);
 
+		//// Configure display button
+		JButton configureDisplayButton = new JButton(Icons.CONFIGURE_DISPLAY);
+		configureDisplayButton.setToolTipText(trans.get("RocketPanel.btn.configureDisplay.ttip"));
+		configureDisplayButton.addActionListener(e -> showDisplaySettingsDialog());
+		bottomRow.add(configureDisplayButton, "pushx, right, gapright unrel");
+
 		//// Screenshot button
 		JButton screenshotButton = new JButton(Icons.SCREENSHOT);
 		screenshotButton.setToolTipText(trans.get("RocketPanel.btn.captureDesignView.ttip"));
 		screenshotButton.addActionListener(e -> showCaptureDesignViewDialog());
-		bottomRow.add(screenshotButton, "pushx, right, gapright unrel");
+		bottomRow.add(screenshotButton, "right, gapright unrel");
 
 		//// Show warnings
 		this.showWarnings = new JCheckBox(trans.get("RocketPanel.check.showWarnings"));
@@ -1219,6 +1238,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		extraCP = new CPCaret(0, 0);
 		extraText = new RocketInfo(curConfig);
 		
+		// Set document-specific text colors if available
+		updateTextColors();
+		
 		updateExtras();
 
 		figure.clearRelativeExtra();
@@ -1274,6 +1296,74 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		}
 		doc.getDefaultStorageOptions().setPreviewImage(png);
 		return true;
+	}
+
+	/**
+	 * Updates the background colors of the 2D and 3D figures from document preferences or defaults.
+	 * Uses document preference if set, otherwise falls back to SwingPreferences default, otherwise theme default.
+	 */
+	public void updateBackgroundColors() {
+		DocumentPreferences docPrefs = document.getDocumentPreferences();
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		
+		// Update 2D view background: document preference -> SwingPreferences default -> theme default (null)
+		Color docColor2D = docPrefs.getColor(DocumentPreferences.PREF_2D_BACKGROUND_COLOR, null);
+		Color defaultColor2D = swingPrefs.getDefault2DBackgroundColor();
+		Color color2D = docColor2D != null ? docColor2D : 
+			(defaultColor2D != null ? defaultColor2D : null);
+		if (figure != null) {
+			figure.setCustomBackgroundColor(color2D); // null means use theme default
+		}
+		
+		// Update 3D view background: document preference -> SwingPreferences default -> theme default (null)
+		Color docColor3D = docPrefs.getColor(DocumentPreferences.PREF_3D_BACKGROUND_COLOR, null);
+		Color defaultColor3D = swingPrefs.getDefault3DBackgroundColor();
+		Color color3D = docColor3D != null ? docColor3D : 
+			(defaultColor3D != null ? defaultColor3D : null);
+		if (figure3d != null) {
+			figure3d.setCustomBackgroundColor(color3D); // null means use theme default
+		}
+	}
+	
+	/**
+	 * Updates the text colors of the design view from document preferences or defaults.
+	 * Uses document preference if set, otherwise falls back to SwingPreferences default, otherwise theme default.
+	 */
+	public void updateTextColors() {
+		DocumentPreferences docPrefs = document.getDocumentPreferences();
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		
+		if (extraText != null) {
+			// Get 2D text color: document preference -> SwingPreferences default -> theme default (null)
+			Color doc2DTextColor = docPrefs.getColor(DocumentPreferences.PREF_2D_TEXT_COLOR, null);
+			Color default2DTextColor = swingPrefs.getDefault2DTextColor();
+			Color textColor2D = doc2DTextColor != null ? doc2DTextColor : 
+				(default2DTextColor != null ? default2DTextColor : null);
+			
+			// Get 3D text color: document preference -> SwingPreferences default -> theme default (null)
+			Color doc3DTextColor = docPrefs.getColor(DocumentPreferences.PREF_3D_TEXT_COLOR, null);
+			Color default3DTextColor = swingPrefs.getDefault3DTextColor();
+			Color textColor3D = doc3DTextColor != null ? doc3DTextColor : 
+				(default3DTextColor != null ? default3DTextColor : null);
+			
+			// Set the custom text colors (when set, applies to all text types)
+			extraText.setCustomTextColors(textColor2D, textColor3D);
+			
+			// Set the current view type
+			extraText.set3DView(is3d);
+		}
+	}
+
+	/**
+	 * Shows a dialog for configuring display settings (background colors, etc.).
+	 */
+	private void showDisplaySettingsDialog() {
+		DisplaySettingsDialog dialog = new DisplaySettingsDialog(SwingUtilities.getWindowAncestor(this), document);
+		dialog.setVisible(true);
+		// Update colors after dialog is closed
+		updateBackgroundColors();
+		updateTextColors();
+		updateFigures();
 	}
 
 	/**
@@ -1457,6 +1547,21 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		RocketFigure previewFigure = new RocketFigure(document.getRocket());
 		previewFigure.setType(viewType);
 		previewFigure.setDrawCarets(true);
+		
+		// Apply custom background color to preview figure
+		DocumentPreferences docPrefs = document.getDocumentPreferences();
+		SwingPreferences swingPrefs = (SwingPreferences) Application.getPreferences();
+		Color docColor2D = docPrefs.getColor(DocumentPreferences.PREF_2D_BACKGROUND_COLOR, null);
+		Color defaultColor2D = swingPrefs.getDefault2DBackgroundColor();
+		Color color2D = docColor2D != null ? docColor2D : 
+			(defaultColor2D != null ? defaultColor2D : null);
+		previewFigure.setCustomBackgroundColor(color2D); // null means use theme default
+		
+		// Ensure text colors are correct for 2D view
+		if (extraText != null) {
+			extraText.set3DView(false); // 2D view
+		}
+		
 		previewFigure.addRelativeExtra(extraCP);
 		previewFigure.addRelativeExtra(extraCG);
 		previewFigure.addAbsoluteExtra(extraText);
@@ -1493,6 +1598,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Only capture if we're currently in 3D mode
 		if (currentViewType != viewType) {
 			return null;
+		}
+
+		// Ensure text colors are correct for 3D view before capture
+		if (extraText != null) {
+			extraText.set3DView(true); // 3D view
 		}
 
 		// Capture the current 3D view
