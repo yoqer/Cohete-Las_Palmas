@@ -473,6 +473,12 @@ public class Icons {
 			"pix/icons/lucide/lock-open.svg",
 			"pix/icons/unlocked.png",
 			"Unlocked");
+	public static final Icon SCREENSHOT = loadSvgIcon(
+			"pix/icons/lucide/camera.svg",
+			"Screenshot",
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.camera"
+			));
 
 	// MANUFACTURERS ICONS
 	public static final Icon RASAERO = loadImageIcon("pix/icons/RASAero_16.png", "RASAero Icon");
