@@ -84,7 +84,7 @@ public abstract class AbstractSimulationStepper implements SimulationStepper {
 
 		double velocity = airSpeed.length();
 		store.flightConditions.setVelocity(velocity);
-		if (velocity > 0.01) {
+		if (status.isLaunchRodCleared() && velocity > 0.01) {
 			// aoa must be calculated from the monotonous cosine
 			// sine can be calculated by a simple division
 			store.flightConditions.setAOA(Math.acos(airSpeed.getZ() / velocity), len / velocity);
