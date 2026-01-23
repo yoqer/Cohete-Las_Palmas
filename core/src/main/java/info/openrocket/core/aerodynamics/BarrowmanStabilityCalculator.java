@@ -153,7 +153,15 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 					SymmetricComponent sym = (SymmetricComponent) comp;
 					if (prevComp == null) {
 						if (sym.getForeRadius() - sym.getThickness() > MathUtil.EPSILON) {
-							actualWarnings.add(Warning.OPEN_AIRFRAME_FORWARD, sym);
+
+							// only recorde open airframe warning if it's the sustainer is active or if
+							// the booster has a recovery device
+							boolean sustainer = configuration.isStageActive(0);
+							boolean hasRecoveryDevice = configuration.getBottomStage().hasRecoveryDevice();
+
+							if (sustainer || hasRecoveryDevice) {
+								actualWarnings.add(Warning.OPEN_AIRFRAME_FORWARD, sym);
+							}
 						}
 					} else {
 						if (!UnitGroup.UNITS_LENGTH.getDefaultUnit().toStringUnit(2.0 * sym.getForeRadius())

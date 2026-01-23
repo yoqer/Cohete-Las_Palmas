@@ -794,22 +794,6 @@ public class RK6SimulationStepper extends AbstractSimulationStepper {
                 .getAerodynamicForces(status.getConfiguration(), store.flightConditions, warnings);
 
         if (null != warnings) {
-            // If this doesn't include the sustainer and either isn't stable or is about
-            // to deploy a recovery device, don't store open airframe warnings
-            boolean sustainer = status.getConfiguration().isStageActive(0);
-            boolean stable = store.rocketMass.getCM().getX() < store.forces.getCP().getX();
-            boolean recoverySoon = false;
-            for (FlightEvent e : status.getEventQueue()) {
-                if ((e.getType() == FlightEvent.Type.RECOVERY_DEVICE_DEPLOYMENT) &&
-                        (e.getTime() < status.getSimulationTime() + 0.5)) {
-                    recoverySoon = true;
-                }
-            }
-
-            if (!sustainer && (!stable || recoverySoon)) {
-                warnings.filterOut(Warning.OPEN_AIRFRAME_FORWARD);
-            }
-
             status.addWarnings(warnings);
         }
 
