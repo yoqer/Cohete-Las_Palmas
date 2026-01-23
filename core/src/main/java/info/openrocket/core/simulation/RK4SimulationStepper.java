@@ -510,10 +510,7 @@ public class RK4SimulationStepper extends AbstractSimulationStepper {
 		// Calculate aerodynamic forces
 		store.forces = status.getSimulationConditions().getAerodynamicCalculator()
 				.getAerodynamicForces(status.getConfiguration(), store.flightConditions, warnings);
-
-		if (null != warnings) {
-			status.addWarnings(warnings);
-		}
+		status.addWarnings(warnings);
 
 		// Add very small randomization to yaw & pitch moments to prevent over-perfect flight
 		// TODO: HIGH: This should rather be performed as a listener
