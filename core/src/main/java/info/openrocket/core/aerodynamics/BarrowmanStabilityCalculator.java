@@ -68,7 +68,6 @@ public class BarrowmanStabilityCalculator implements StabilityCalculator {
 		ensureCalcMap(configuration);
 
 		WarningSet actualWarnings = (warnings != null) ? warnings : ignoreWarningSet;
-		checkGeometry(configuration, configuration.getRocket(), actualWarnings);
 
 		InstanceMap imap = configuration.getActiveInstances();
 		AerodynamicForces assemblyForces = new AerodynamicForces().zero();
