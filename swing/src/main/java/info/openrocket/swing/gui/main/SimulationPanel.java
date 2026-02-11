@@ -1,13 +1,7 @@
 package info.openrocket.swing.gui.main;
 
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.Window;
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -30,28 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -173,6 +150,10 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		COLUMN_ID_GROUND_HIT_VELOCITY
 	};
 
+	private static final String CARD_HELP = "help";
+	private static final String CARD_TABLE = "table";
+
+
 	private static Color dimTextColor;
 	private static Color warningColor;
 	private static Color errorColor;
@@ -235,7 +216,6 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		//// Run then Dump simulations
 		simTableExportButton = new IconButton();
 		RocketActions.tieActionToButton(simTableExportButton, simTableExportAction, trans.get("simpanel.but.runsimulations"));
-
 
 		////////  The simulation table
 		simulationTableModel = new SimulationTableModel();
@@ -365,6 +345,33 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 				}
 			}
 		});
+		JPanel cardPanel = new JPanel(new CardLayout());
+
+		JLabel label = new JLabel(trans.get("simpanel.lbl.noConfiguration"), SwingConstants.CENTER);
+		cardPanel.add(label, CARD_HELP);
+
+		JPanel tablePanel = new JPanel(new BorderLayout());
+		tablePanel.add(new JScrollPane(simulationTable), BorderLayout.CENTER);
+		cardPanel.add(tablePanel, CARD_TABLE);
+
+		CardLayout cardLayout = (CardLayout) (cardPanel.getLayout());
+		if (!document.getRocket().getSelectedConfiguration().getAllMotors().isEmpty()) {
+			cardLayout.show(cardPanel, "table");
+		}
+
+		simulationTableModel.addTableModelListener(new TableModelListener() {
+			@Override
+			public void tableChanged(TableModelEvent e) {
+				Rocket rocket = document.getRocket();
+				boolean hasMotors = (rocket != null &&
+						!rocket.getSelectedConfiguration()
+								.getAllMotors()
+								.isEmpty());
+
+				newSimulationAction.setEnabled(hasMotors);
+				cardLayout.show(cardPanel, hasMotors ? CARD_TABLE : CARD_HELP);
+			}
+		});
 
 		document.addDocumentChangeListener(new DocumentChangeListener() {
 			@Override
@@ -386,9 +393,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			}
 		});
 
-
-		JScrollPane scrollpane = new JScrollPane(simulationTable);
-		this.add(scrollpane, "spanx, grow, wrap rel");
+		this.add(cardPanel, "spanx, grow, pushy, wrap rel");
 
 		updateActions();
 	}
@@ -996,6 +1001,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			putValue(NAME, trans.get("simpanel.but.newsimulation"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_N);
 			this.putValue(SMALL_ICON, Icons.FILE_NEW);
+
+			setEnabled(false);
 		}
 
 		@Override
