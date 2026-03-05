@@ -1435,13 +1435,14 @@ public class MassCalculatorTest extends BaseTestCase {
 		config._setStageActive(TestRockets.FALCON_9H_CORE_STAGE_NUMBER, false);
 		config._setStageActive(TestRockets.FALCON_9H_BOOSTER_STAGE_NUMBER, false);
 
+		// All hardcoded values are pulled from testFalcon9HPayloadStructureCM
 		RigidBody noBooster = MassCalculator.calculateStructure(config);
-		double expMassNoBooster = 0.11628853296935873; // payload only, known from testFalcon9HPayloadStructureCM
+		double expMassNoBooster = 0.11628853296935873; // payload only
 		assertEquals(expMassNoBooster, noBooster.getMass(), EPSILON,
 				"Mass with core+booster disabled should equal payload mass only");
 
-		// CG must shift forward (toward nose) when heavy rear booster is removed
-		double expCMxNoBooster = 0.2780673116227175; // payload only, known from testFalcon9HPayloadStructureCM
+		// CG must shift toward nose when heavy rear booster is removed
+		double expCMxNoBooster = 0.2780673116227175; // payload only
 		assertEquals(expCMxNoBooster, noBooster.getCM().getX(), EPSILON,
         "CG with core+booster disabled should match standalone payload CG");
 
@@ -1449,11 +1450,11 @@ public class MassCalculatorTest extends BaseTestCase {
 		config._setStageActive(TestRockets.FALCON_9H_CORE_STAGE_NUMBER, false);
 
 		RigidBody payloadOnly = MassCalculator.calculateStructure(config);
-		double expMassPayloadOnly = 0.11628853296935873; // known from testFalcon9HPayloadStructureCM
+		double expMassPayloadOnly = 0.11628853296935873;
 		assertEquals(expMassPayloadOnly, payloadOnly.getMass(), EPSILON,
 				"Mass with core+booster disabled should equal payload mass only");
 
-		double expCMxPayloadOnly = 0.2780673116227175; // known from testFalcon9HPayloadStructureCM
+		double expCMxPayloadOnly = 0.2780673116227175;
 		assertEquals(expCMxPayloadOnly, payloadOnly.getCM().getX(), EPSILON,
 				"CG with core+booster disabled should match standalone payload CG");
 
