@@ -1466,5 +1466,4 @@ public class MassCalculatorTest extends BaseTestCase {
 		assertEquals(cmxAll, restored.getCM().getX(), EPSILON,
 				"CG should be fully restored after re-enabling all stages");
 	}
-
 }
