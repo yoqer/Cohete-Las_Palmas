@@ -165,6 +165,9 @@ public class SimulationPlotPanel extends PlotPanel<FlightDataType, FlightDataBra
 
 	@Override
 	protected void setDefaultConfiguration(SimulationPlotConfiguration newConfiguration) {
+		// Strip per-simulation appearance overrides so they don't leak into other simulations
+		// that will start from this default.
+		newConfiguration.clearPlotAppearances();
 		super.setDefaultConfiguration(newConfiguration);
 		DEFAULT_CONFIGURATION = newConfiguration;
 	}

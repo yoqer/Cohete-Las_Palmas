@@ -157,6 +157,14 @@ public class PlotConfiguration<T extends DataType, B extends DataBranch<T>> impl
 	}
 
 	/**
+	 * Reset all per-series colors and line styles to their defaults (null color, SOLID line style).
+	 */
+	public void clearPlotAppearances() {
+		Collections.fill(plotDataColors, null);
+		Collections.fill(plotDataLineStyles, LineStyle.SOLID);
+	}
+
+	/**
 	 * Returns the number of data types in this configuration.
 	 * @return the number of data types in this configuration.
 	 */
