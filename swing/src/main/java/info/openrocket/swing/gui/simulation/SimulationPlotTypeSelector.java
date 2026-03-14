@@ -17,8 +17,10 @@ import javax.swing.ListCellRenderer;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
+import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.simulation.FlightDataType;
 import info.openrocket.core.simulation.FlightDataTypeGroup;
+import info.openrocket.core.startup.Application;
 import info.openrocket.core.unit.Unit;
 import info.openrocket.core.util.LineStyle;
 import info.openrocket.swing.gui.components.ColorChooserButton;
@@ -27,6 +29,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class SimulationPlotTypeSelector extends PlotTypeSelector<FlightDataType, FlightDataTypeGroup> {
 	private static final long serialVersionUID = 8745908975963777281L;
+	private static final Translator trans = Application.getTranslator();
 
 	private final ColorChooserButton colorButton;
 	private final JComboBox<LineStyle> lineStyleSelector;
@@ -37,11 +40,11 @@ public class SimulationPlotTypeSelector extends PlotTypeSelector<FlightDataType,
 		super(plotIndex, type, unit, position, availableTypes);
 
 		JPanel appearancePanel = new JPanel(new MigLayout("ins 0"));
-		appearancePanel.add(new JLabel("Color:"), "top");
+		appearancePanel.add(new JLabel(trans.get("simplotpanel.lbl.Color")), "top");
 		colorButton = new ColorChooserButton(initialColor);
 		appearancePanel.add(colorButton, "top");
 
-		appearancePanel.add(new JLabel("Line style:"), "gapleft para, top");
+		appearancePanel.add(new JLabel(trans.get("simplotpanel.lbl.LineStyle")), "gapleft para, top");
 		lineStyleSelector = new JComboBox<>(LineStyle.values());
 		lineStyleSelector.setSelectedItem(initialLineStyle != null ? initialLineStyle : LineStyle.SOLID);
 		lineStyleSelector.setRenderer(new LineStyleRenderer());
