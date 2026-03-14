@@ -50,7 +50,7 @@ public class SimulationPlotTypeSelector extends PlotTypeSelector<FlightDataType,
 		lineStyleSelector.setRenderer(new LineStyleRenderer());
 		appearancePanel.add(lineStyleSelector, "top");
 
-		this.add(appearancePanel, "newline, spanx, wrap");
+		this.add(appearancePanel, "newline, gapleft para, spanx, wrap");
 	}
 
 	public Color getSelectedColor() {
