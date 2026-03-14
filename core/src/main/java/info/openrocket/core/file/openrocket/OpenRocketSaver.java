@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import info.openrocket.core.file.openrocket.savers.PhotoStudioSaver;
 import info.openrocket.core.logging.ErrorSet;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import info.openrocket.core.logging.Warning;
 import info.openrocket.core.document.OpenRocketDocument;
+import info.openrocket.core.document.PlotAppearance;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.document.StorageOptions;
 import info.openrocket.core.file.RocketSaver;
@@ -412,6 +414,35 @@ public class OpenRocketSaver extends RocketSaver {
 		
 		indent--;
 		writeln("</conditions>");
+
+		Map<String, PlotAppearance> plotAppearances = simulation.getPlotAppearances();
+		if (!plotAppearances.isEmpty()) {
+			// Persist per-series appearance tweaks (color and/or line style).
+			writeln("<plotappearance>");
+			indent++;
+			for (Map.Entry<String, PlotAppearance> entry : new TreeMap<>(plotAppearances).entrySet()) {
+				String symbol = entry.getKey();
+				PlotAppearance appearance = entry.getValue();
+				if (appearance == null || appearance.isEmpty() || symbol == null || symbol.isEmpty()) {
+					continue;
+				}
+				StringBuilder series = new StringBuilder();
+				series.append("<series symbol=\"").append(TextUtil.escapeXML(symbol)).append("\"");
+				if (appearance.getLineStyle() != null) {
+					series.append(" linestyle=\"").append(enumToXMLName(appearance.getLineStyle())).append("\"");
+				}
+				if (appearance.getColor() != null) {
+					series.append(" red=\"").append(appearance.getColor().getRed()).append("\"");
+					series.append(" green=\"").append(appearance.getColor().getGreen()).append("\"");
+					series.append(" blue=\"").append(appearance.getColor().getBlue()).append("\"");
+					series.append(" alpha=\"").append(appearance.getColor().getAlpha()).append("\"");
+				}
+				series.append("/>");
+				writeln(series.toString());
+			}
+			indent--;
+			writeln("</plotappearance>");
+		}
 		
 		for (SimulationExtension extension : simulation.getSimulationExtensions()) {
 			Config config = extension.getConfig();
