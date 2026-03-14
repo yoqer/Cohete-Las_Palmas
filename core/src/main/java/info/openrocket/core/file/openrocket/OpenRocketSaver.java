@@ -432,10 +432,7 @@ public class OpenRocketSaver extends RocketSaver {
 					series.append(" linestyle=\"").append(enumToXMLName(appearance.getLineStyle())).append("\"");
 				}
 				if (appearance.getColor() != null) {
-					series.append(" red=\"").append(appearance.getColor().getRed()).append("\"");
-					series.append(" green=\"").append(appearance.getColor().getGreen()).append("\"");
-					series.append(" blue=\"").append(appearance.getColor().getBlue()).append("\"");
-					series.append(" alpha=\"").append(appearance.getColor().getAlpha()).append("\"");
+					series.append(" ").append(appearance.getColor().toXMLAttributes());
 				}
 				series.append("/>");
 				writeln(series.toString());
