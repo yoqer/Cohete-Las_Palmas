@@ -766,4 +766,46 @@ public class BarrowmanCalculatorTest {
 		}
 		assertEquals(11, boosterOnlyForceMap.size(), "Force map should contain 10 components");
 	}
+
+	@Test
+	public void testDisabledStageAerodynamics() {
+		Rocket rocket = TestRockets.makeFalcon9Heavy();
+		FlightConfigurationId fcid = new FlightConfigurationId(TestRockets.FALCON_9H_FCID_1);
+
+		Simulation simulation = new Simulation(rocket);
+		simulation.setFlightConfigurationId(fcid);
+		FlightConfiguration config = simulation.getActiveConfiguration();
+
+		BarrowmanCalculator calc = new BarrowmanCalculator();
+		FlightConditions conditions = new FlightConditions(config);
+		WarningSet warnings = new WarningSet();
+
+		// Baseline: all stages active
+		CoordinateIF cpAll = calc.getCP(config, conditions, warnings);
+		double cnAll = cpAll.getWeight();
+		double cpxAll = cpAll.getX();
+
+		// Disable core + booster stages
+		config._setStageActive(TestRockets.FALCON_9H_CORE_STAGE_NUMBER, false);
+		config._setStageActive(TestRockets.FALCON_9H_BOOSTER_STAGE_NUMBER, false);
+
+		warnings.clear();
+		CoordinateIF cpPayloadOnly = calc.getCP(config, conditions, warnings);
+
+		// CNa must decrease — booster fins are gone
+		assertTrue(cpPayloadOnly.getWeight() < cnAll,
+			"CNa should decrease when booster/core disabled");
+
+		// CP should shift forward — rear fins removed
+		assertTrue(cpPayloadOnly.getX() < cpxAll,
+			"CP should move forward when booster/core disabled");
+
+		// Re-enable all stages and verify full restoration
+		config.setAllStages();
+		warnings.clear();
+		CoordinateIF cpRestored = calc.getCP(config, conditions, warnings);
+
+		assertEquals(cnAll,  cpRestored.getWeight(), EPSILON, "CNa should be restored after re-enabling all stages");
+		assertEquals(cpxAll, cpRestored.getX(),      EPSILON, "CP should be restored after re-enabling all stages");
+	}
 }
