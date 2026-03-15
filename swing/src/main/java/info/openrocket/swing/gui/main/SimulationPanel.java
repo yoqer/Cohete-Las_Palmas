@@ -144,8 +144,8 @@ public class SimulationPanel extends JPanel {
 
 	private int[] previousSelection = null;
 
-private static final String PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns";
-private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns.default";
+    private static final String PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns";
+    private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns.default";
 	private static final String COLUMN_ID_STATUS = "status";
 	private static final String COLUMN_ID_WARNINGS = "warnings";
 	private static final String COLUMN_ID_NAME = "name";
@@ -185,6 +185,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 	private static Color warningColor;
 	private static Color errorColor;
 	private static Color informationColor;
+
+	private boolean hasMotors;
 
 	static {
 		initColors();
@@ -372,6 +374,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 				}
 			}
 		});
+
 		JPanel cardPanel = new JPanel(new CardLayout());
 
 		JLabel label = new JLabel(trans.get("simpanel.lbl.noConfiguration"), SwingConstants.CENTER);
@@ -382,21 +385,25 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		cardPanel.add(tablePanel, CARD_TABLE);
 
 		CardLayout cardLayout = (CardLayout) (cardPanel.getLayout());
-		if (!document.getRocket().getSelectedConfiguration().getAllMotors().isEmpty()) {
-			cardLayout.show(cardPanel, "table");
-		}
+
+		Runnable updateMotorState = () -> {
+			Rocket rocket = document.getRocket();
+
+			hasMotors = rocket != null &&
+					!rocket.getSelectedConfiguration()
+							.getAllMotors()
+							.isEmpty();
+
+			newSimulationAction.setEnabled(hasMotors);
+			cardLayout.show(cardPanel, hasMotors ? CARD_TABLE : CARD_HELP);
+		};
+
+		updateMotorState.run();
 
 		simulationTableModel.addTableModelListener(new TableModelListener() {
 			@Override
 			public void tableChanged(TableModelEvent e) {
-				Rocket rocket = document.getRocket();
-				boolean hasMotors = (rocket != null &&
-						!rocket.getSelectedConfiguration()
-								.getAllMotors()
-								.isEmpty());
-
-				newSimulationAction.setEnabled(hasMotors);
-				cardLayout.show(cardPanel, hasMotors ? CARD_TABLE : CARD_HELP);
+				updateMotorState.run();
 			}
 		});
 
@@ -1039,7 +1046,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			setEnabled(true);
+			setEnabled(hasMotors);
 		}
 	}
 
@@ -1059,7 +1066,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
 		}
 	}
 
@@ -1166,7 +1173,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
 		}
 	}
 
@@ -1185,7 +1192,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
 		}
 	}
 
@@ -1203,7 +1210,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() == 1);
+			this.setEnabled(simulationTable.getSelectedRowCount() == 1 && hasMotors);
 		}
 	}
 
