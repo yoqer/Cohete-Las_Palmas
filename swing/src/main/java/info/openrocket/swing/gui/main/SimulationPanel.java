@@ -377,7 +377,7 @@ public class SimulationPanel extends JPanel {
 
 		JPanel cardPanel = new JPanel(new CardLayout());
 
-		JLabel label = new JLabel(trans.get("simpanel.lbl.noConfiguration"), SwingConstants.CENTER);
+		JLabel label = new JLabel(String.format(trans.get("simpanel.lbl.noConfiguration"), trans.get("BasicFrame.tab.Flightconfig")), SwingConstants.CENTER);
 		cardPanel.add(label, CARD_HELP);
 
 		JPanel tablePanel = new JPanel(new BorderLayout());
