@@ -2,6 +2,7 @@ package info.openrocket.swing.gui.main;
 
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -49,6 +50,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -63,15 +65,11 @@ import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.document.Simulation.Status;
-import info.openrocket.core.document.events.DocumentChangeEvent;
-import info.openrocket.core.document.events.DocumentChangeListener;
 import info.openrocket.core.document.events.SimulationChangeEvent;
 import info.openrocket.core.formatting.RocketDescriptor;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.preferences.DocumentPreferences;
-import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
-import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfigurationId;
 import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.simulation.FlightData;
@@ -86,7 +84,6 @@ import info.openrocket.swing.gui.simulation.SimulationConfigDialog;
 import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.widgets.SaveFileChooser;
 import org.slf4j.Logger;
@@ -127,6 +124,7 @@ public class SimulationPanel extends JPanel {
 	private final JPopupMenu pm;
 	private final ColumnVisibilityController columnVisibilityController;
 
+	private final SimulationAction newSimulationAction;
 	private final SimulationAction editSimulationAction;
 	private final SimulationAction cutSimulationAction;
 	private final SimulationAction copySimulationAction;
@@ -140,8 +138,8 @@ public class SimulationPanel extends JPanel {
 
 	private int[] previousSelection = null;
 
-private static final String PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns";
-private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns.default";
+    private static final String PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns";
+    private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simulation.table.hiddenColumns.default";
 	private static final String COLUMN_ID_STATUS = "status";
 	private static final String COLUMN_ID_WARNINGS = "warnings";
 	private static final String COLUMN_ID_NAME = "name";
@@ -173,10 +171,19 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		COLUMN_ID_GROUND_HIT_VELOCITY
 	};
 
+	private static final String CARD_HELP = "help";
+	private static final String CARD_TABLE = "table";
+
+
 	private static Color dimTextColor;
 	private static Color warningColor;
 	private static Color errorColor;
 	private static Color informationColor;
+
+	private boolean hasValidConfig;
+
+	private final JPanel cardPanel;
+	private final CardLayout cardLayout;
 
 	static {
 		initColors();
@@ -189,7 +196,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 
 		// Simulation actions
-		SimulationAction newSimulationAction = new NewSimulationAction();
+		newSimulationAction = new NewSimulationAction();
 		editSimulationAction = new EditSimulationAction();
 		cutSimulationAction = new CutSimulationAction();
 		copySimulationAction = new CopySimulationAction();
@@ -235,7 +242,6 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		//// Run then Dump simulations
 		simTableExportButton = new IconButton();
 		RocketActions.tieActionToButton(simTableExportButton, simTableExportAction, trans.get("simpanel.but.runsimulations"));
-
 
 		////////  The simulation table
 		simulationTableModel = new SimulationTableModel();
@@ -366,29 +372,33 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			}
 		});
 
-		document.addDocumentChangeListener(new DocumentChangeListener() {
-			@Override
-			public void documentChanged(DocumentChangeEvent event) {
-				if (!(event instanceof SimulationChangeEvent))
-					return;
-				fireMaintainSelection();
-			}
+		cardPanel = new JPanel(new CardLayout());
+		cardLayout = (CardLayout) cardPanel.getLayout();
+
+		JLabel label = new JLabel(String.format(trans.get("simpanel.lbl.noConfiguration"), trans.get("BasicFrame.tab.Flightconfig")), SwingConstants.CENTER);
+		cardPanel.add(label, CARD_HELP);
+
+		JPanel tablePanel = new JPanel(new BorderLayout());
+		tablePanel.add(new JScrollPane(simulationTable), BorderLayout.CENTER);
+		cardPanel.add(tablePanel, CARD_TABLE);
+
+		updateMotorState();
+
+		document.addDocumentChangeListener(event -> {
+			if (!(event instanceof SimulationChangeEvent))
+				return;
+			fireMaintainSelection();
 		});
 
-
-
-
-		// Fire table change event when the rocket changes
-		document.getRocket().addComponentChangeListener(new ComponentChangeListener() {
-			@Override
-			public void componentChanged(ComponentChangeEvent e) {
-				fireMaintainSelection();
+		// Fire table change event when the rocket changes, and update motor state when relevant
+		document.getRocket().addComponentChangeListener(e -> {
+			if (e.isMotorChange() || e.isTreeChange()) {
+				updateMotorState();
 			}
+			fireMaintainSelection();
 		});
 
-
-		JScrollPane scrollpane = new JScrollPane(simulationTable);
-		this.add(scrollpane, "spanx, grow, wrap rel");
+		this.add(cardPanel, "spanx, grow, pushy, wrap rel");
 
 		updateActions();
 	}
@@ -403,6 +413,19 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 		warningColor = UITheme.getColor(UITheme.Keys.WARNING);
 		errorColor = UITheme.getColor(UITheme.Keys.ERROR);
 		informationColor = UITheme.getColor(UITheme.Keys.INFO);
+	}
+
+	private void updateMotorState() {
+		Rocket rocket = document.getRocket();
+		boolean newHasValidConfig = rocket != null &&
+				rocket.getIds().stream().anyMatch(rocket::hasMotors);
+
+		if (newHasValidConfig == hasValidConfig) {
+			return;
+		}
+
+		hasValidConfig = newHasValidConfig;
+		cardLayout.show(cardPanel, hasValidConfig ? CARD_TABLE : CARD_HELP);
 	}
 
 	/**
@@ -996,6 +1019,8 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 			putValue(NAME, trans.get("simpanel.but.newsimulation"));
 			this.putValue(MNEMONIC_KEY, KeyEvent.VK_N);
 			this.putValue(SMALL_ICON, Icons.FILE_NEW);
+
+			setEnabled(false);
 		}
 
 		@Override
@@ -1005,7 +1030,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			setEnabled(true);
+			setEnabled(hasValidConfig);
 		}
 	}
 
@@ -1025,7 +1050,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1132,7 +1157,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1151,7 +1176,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1169,7 +1194,7 @@ private static final String APP_PREF_KEY_SIMULATION_TABLE_HIDDEN_COLUMNS = "simu
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() == 1);
+			this.setEnabled(simulationTable.getSelectedRowCount() == 1 && hasValidConfig);
 		}
 	}
 
