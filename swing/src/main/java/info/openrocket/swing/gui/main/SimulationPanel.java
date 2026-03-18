@@ -54,8 +54,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -67,15 +65,11 @@ import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.document.Simulation.Status;
-import info.openrocket.core.document.events.DocumentChangeEvent;
-import info.openrocket.core.document.events.DocumentChangeListener;
 import info.openrocket.core.document.events.SimulationChangeEvent;
 import info.openrocket.core.formatting.RocketDescriptor;
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.preferences.ApplicationPreferences;
 import info.openrocket.core.preferences.DocumentPreferences;
-import info.openrocket.core.rocketcomponent.ComponentChangeEvent;
-import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfigurationId;
 import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.simulation.FlightData;
@@ -90,7 +84,6 @@ import info.openrocket.swing.gui.simulation.SimulationConfigDialog;
 import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.FileHelper;
 import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.swing.gui.theme.UITheme;
 import info.openrocket.swing.gui.widgets.SaveFileChooser;
 import org.slf4j.Logger;
@@ -131,6 +124,7 @@ public class SimulationPanel extends JPanel {
 	private final JPopupMenu pm;
 	private final ColumnVisibilityController columnVisibilityController;
 
+	private final SimulationAction newSimulationAction;
 	private final SimulationAction editSimulationAction;
 	private final SimulationAction cutSimulationAction;
 	private final SimulationAction copySimulationAction;
@@ -186,7 +180,10 @@ public class SimulationPanel extends JPanel {
 	private static Color errorColor;
 	private static Color informationColor;
 
-	private boolean hasMotors;
+	private boolean hasValidConfig;
+
+	private final JPanel cardPanel;
+	private final CardLayout cardLayout;
 
 	static {
 		initColors();
@@ -199,7 +196,7 @@ public class SimulationPanel extends JPanel {
 
 
 		// Simulation actions
-		SimulationAction newSimulationAction = new NewSimulationAction();
+		newSimulationAction = new NewSimulationAction();
 		editSimulationAction = new EditSimulationAction();
 		cutSimulationAction = new CutSimulationAction();
 		copySimulationAction = new CopySimulationAction();
@@ -375,7 +372,8 @@ public class SimulationPanel extends JPanel {
 			}
 		});
 
-		JPanel cardPanel = new JPanel(new CardLayout());
+		cardPanel = new JPanel(new CardLayout());
+		cardLayout = (CardLayout) cardPanel.getLayout();
 
 		JLabel label = new JLabel(String.format(trans.get("simpanel.lbl.noConfiguration"), trans.get("BasicFrame.tab.Flightconfig")), SwingConstants.CENTER);
 		cardPanel.add(label, CARD_HELP);
@@ -384,47 +382,20 @@ public class SimulationPanel extends JPanel {
 		tablePanel.add(new JScrollPane(simulationTable), BorderLayout.CENTER);
 		cardPanel.add(tablePanel, CARD_TABLE);
 
-		CardLayout cardLayout = (CardLayout) (cardPanel.getLayout());
+		updateMotorState();
 
-		Runnable updateMotorState = () -> {
-			Rocket rocket = document.getRocket();
-
-			hasMotors = rocket != null &&
-					!rocket.getSelectedConfiguration()
-							.getAllMotors()
-							.isEmpty();
-
-			newSimulationAction.setEnabled(hasMotors);
-			cardLayout.show(cardPanel, hasMotors ? CARD_TABLE : CARD_HELP);
-		};
-
-		updateMotorState.run();
-
-		simulationTableModel.addTableModelListener(new TableModelListener() {
-			@Override
-			public void tableChanged(TableModelEvent e) {
-				updateMotorState.run();
-			}
+		document.addDocumentChangeListener(event -> {
+			if (!(event instanceof SimulationChangeEvent))
+				return;
+			fireMaintainSelection();
 		});
 
-		document.addDocumentChangeListener(new DocumentChangeListener() {
-			@Override
-			public void documentChanged(DocumentChangeEvent event) {
-				if (!(event instanceof SimulationChangeEvent))
-					return;
-				fireMaintainSelection();
+		// Fire table change event when the rocket changes, and update motor state when relevant
+		document.getRocket().addComponentChangeListener(e -> {
+			if (e.isMotorChange() || e.isTreeChange()) {
+				updateMotorState();
 			}
-		});
-
-
-
-
-		// Fire table change event when the rocket changes
-		document.getRocket().addComponentChangeListener(new ComponentChangeListener() {
-			@Override
-			public void componentChanged(ComponentChangeEvent e) {
-				fireMaintainSelection();
-			}
+			fireMaintainSelection();
 		});
 
 		this.add(cardPanel, "spanx, grow, pushy, wrap rel");
@@ -442,6 +413,19 @@ public class SimulationPanel extends JPanel {
 		warningColor = UITheme.getColor(UITheme.Keys.WARNING);
 		errorColor = UITheme.getColor(UITheme.Keys.ERROR);
 		informationColor = UITheme.getColor(UITheme.Keys.INFO);
+	}
+
+	private void updateMotorState() {
+		Rocket rocket = document.getRocket();
+		boolean newHasValidConfig = rocket != null &&
+				rocket.getIds().stream().anyMatch(rocket::hasMotors);
+
+		if (newHasValidConfig == hasValidConfig) {
+			return;
+		}
+
+		hasValidConfig = newHasValidConfig;
+		cardLayout.show(cardPanel, hasValidConfig ? CARD_TABLE : CARD_HELP);
 	}
 
 	/**
@@ -1046,7 +1030,7 @@ public class SimulationPanel extends JPanel {
 
 		@Override
 		public void updateEnabledState() {
-			setEnabled(hasMotors);
+			setEnabled(hasValidConfig);
 		}
 	}
 
@@ -1066,7 +1050,7 @@ public class SimulationPanel extends JPanel {
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1173,7 +1157,7 @@ public class SimulationPanel extends JPanel {
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1192,7 +1176,7 @@ public class SimulationPanel extends JPanel {
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasMotors);
+			this.setEnabled(simulationTable.getSelectedRowCount() > 0 && hasValidConfig);
 		}
 	}
 
@@ -1210,7 +1194,7 @@ public class SimulationPanel extends JPanel {
 
 		@Override
 		public void updateEnabledState() {
-			this.setEnabled(simulationTable.getSelectedRowCount() == 1 && hasMotors);
+			this.setEnabled(simulationTable.getSelectedRowCount() == 1 && hasValidConfig);
 		}
 	}
 
