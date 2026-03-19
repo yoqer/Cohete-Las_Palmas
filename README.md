@@ -14,8 +14,6 @@ OpenRocket is a free, fully featured model rocket simulator that allows you to d
 
 --------
 
-# OpenRocket
-
 ## 🛠️ Design, Visualize, and Analyze
 
 1. **Design** your rockets using a rich selection of built-in components:
