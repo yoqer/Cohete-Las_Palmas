@@ -4,6 +4,7 @@ package info.openrocket.swing.gui.scalefigure;
 import info.openrocket.core.aerodynamics.AerodynamicCalculator;
 import info.openrocket.core.aerodynamics.BarrowmanCalculator;
 import info.openrocket.core.aerodynamics.FlightConditions;
+import info.openrocket.core.arch.SystemInfo;
 import info.openrocket.core.componentanalysis.CAParameters;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
@@ -1470,6 +1471,33 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	}
 
 	/**
+	 * Copies the current design view to the system clipboard on macOS in native PNG format.
+	 */
+	private void copyDesignViewToClipboardMacOS(BufferedImage image) {
+		try {
+			// Save to temporary file
+			File tempFile = File.createTempFile("clipboard_", ".png");
+			ImageIO.write(image, "png", tempFile);
+
+			// Use AppleScript to copy to clipboard in native format
+			String script = String.format(
+					"set the clipboard to (read (POSIX file \"%s\") as «class PNGf»)",
+					tempFile.getAbsolutePath()
+			);
+
+			ProcessBuilder pb = new ProcessBuilder("osascript", "-e", script);
+			Process process = pb.start();
+			process.waitFor();
+
+			// Clean up
+			tempFile.deleteOnExit();
+
+		} catch (IOException | InterruptedException e) {
+			log.error("Failed to copy design view to clipboard", e);
+		}
+	}
+
+	/**
 	 * Copies the current design view to the system clipboard.
 	 */
 	private void copyDesignViewToClipboard() {
@@ -1478,9 +1506,13 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			return;
 		}
 
-		TransferableImage transferableImage = new TransferableImage(image);
-		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-		clipboard.setContents(transferableImage, null);
+		if (SystemInfo.getPlatform() == SystemInfo.Platform.MAC_OS) {
+			copyDesignViewToClipboardMacOS(image);
+		} else {
+			TransferableImage transferableImage = new TransferableImage(image);
+			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+			clipboard.setContents(transferableImage, null);
+		}
 	}
 
 	/**
