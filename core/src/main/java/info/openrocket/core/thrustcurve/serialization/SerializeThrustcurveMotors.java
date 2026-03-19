@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -216,7 +217,7 @@ public class SerializeThrustcurveMotors {
 
     private static void writeBadFile(MotorBurnFile burnFile) {
         try (FileOutputStream out = new FileOutputStream("simfile-" + burnFile.getSimfileId())) {
-            out.write(burnFile.getContents().getBytes());
+            out.write(burnFile.getContents().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             System.out.println("Unable to write bad file: " + e.getMessage());
         }

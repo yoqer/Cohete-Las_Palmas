@@ -577,13 +577,14 @@ public class AppearancePanel extends JPanel implements Invalidatable, Invalidati
 		materialDefault.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (builder == null) {
+					return;
+				}
 				if (materialDefault.isSelected()) {
 					if (!insideBuilder) {
-						previousUserSelectedAppearance = (builder == null) ? null
-								: builder.getAppearance();
+						previousUserSelectedAppearance = builder.getAppearance();
 					} else {
-						previousUserSelectedInsideAppearance = (builder == null) ? null
-								: builder.getAppearance();
+						previousUserSelectedInsideAppearance = builder.getAppearance();
 					}
 
 					// Set the listeners' appearance to the default appearance
