@@ -402,4 +402,10 @@ public class ThrustCurveMotorSet implements Comparable<ThrustCurveMotorSet> {
 
 	}
 
+	/**
+	 * Get index of selected motor in set
+	 */
+	public int indexOf(ThrustCurveMotor motor) {
+		return motors.indexOf(motor);
+	}
 }

@@ -16,6 +16,9 @@ import info.openrocket.core.motor.Motor;
 import info.openrocket.core.motor.ThrustCurveMotor;
 import info.openrocket.core.database.motor.ThrustCurveMotorSet;
 
+import info.openrocket.core.database.motor.ThrustCurveMotorSetDatabase;
+import info.openrocket.core.util.Coordinate;
+
 public class MotorRowFilterTest {
 	// just "slightly" above or below limits; also accuracy of
 	// equality tests
@@ -53,14 +56,11 @@ public class MotorRowFilterTest {
 	}
 	
 	private void testMotor(ThrustCurveMotor motor, ArrayList goodSearchTerms, ImpulseClass lowImpulse, ImpulseClass impulse, ImpulseClass highImpulse) {
-
-		ThrustCurveMotorSet motorSet = new ThrustCurveMotorSet();
-		motorSet.addMotor(motor);
 		
-		List<ThrustCurveMotorSet> motorList = new ArrayList<>();
-		motorList.add(motorSet);
+		ThrustCurveMotorSetDatabase database = new ThrustCurveMotorSetDatabase();
+		database.addMotor(motor);
 		
-		ThrustCurveMotorDatabaseModel model = new ThrustCurveMotorDatabaseModel(motorList);
+		ThrustCurveMotorDatabaseModel model = new ThrustCurveMotorDatabaseModel(database);
 		MotorRowFilter filter = new MotorRowFilter(model);
 		MotorEntry entry = new MotorEntry(model);
 

@@ -88,4 +88,8 @@ public abstract class Util {
 	public static Color getPlotColor(int index) {
 		return PLOT_COLORS[index % PLOT_COLORS.length];
 	}
+
+	public static Color[] getPlotColors() {
+		return PLOT_COLORS;
+	}
 }
