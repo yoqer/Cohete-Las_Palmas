@@ -30,11 +30,11 @@ public abstract class SymmetricComponent extends BodyComponent implements BoxBou
 	protected double thickness = DEFAULT_THICKNESS;
 
 	// Cached data, default values signify not calculated
-	private double wetArea = Double.NaN;
-	private double planArea = Double.NaN;
-	private double planCenter = Double.NaN;
+	protected double wetArea = Double.NaN;
+	protected double planArea = Double.NaN;
+	protected double planCenter = Double.NaN;
 	protected double volume = Double.NaN;
-	private double fullVolume = Double.NaN;
+	protected double fullVolume = Double.NaN;
 	protected double longitudinalUnitInertia = Double.NaN;
 	protected double rotationalUnitInertia = Double.NaN;
 	protected CoordinateIF cg = null;
@@ -481,7 +481,7 @@ public abstract class SymmetricComponent extends BodyComponent implements BoxBou
 				r1i = 0;
 				r2i = 0;
 			} else {
-				// Tiny inaccuracy is introduced on a division where one end is closed and other is open.
+				// TODO Tiny inaccuracy is introduced on a division where one end is closed and other is open.
 				r1i = MathUtil.max(r1o - height, 0);
 				r2i = MathUtil.max(r2o - height, 0);
 			}

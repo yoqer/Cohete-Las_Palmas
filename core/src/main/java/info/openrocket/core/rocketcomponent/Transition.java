@@ -5,6 +5,7 @@ import static info.openrocket.core.util.MathUtil.pow2;
 import static info.openrocket.core.util.MathUtil.pow3;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import info.openrocket.core.l10n.Translator;
 import info.openrocket.core.preset.ComponentPreset;
@@ -37,6 +38,30 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 
 	// Used to cache the clip length
 	private double clipLength = -1;
+
+	// Cached shoulder/cap properties to avoid duplicated calculations
+	private boolean shouldersComputed = false;
+
+	private double foreCapVolume = 0.0;
+	private CoordinateIF foreCapCG = Coordinate.ZERO;
+	// local (unshifted) moments stored by calculateShoulderProperties
+	private double foreCapLongMOILocal = 0.0;
+	private double foreCapRotMOILocal = 0.0;
+
+	private double foreShoulderVolume = 0.0;
+	private CoordinateIF foreShoulderCG = Coordinate.ZERO;
+	private double foreShoulderLongMOILocal = 0.0;
+	private double foreShoulderRotMOILocal = 0.0;
+
+	private double aftShoulderVolume = 0.0;
+	private CoordinateIF aftShoulderCG = Coordinate.ZERO;
+	private double aftShoulderLongMOILocal = 0.0;
+	private double aftShoulderRotMOILocal = 0.0;
+
+	private double aftCapVolume = 0.0;
+	private CoordinateIF aftCapCG = Coordinate.ZERO;
+	private double aftCapLongMOILocal = 0.0;
+	private double aftCapRotMOILocal = 0.0;
 
 	private InsideColorComponentHandler insideColorComponentHandler = new InsideColorComponentHandler(this);
 
@@ -601,6 +626,179 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		}
 	}
 
+    /**
+     * Return the Volume with shoulders (by direct calculation or by the super() implementation fallback)
+     */
+    @Override
+    public double getComponentVolume() {
+        if (isClipped()) {
+            return super.getComponentVolume();
+        } else {
+			Optional<Double> optVolume = type.getComponentVolume(this);
+
+			// Prefer analytic shape volume when available, otherwise fall back to
+			// numerical super implementation for the transition core.
+			final double transVolume = optVolume.orElseGet(() -> super.getComponentVolume());
+
+			// Ensure shoulder properties are calculated and cached.
+			if (!shouldersComputed) {
+				calculateShoulderProperties();
+			}
+			// Total volume (core transition + shoulders + caps)
+			double totalVolume = foreCapVolume + foreShoulderVolume + transVolume + aftShoulderVolume + aftCapVolume;
+
+			// Write into the protected cache so subsequent calls reuse the value
+			this.volume = transVolume;
+
+			return totalVolume;
+        }
+    }
+
+    /**
+     * Return the Full Volume (by direct calculation or by the super() implementation)
+     */
+    @Override
+    public double getFullVolume() {
+        if (isClipped()) {
+            return super.getFullVolume();
+        } else {
+			Optional<Double> optfullVolume = type.getFullVolume(this);
+			// Prefer analytic full volume when available, otherwise fall back to
+			// numerical super implementation for the transition core.
+			final double transFull = optfullVolume.orElseGet(() -> super.getFullVolume());
+			this.fullVolume = transFull;
+			return transFull;
+        }
+    }
+
+	/**
+     * Return the Volume (by direct calculation or by the super() implementation)
+     */
+    @Override
+    public double getComponentWetArea() {
+        if (isClipped()) {
+            return super.getComponentWetArea();
+        } else {
+            Optional<Double> optwetArea =  type.getComponentWetArea(this);
+			
+			final double wetAreaValue = optwetArea.orElseGet(() -> super.getComponentWetArea());
+			this.wetArea = wetAreaValue;
+            return wetAreaValue;
+        }
+    }
+
+	/**
+	 * Return the Planform Area (by direct calculation or by the super() implementation)
+	 */
+	@Override
+    public double getComponentPlanformArea() {
+        if (isClipped()) {
+            return super.getComponentPlanformArea();
+        } else {
+            Optional<Double> optPlanformArea =  type.getComponentPlanformArea(this);
+			
+			final double planformAreaValue = optPlanformArea.orElseGet(() -> super.getComponentPlanformArea());
+			this.planArea = planformAreaValue;
+            return planformAreaValue;
+        }
+    }
+
+    // TODO, getComponentPlanformCenter, getSymmetricComponentCG,getLongitudinalUnitInertia, getRotationalUnitInertia
+
+	/**
+	 * Calculate and cache shoulder and cap properties (volumes, CGs and unit MOIs).
+	 * This centralises the duplicated shoulder/cap code so both volume queries and
+	 * property calculations can reuse the same values.
+	 */
+	private void calculateShoulderProperties() {
+		if (shouldersComputed) {
+			return;
+		}
+
+		// Reset cached values
+		foreCapVolume = 0.0;
+		foreCapCG = Coordinate.ZERO;
+		foreCapLongMOILocal = 0.0;
+		foreCapRotMOILocal = 0.0;
+
+		foreShoulderVolume = 0.0;
+		foreShoulderCG = Coordinate.ZERO;
+		foreShoulderLongMOILocal = 0.0;
+		foreShoulderRotMOILocal = 0.0;
+
+		aftShoulderVolume = 0.0;
+		aftShoulderCG = Coordinate.ZERO;
+		aftShoulderLongMOILocal = 0.0;
+		aftShoulderRotMOILocal = 0.0;
+
+		aftCapVolume = 0.0;
+		aftCapCG = Coordinate.ZERO;
+		aftCapLongMOILocal = 0.0;
+		aftCapRotMOILocal = 0.0;
+
+		// Fore cap
+		if (isForeShoulderCapped()) {
+			final double ir = Math.max(getForeShoulderRadius() - getForeShoulderThickness(), 0);
+
+			foreCapCG = ringCG(ir, 0, -getForeShoulderLength(), getForeShoulderThickness() - getForeShoulderLength(),
+					getMaterial().getDensity());
+
+			foreCapVolume = ringVolume(ir, 0, getForeShoulderThickness());
+
+			// store local (unshifted) moments; shifting is applied later when the
+			// combined component CG is known
+			foreCapLongMOILocal = ringLongitudinalUnitInertia(ir, 0, getForeShoulderThickness()) * foreCapVolume;
+
+			foreCapRotMOILocal = ringRotationalUnitInertia(ir, 0.0) * foreCapVolume;
+		}
+
+		// Fore shoulder
+		if (getForeShoulderLength() > MINFEATURE) {
+			final double or = getForeShoulderRadius();
+			final double ir = Math.max(getForeShoulderRadius() - getForeShoulderThickness(), 0);
+
+			foreShoulderCG = ringCG(or, ir, -getForeShoulderLength(), 0, getMaterial().getDensity());
+
+			foreShoulderVolume = ringVolume(or, ir, getForeShoulderLength());
+
+			foreShoulderLongMOILocal = ringLongitudinalUnitInertia(or, ir, getForeShoulderLength()) * foreShoulderVolume;
+
+			foreShoulderRotMOILocal = ringRotationalUnitInertia(or, ir) * foreShoulderVolume;
+		}
+
+		// Aft shoulder
+		if (getAftShoulderLength() > MINFEATURE) {
+			final double or = getAftShoulderRadius();
+			final double ir = Math.max(getAftShoulderRadius() - getAftShoulderThickness(), 0);
+
+			aftShoulderCG = ringCG(getAftShoulderRadius(), ir, getLength(), getLength() + getAftShoulderLength(),
+					getMaterial().getDensity());
+
+			aftShoulderVolume = ringVolume(or, ir, getAftShoulderLength());
+
+			aftShoulderLongMOILocal = ringLongitudinalUnitInertia(or, ir, getAftShoulderLength()) * aftShoulderVolume;
+
+			aftShoulderRotMOILocal = ringRotationalUnitInertia(or, ir) * aftShoulderVolume;
+		}
+
+		// Aft cap
+		if (isAftShoulderCapped()) {
+			final double ir = Math.max(getAftShoulderRadius() - getAftShoulderThickness(), 0);
+
+			aftCapCG = ringCG(ir, 0, getLength() + getAftShoulderLength() - getAftShoulderThickness(),
+					getLength() + getAftShoulderLength(), getMaterial().getDensity());
+
+			aftCapVolume = ringVolume(ir, 0, getAftShoulderThickness());
+
+			aftCapLongMOILocal = ringLongitudinalUnitInertia(ir, 0, getForeShoulderThickness()) * aftCapVolume;
+
+			aftCapRotMOILocal = ringRotationalUnitInertia(ir, 0.0) * aftCapVolume;
+		}
+
+		shouldersComputed = true;
+	}
+
+
 	/**
 	 * Numerically solve clipLength from the equation
 	 * r1 == type.getRadius(clipLength,r2,clipLength+length)
@@ -682,78 +880,8 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 			double transRotMOI = rotationalUnitInertia * transVolume;
 			final CoordinateIF transCG = cg;
 
-			double foreCapVolume = 0.0;
-			CoordinateIF foreCapCG = Coordinate.ZERO;
-			double foreCapLongMOI = 0.0;
-			double foreCapRotMOI = 0.0;
-			if (isForeShoulderCapped()) {
-				final double ir = Math.max(getForeShoulderRadius() - getForeShoulderThickness(), 0);
-
-				foreCapCG = ringCG(ir, 0, -getForeShoulderLength(),
-						getForeShoulderThickness() - getForeShoulderLength(),
-						getMaterial().getDensity());
-
-				foreCapVolume = ringVolume(ir, 0, getForeShoulderThickness());
-
-				foreCapLongMOI = ringLongitudinalUnitInertia(ir, 0, getForeShoulderThickness()) * foreCapVolume;
-
-				foreCapRotMOI += ringRotationalUnitInertia(ir, 0.0) * foreCapVolume;
-			}
-
-			double foreShoulderVolume = 0.0;
-			CoordinateIF foreShoulderCG = Coordinate.ZERO;
-			double foreShoulderLongMOI = 0.0;
-			double foreShoulderRotMOI = 0.0;
-			if (getForeShoulderLength() > MINFEATURE) {
-				final double or = getForeShoulderRadius();
-				final double ir = Math.max(getForeShoulderRadius() - getForeShoulderThickness(), 0);
-
-				foreShoulderCG = ringCG(getForeShoulderRadius(), ir, -getForeShoulderLength(), 0,
-						getMaterial().getDensity());
-
-				foreShoulderVolume = ringVolume(or, ir, getForeShoulderLength());
-
-				foreShoulderLongMOI = ringLongitudinalUnitInertia(or, ir, getForeShoulderLength()) * foreShoulderVolume;
-
-				foreShoulderRotMOI = ringRotationalUnitInertia(or, ir) * foreShoulderVolume;
-			}
-
-			double aftShoulderVolume = 0.0;
-			CoordinateIF aftShoulderCG = Coordinate.ZERO;
-			double aftShoulderLongMOI = 0.0;
-			double aftShoulderRotMOI = 0.0;
-			if (getAftShoulderLength() > MINFEATURE) {
-				final double or = getAftShoulderRadius();
-				final double ir = Math.max(getAftShoulderRadius() - getAftShoulderThickness(), 0);
-
-				aftShoulderCG = ringCG(getAftShoulderRadius(), ir, getLength(),
-									   getLength() + getAftShoulderLength(),
-									   getMaterial().getDensity());
-
-				aftShoulderVolume = ringVolume(or, ir, getAftShoulderLength());
-
-				aftShoulderLongMOI = ringLongitudinalUnitInertia(or, ir, getAftShoulderLength())*aftShoulderVolume;
-
-				aftShoulderRotMOI = ringRotationalUnitInertia(or, ir) * aftShoulderVolume;
-			}
-
-			double aftCapVolume = 0.0;
-			CoordinateIF aftCapCG = Coordinate.ZERO;
-			double aftCapLongMOI = 0.0;
-			double aftCapRotMOI = 0.0;
-			if (isAftShoulderCapped()) {
-				final double ir = Math.max(getAftShoulderRadius() - getAftShoulderThickness(), 0);
-
-				aftCapCG = ringCG(ir, 0,
-								  getLength() + getAftShoulderLength() - getAftShoulderThickness(),
-								  getLength() + getAftShoulderLength(), getMaterial().getDensity());
-
-				aftCapVolume = ringVolume(ir, 0, getAftShoulderThickness() );
-
-				aftCapLongMOI = ringLongitudinalUnitInertia(ir, 0, getForeShoulderThickness())*aftCapVolume;
-
-				aftCapRotMOI = ringRotationalUnitInertia(ir, 0.0) * aftCapVolume;
-			}
+			// Ensure shoulder/cap values are calculated and cached
+			calculateShoulderProperties();
 
 			// Combine results
 			volume = foreCapVolume + foreShoulderVolume + transVolume + aftShoulderVolume + aftCapVolume;
@@ -774,20 +902,26 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 
 				return;
 			}
-			
+
 			cg = new Coordinate(cgx / mass, 0, 0, mass);
 
-			// need to use parallel axis theorem to move longitudinal MOI to CG of component
-			foreCapLongMOI += pow2(cg.getX() - foreCapCG.getX()) * foreCapVolume;
-			foreShoulderLongMOI += pow2(cg.getX() - foreShoulderCG.getX()) * foreShoulderVolume;
-			transLongMOI += pow2(cg.getX() - transCG.getX()) * transVolume;
-			aftShoulderLongMOI += pow2(cg.getX() - aftShoulderCG.getX()) * aftShoulderVolume;
-			aftCapLongMOI += pow2(cg.getX() - aftCapCG.getX()) * aftCapVolume;
+			// compute shifted (about combined CG) moments using stored local moments
+			double foreCapLongMOIShifted = foreCapLongMOILocal + pow2(cg.getX() - foreCapCG.getX()) * foreCapVolume;
+			double foreShoulderLongMOIShifted = foreShoulderLongMOILocal + pow2(cg.getX() - foreShoulderCG.getX()) * foreShoulderVolume;
+			double transLongMOIShifted = transLongMOI + pow2(cg.getX() - transCG.getX()) * transVolume;
+			double aftShoulderLongMOIShifted = aftShoulderLongMOILocal + pow2(cg.getX() - aftShoulderCG.getX()) * aftShoulderVolume;
+			double aftCapLongMOIShifted = aftCapLongMOILocal + pow2(cg.getX() - aftCapCG.getX()) * aftCapVolume;
 
-			final double longMOI = foreCapLongMOI + foreShoulderLongMOI + transLongMOI + aftShoulderLongMOI + aftCapLongMOI;
+			final double longMOI = foreCapLongMOIShifted + foreShoulderLongMOIShifted + transLongMOIShifted + aftShoulderLongMOIShifted + aftCapLongMOIShifted;
 			longitudinalUnitInertia = longMOI/volume;
 
-			final double rotMOI = foreCapRotMOI + foreShoulderRotMOI + transRotMOI + aftShoulderRotMOI + aftCapRotMOI;
+			double foreCapRotMOIShifted = foreCapRotMOILocal + /* rotational parallel-axis shift is same formula */ pow2(cg.getX() - foreCapCG.getX()) * foreCapVolume;
+			double foreShoulderRotMOIShifted = foreShoulderRotMOILocal + pow2(cg.getX() - foreShoulderCG.getX()) * foreShoulderVolume;
+			double transRotMOIShifted = transRotMOI + pow2(cg.getX() - transCG.getX()) * transVolume;
+			double aftShoulderRotMOIShifted = aftShoulderRotMOILocal + pow2(cg.getX() - aftShoulderCG.getX()) * aftShoulderVolume;
+			double aftCapRotMOIShifted = aftCapRotMOILocal + pow2(cg.getX() - aftCapCG.getX()) * aftCapVolume;
+
+			final double rotMOI = foreCapRotMOIShifted + foreShoulderRotMOIShifted + transRotMOIShifted + aftShoulderRotMOIShifted + aftCapRotMOIShifted;
 			rotationalUnitInertia = rotMOI/volume;
 		}
  	}
@@ -805,6 +939,8 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 	protected void componentChanged(ComponentChangeEvent e) {
 		super.componentChanged(e);
 		clipLength = -1;
+		// Invalidate cached shoulder properties when the component changes
+		shouldersComputed = false;
 	}
 
 	/**
@@ -916,6 +1052,71 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 				assert radius >= 0;
 				return radius * x / length;
 			}
+
+            private double getConeVolume(double length, double r1, double r2) {
+                // Volume of a conical section: V = pi/3 * L * (r1^2 + r1*r2 + r2^2)
+                return Math.PI / 3.0 * length * (pow2(r1) + r1 * r2 + pow2((r2)));
+            }
+
+			@Override
+			public Optional<Double> getComponentVolume(Transition transition) {
+				// If filled, return full volume
+				if (transition.isFilled()) {
+					return getFullVolume(transition);
+				}
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+                double t = transition.getThickness();
+                double r1i = r1o-t;
+                double r2i = r2o-t;
+
+				// Outer full volume
+				double outerV = getConeVolume(l, r1o, r2o);
+
+                // Inner full volume // TODO, specials case of thickness
+                double innerV = getConeVolume(l, r1i, r2i);
+
+                return Optional.of(outerV - innerV);
+			}
+
+            @Override
+            public Optional<Double> getFullVolume(Transition transition) {
+                double l = transition.getLength();
+                double foreR = transition.getForeRadius();
+                double aftR = transition.getAftRadius();
+
+                double v = getConeVolume(l, foreR,  aftR);
+                return Optional.of(v);
+            }
+
+            @Override
+            public Optional<Double> getComponentWetArea(Transition transition) {
+                // Wet area of a conical is: wA = pi * r1 * r2 * sqrt(l^2 + (r1-r2)^2)
+
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+
+                double wetArea = Math.PI * (r1o + r2o) * Math.sqrt(pow2(l) + pow2(r1o - r2o));
+                return Optional.of(wetArea);
+            }
+
+            @Override
+            public Optional<Double> getComponentPlanformArea(Transition transition) {
+                // PlanformArea of a conical is a isosceles trapezoid of surface: 2*r1*length + (r1-r2)*length
+                double l = transition.getLength();
+                double r1o = transition.getForeRadius();
+                double r2o = transition.getAftRadius();
+
+                double planArea = l * ((2*r1o) + (r1o - r2o));
+                return Optional.of(planArea);
+            }
+
+            // TODO getComponentPlanformCenter : formula?
+            // TODO getSymmetricComponentCG
+            // TODO getLongitudinalUnitInertia
+            // TODO getLongitudinalUnitInertia
 		},
 
 		/**
@@ -1232,6 +1433,106 @@ public class Transition extends SymmetricComponent implements InsideColorCompone
 		 * @return The basic radius at the given position.
 		 */
 		public abstract double getRadius(double x, double radius, double length, double param);
+
+		/**
+		 * Optional analytic hollow volume of this basic shape,
+		 * taking wall thickness or filled flag into account. Return null if an analytic
+		 * formula is not provided for this shape.
+		 *
+		 * @param transition The transition
+		 * @return analytic hollow volume (cubic units) or null if not available
+		 */
+		public Optional<Double> getComponentVolume(Transition transition) {
+			return Optional.empty();
+		}
+
+        /**
+         * Optional analytic full volume of this shape,
+         * given the fore and aft outer radii and the length. Return null if an analytic
+         * formula is not provided for this shape.
+         *
+         * @param transition The transition
+         * @return analytic full volume (cubic units) or null if not available
+         */
+        public Optional<Double> getFullVolume(Transition transition) {
+            return Optional.empty();
+        }
+
+		/**
+		 * Optional analytic wetted surface area of this shape (outer surface area),
+		 * taking into account wall thickness only insofar as it affects the outer
+		 * geometry. Implementations should compute the outer surface area of the
+		 * transition (i.e. the surface in contact with the surrounding fluid).
+		 *
+		 * @param transition The transition 
+		 * @return Analytic wetted surface area (square units) or empty if not available
+		 */
+		public Optional<Double> getComponentWetArea(Transition transition) {
+			return Optional.empty();
+		}
+
+		/**
+		 * Optional analytic planform area of this shape. The planform area is
+		 * the projection area of the component onto a plane orthogonal to the body
+		 * axis.
+		 *
+		 * @param transition The transition
+		 * @return Analytic planform area (square units) or empty if not available
+		 */
+		public Optional<Double> getComponentPlanformArea(Transition transition) {
+			return Optional.empty();
+		}
+
+		/**
+		 * Optional analytic planform centroid of this shape. Returns the
+		 * longitudinal location of the planform area centroid.
+		 * The returned Coordinate should carry the X coordinate (longitudinal position) and the
+		 * weight field may be used to store the planform area if convenient.
+		 *
+		 * @param transition The transition
+		 * @return Analytic planform centroid (Coordinate) or empty if not available
+		 */
+		public Optional<Double> getComponentPlanformCenter(Transition transition) {
+			return Optional.empty();
+		}
+
+		/**
+		 * Optional analytic center of gravity for the solid given by
+		 * this shape and the transition parameters. The returned {@link Coordinate}
+		 * should encode the longitudinal CG in X and include the mass/weight in the
+		 * weight field.
+		 *
+		 * @param transition Transition instance
+		 * @return Analytic CG coordinate (with weight = mass) or empty if not available
+		 */
+		public Optional<Coordinate> getSymmetricComponentCG(Transition transition) {
+			return Optional.empty();
+		}
+
+		/**
+		 * Optional analytic longitudinal unit moment of inertia for this shape
+		 * (i.e. second moment per unit mass about the longitudinal axis through the
+		 * component's centroid). The returned value should be expressed in squared
+		 * length units (e.g. m^2).
+		 *
+		 * @param transition Transition instance
+		 * @return Longitudinal unit inertia or empty if not available
+		 */
+		public Optional<Double> getLongitudinalUnitInertia(Transition transition) {
+			return Optional.empty();
+		}
+
+		/**
+		 * Optional analytic rotational unit moment of inertia for this shape
+		 * (i.e. transverse/rotational inertia per unit mass about the component's
+		 * centroid). The returned value should be expressed in squared length units
+		 *
+		 * @param transition Transition instance
+		 * @return Rotational unit inertia or empty if not available
+		 */
+		public Optional<Double> getRotationalUnitInertia(Transition transition) {
+			return Optional.empty();
+		}
 
 		/**
 		 * Returns the name of the shape (same as getName()).
