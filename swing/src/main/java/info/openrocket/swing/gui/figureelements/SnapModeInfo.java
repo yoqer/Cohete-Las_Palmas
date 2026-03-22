@@ -24,6 +24,7 @@ public class SnapModeInfo implements FigureElement {
 	private static final Translator trans = Application.getTranslator();
 	private static final int MARGIN = 8;
 	private static final Font FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+	private static final Font HINT_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 11);
 
 	private int caliperNumber;
 	private static Color snapHighlightColor;
@@ -60,14 +61,26 @@ public class SnapModeInfo implements FigureElement {
 		String mainMessage = String.format(trans.get("CaliperManager.snapModeMessage"), caliperNumber);
 		GlyphVector mainText = FONT.createGlyphVector(g2.getFontRenderContext(), mainMessage);
 
+		// Create the escape hint text
+		String hintMessage = trans.get("CaliperManager.snapModeEscapeHint");
+		GlyphVector hintText = HINT_FONT.createGlyphVector(g2.getFontRenderContext(), hintMessage);
+
 		// Calculate bounds for the text
 		Rectangle2D mainBounds = mainText.getVisualBounds();
-		
+		Rectangle2D hintBounds = hintText.getVisualBounds();
+
 		// Draw the main message at top center of visible area in snap highlight color
 		float mainX = (float)(visible.x + (visible.width - mainBounds.getWidth()) / 2);
 		float mainY = visible.y + MARGIN + (float)mainBounds.getHeight();
 		g2.setColor(snapHighlightColor);
 		g2.drawGlyphVector(mainText, mainX, mainY);
+
+		// Draw the escape hint below the main message in a dimmer color
+		float hintX = (float)(visible.x + (visible.width - hintBounds.getWidth()) / 2);
+		float hintY = mainY + (float)hintBounds.getHeight() + 2;
+		g2.setColor(new Color(snapHighlightColor.getRed(), snapHighlightColor.getGreen(),
+				snapHighlightColor.getBlue(), (int)(snapHighlightColor.getAlpha() * 0.65)));
+		g2.drawGlyphVector(hintText, hintX, hintY);
 	}
 }
 
