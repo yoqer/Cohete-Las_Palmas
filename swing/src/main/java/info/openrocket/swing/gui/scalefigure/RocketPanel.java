@@ -77,6 +77,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
@@ -691,8 +692,8 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			}
 		});
 
-		// Calipers checkbox - directly enables/disables the caliper tool
-		final JCheckBox showCalipers = new JCheckBox(trans.get("RocketPanel.checkbox.Calipers"));
+		// Calipers toggle button - directly enables/disables the caliper tool
+		final JToggleButton showCalipers = new JToggleButton(trans.get("RocketPanel.checkbox.Calipers"), Icons.RULER);
 		showCalipers.setToolTipText(trans.get("RocketPanel.checkbox.Calipers.ttip"));
 		showCalipers.setSelected(false);
 		ribbon.add(showCalipers, "cell 4 1, gapleft para");
