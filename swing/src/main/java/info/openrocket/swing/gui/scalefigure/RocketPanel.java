@@ -48,6 +48,7 @@ import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
+import info.openrocket.swing.gui.widgets.ThemedToggleButton;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
@@ -77,7 +78,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.JToggleButton;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
@@ -693,7 +693,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		});
 
 		// Calipers toggle button - directly enables/disables the caliper tool
-		final JToggleButton showCalipers = new JToggleButton(trans.get("RocketPanel.checkbox.Calipers"), Icons.RULER);
+		final ThemedToggleButton showCalipers = new ThemedToggleButton(trans.get("RocketPanel.checkbox.Calipers"), Icons.RULER);
 		showCalipers.setToolTipText(trans.get("RocketPanel.checkbox.Calipers.ttip"));
 		showCalipers.setSelected(false);
 		ribbon.add(showCalipers, "cell 4 1, gapleft para");
@@ -2186,7 +2186,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		panel.add(horizontalRadio, "cell 1 0");
 
 		// Snap toggle button
-		JToggleButton snapToggle = new JToggleButton(trans.get("RocketPanel.checkbox.CaliperSnap"), Icons.SNAP);
+		ThemedToggleButton snapToggle = new ThemedToggleButton(trans.get("RocketPanel.checkbox.CaliperSnap"), Icons.SNAP);
 		snapToggle.setToolTipText(trans.get("RocketPanel.checkbox.CaliperSnap.ttip"));
 		snapToggle.setSelected(caliperManager.isSnapEnabled());
 		snapToggle.addActionListener(e -> caliperManager.setSnapEnabled(snapToggle.isSelected()));
