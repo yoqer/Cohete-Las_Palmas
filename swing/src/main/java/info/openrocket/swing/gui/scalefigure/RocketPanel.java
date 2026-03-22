@@ -1617,7 +1617,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					for (CaliperSnapTarget target : caliperManager.getCurrentSnapTargets()) {
 						info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
 								new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(target, figure.getCurrentViewType());
-						figure.addRelativeExtra(highlight);
+						figure.addRelativeTopExtra(highlight);
 			}
 		} else {
 					// Normal mode: only show hovered target
@@ -1626,7 +1626,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					if (hoveredTarget != null) {
 						info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
 								new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(hoveredTarget, figure.getCurrentViewType());
-						figure.addRelativeExtra(highlight);
+						figure.addRelativeTopExtra(highlight);
 					}
 				}
 			}
@@ -1636,7 +1636,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			if (shiftDragTarget != null) {
 				info.openrocket.swing.gui.figureelements.SnapTargetHighlight highlight =
 						new info.openrocket.swing.gui.figureelements.SnapTargetHighlight(shiftDragTarget, figure.getCurrentViewType());
-				figure.addRelativeExtra(highlight);
+				figure.addRelativeTopExtra(highlight);
 			}
 		}
 
