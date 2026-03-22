@@ -51,7 +51,8 @@ public class CaliperLine implements FigureElement {
 	private static float LABEL_OFFSET;
 
 	private double x;  // X position in model coordinates
-	private boolean isHovered = false;  // Whether the mouse is hovering over this line
+	private boolean isHovered = false;          // Whether the mouse is hovering over this line
+	private boolean isIndicatorHovered = false; // Whether the mouse is hovering over the out-of-view indicator
 	private boolean isSnapMode = false;  // Whether we're in snap mode (affects transparency)
 	private String handleLabel = "";
 
@@ -171,6 +172,14 @@ public class CaliperLine implements FigureElement {
 	 */
 	public boolean isHovered() {
 		return isHovered;
+	}
+
+	public void setIndicatorHovered(boolean hovered) {
+		this.isIndicatorHovered = hovered;
+	}
+
+	public boolean isIndicatorHovered() {
+		return isIndicatorHovered;
 	}
 
 	/**
@@ -431,62 +440,69 @@ public class CaliperLine implements FigureElement {
 	 * @param visible the visible viewport rectangle
 	 */
 	private void drawOutOfViewIndicator(Graphics2D g2Screen, double caliperX, Rectangle visible) {
-		Color indicatorColor = lineColor;
-		if (isSnapMode) {
-			indicatorColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);
-		}
+		Color baseColor = isIndicatorHovered ? ColorConversion.brightenColor(lineColor, 60) : lineColor;
+		Color indicatorColor = isSnapMode
+				? new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), 128)
+				: baseColor;
 		g2Screen.setColor(indicatorColor);
 		g2Screen.setStroke(new BasicStroke(ARROW_STROKE_WIDTH, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		
+
 		// Determine which edge to draw the arrow on
 		boolean isLeft = caliperX < visible.x;
 		double arrowX = isLeft ? visible.x : visible.x + visible.width;
-		
+
 		// Position arrow vertically centered in the visible area
 		double arrowY = visible.y + visible.height / 2.0;
-		
+
 		// Draw arrow pointing toward the caliper line
 		Path2D.Double arrow = new Path2D.Double();
 		if (isLeft) {
-			// Arrow pointing left (caliper is to the left)
 			arrow.moveTo(arrowX, arrowY);
 			arrow.lineTo(arrowX + ARROW_SIZE, arrowY - ARROW_SIZE / 2);
 			arrow.lineTo(arrowX + ARROW_SIZE, arrowY + ARROW_SIZE / 2);
 			arrow.closePath();
 		} else {
-			// Arrow pointing right (caliper is to the right)
 			arrow.moveTo(arrowX, arrowY);
 			arrow.lineTo(arrowX - ARROW_SIZE, arrowY - ARROW_SIZE / 2);
 			arrow.lineTo(arrowX - ARROW_SIZE, arrowY + ARROW_SIZE / 2);
 			arrow.closePath();
 		}
-		
+
 		g2Screen.fill(arrow);
 		g2Screen.draw(arrow);
-		
-		// Draw label next to the arrow if available
+
+		// Draw caliper number label and "click" hint below the arrow
+		FontRenderContext frc = g2Screen.getFontRenderContext();
+		double labelX, labelY;
 		if (handleLabel != null && !handleLabel.isEmpty()) {
 			g2Screen.setFont(INDICATOR_LABEL_FONT);
-			FontRenderContext frc = g2Screen.getFontRenderContext();
 			Rectangle2D textBounds = INDICATOR_LABEL_FONT.getStringBounds(handleLabel, frc);
 			double textWidth = textBounds.getWidth();
 			double textHeight = textBounds.getHeight();
-			
-			// Position label next to the arrow
-			double labelX, labelY;
 			if (isLeft) {
-				// Label to the right of the arrow (arrow points left)
 				labelX = arrowX + ARROW_SIZE + LABEL_OFFSET;
-				labelY = arrowY + textHeight / 4.0;  // Vertically centered
 			} else {
-				// Label to the left of the arrow (arrow points right)
 				labelX = arrowX - ARROW_SIZE - LABEL_OFFSET - textWidth;
-				labelY = arrowY + textHeight / 4.0;  // Vertically centered
 			}
-			
-			g2Screen.setColor(textColor);
+			labelY = arrowY + textHeight / 4.0;
+			g2Screen.setColor(indicatorColor);
 			g2Screen.drawString(handleLabel, (float) labelX, (float) labelY);
 		}
+
+		// Always draw a small "click to return" hint below the arrow
+		Font hintFont = INDICATOR_LABEL_FONT.deriveFont(Font.PLAIN, INDICATOR_LABEL_FONT.getSize2D());
+		g2Screen.setFont(hintFont);
+		String hint = "click";
+		Rectangle2D hintBounds = hintFont.getStringBounds(hint, frc);
+		double hintWidth = hintBounds.getWidth();
+		double hintX = isLeft
+				? arrowX + (ARROW_SIZE - hintWidth) / 2.0
+				: arrowX - ARROW_SIZE + (ARROW_SIZE - hintWidth) / 2.0;
+		double hintY = arrowY + ARROW_SIZE / 2.0 + hintBounds.getHeight();
+		Color hintColor = new Color(indicatorColor.getRed(), indicatorColor.getGreen(),
+				indicatorColor.getBlue(), isSnapMode ? 100 : 180);
+		g2Screen.setColor(hintColor);
+		g2Screen.drawString(hint, (float) hintX, (float) hintY);
 	}
 }
 

@@ -649,31 +649,49 @@ public class CaliperManager {
 		boolean repaintNeeded = false;
 
 		if (mode == CaliperMode.VERTICAL && caliper1Line != null && caliper2Line != null) {
-			boolean nearCal1 = transform != null && (
-					isHandleOrLineHit(caliper1Line, screenPoint, transform, visibleRect));
-			boolean nearCal2 = transform != null && (
-					isHandleOrLineHit(caliper2Line, screenPoint, transform, visibleRect));
+			boolean nearCal1 = transform != null && isHandleOrLineHit(caliper1Line, screenPoint, transform, visibleRect);
+			boolean nearCal2 = transform != null && isHandleOrLineHit(caliper2Line, screenPoint, transform, visibleRect);
+
+			boolean ind1Hovered = transform != null && visibleRect != null
+					&& isIndicatorHit(caliper1Line.getIndicatorBounds(caliper1Line.getScreenX(transform), visibleRect), screenPoint);
+			boolean ind2Hovered = transform != null && visibleRect != null
+					&& isIndicatorHit(caliper2Line.getIndicatorBounds(caliper2Line.getScreenX(transform), visibleRect), screenPoint);
 
 			boolean cal1WasHovered = caliper1Line.isHovered();
 			boolean cal2WasHovered = caliper2Line.isHovered();
+			boolean ind1WasHovered = caliper1Line.isIndicatorHovered();
+			boolean ind2WasHovered = caliper2Line.isIndicatorHovered();
 
 			caliper1Line.setHovered(nearCal1);
 			caliper2Line.setHovered(nearCal2);
+			caliper1Line.setIndicatorHovered(ind1Hovered);
+			caliper2Line.setIndicatorHovered(ind2Hovered);
 
-			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2);
+			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2
+					|| ind1WasHovered != ind1Hovered || ind2WasHovered != ind2Hovered);
 		} else if (mode == CaliperMode.HORIZONTAL && caliper1HorizontalLine != null && caliper2HorizontalLine != null) {
-			boolean nearCal1 = transform != null && visibleRect != null && (
-					isHandleOrLineHit(caliper1HorizontalLine, screenPoint, transform, visibleRect));
-			boolean nearCal2 = transform != null && visibleRect != null && (
-					isHandleOrLineHit(caliper2HorizontalLine, screenPoint, transform, visibleRect));
+			boolean nearCal1 = transform != null && visibleRect != null
+					&& isHandleOrLineHit(caliper1HorizontalLine, screenPoint, transform, visibleRect);
+			boolean nearCal2 = transform != null && visibleRect != null
+					&& isHandleOrLineHit(caliper2HorizontalLine, screenPoint, transform, visibleRect);
+
+			boolean ind1Hovered = transform != null && visibleRect != null
+					&& isIndicatorHit(caliper1HorizontalLine.getIndicatorBounds(caliper1HorizontalLine.getScreenY(transform), visibleRect), screenPoint);
+			boolean ind2Hovered = transform != null && visibleRect != null
+					&& isIndicatorHit(caliper2HorizontalLine.getIndicatorBounds(caliper2HorizontalLine.getScreenY(transform), visibleRect), screenPoint);
 
 			boolean cal1WasHovered = caliper1HorizontalLine.isHovered();
 			boolean cal2WasHovered = caliper2HorizontalLine.isHovered();
+			boolean ind1WasHovered = caliper1HorizontalLine.isIndicatorHovered();
+			boolean ind2WasHovered = caliper2HorizontalLine.isIndicatorHovered();
 
 			caliper1HorizontalLine.setHovered(nearCal1);
 			caliper2HorizontalLine.setHovered(nearCal2);
+			caliper1HorizontalLine.setIndicatorHovered(ind1Hovered);
+			caliper2HorizontalLine.setIndicatorHovered(ind2Hovered);
 
-			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2);
+			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2
+					|| ind1WasHovered != ind1Hovered || ind2WasHovered != ind2Hovered);
 		}
 
 		// Repaint if hover state changed
@@ -698,16 +716,20 @@ public class CaliperManager {
 		return hitHandle || hitLine;
 	}
 
+	private boolean isIndicatorHit(java.awt.geom.Rectangle2D.Double bounds, Point screenPoint) {
+		return bounds != null && bounds.contains(screenPoint.x, screenPoint.y);
+	}
+
 	/**
-	 * Returns true if any caliper line or handle is currently hovered.
+	 * Returns true if any caliper line, handle, or out-of-view indicator is currently hovered.
 	 */
 	public boolean isAnyLineHovered() {
 		if (mode == CaliperMode.VERTICAL) {
-			return (caliper1Line != null && caliper1Line.isHovered())
-					|| (caliper2Line != null && caliper2Line.isHovered());
+			return (caliper1Line != null && (caliper1Line.isHovered() || caliper1Line.isIndicatorHovered()))
+					|| (caliper2Line != null && (caliper2Line.isHovered() || caliper2Line.isIndicatorHovered()));
 		} else {
-			return (caliper1HorizontalLine != null && caliper1HorizontalLine.isHovered())
-					|| (caliper2HorizontalLine != null && caliper2HorizontalLine.isHovered());
+			return (caliper1HorizontalLine != null && (caliper1HorizontalLine.isHovered() || caliper1HorizontalLine.isIndicatorHovered()))
+					|| (caliper2HorizontalLine != null && (caliper2HorizontalLine.isHovered() || caliper2HorizontalLine.isIndicatorHovered()));
 		}
 	}
 
@@ -721,13 +743,19 @@ public class CaliperManager {
 
 		boolean wasHovered = false;
 		if (mode == CaliperMode.VERTICAL && caliper1Line != null && caliper2Line != null) {
-			wasHovered = caliper1Line.isHovered() || caliper2Line.isHovered();
+			wasHovered = caliper1Line.isHovered() || caliper2Line.isHovered()
+					|| caliper1Line.isIndicatorHovered() || caliper2Line.isIndicatorHovered();
 			caliper1Line.setHovered(false);
 			caliper2Line.setHovered(false);
+			caliper1Line.setIndicatorHovered(false);
+			caliper2Line.setIndicatorHovered(false);
 		} else if (mode == CaliperMode.HORIZONTAL && caliper1HorizontalLine != null && caliper2HorizontalLine != null) {
-			wasHovered = caliper1HorizontalLine.isHovered() || caliper2HorizontalLine.isHovered();
+			wasHovered = caliper1HorizontalLine.isHovered() || caliper2HorizontalLine.isHovered()
+					|| caliper1HorizontalLine.isIndicatorHovered() || caliper2HorizontalLine.isIndicatorHovered();
 			caliper1HorizontalLine.setHovered(false);
 			caliper2HorizontalLine.setHovered(false);
+			caliper1HorizontalLine.setIndicatorHovered(false);
+			caliper2HorizontalLine.setIndicatorHovered(false);
 		}
 		if (wasHovered) {
 			figureUpdateCallback.run();
