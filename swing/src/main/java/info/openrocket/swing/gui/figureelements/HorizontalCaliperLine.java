@@ -56,6 +56,8 @@ public class HorizontalCaliperLine implements FigureElement {
 
 	private static Color lineColor;
 	private static Color handleColor;
+	private static Color handleTextColor;
+	private static Color handleBorderColor;
 	private static Color textColor;
 
 	static {
@@ -78,20 +80,23 @@ public class HorizontalCaliperLine implements FigureElement {
 	}
 
 	public static void updateColors() {
-		// Use theme-dependent caliper color
 		lineColor = GUIUtil.getUITheme().getCaliperColor();
-		
-		// Use theme-dependent text color for labels
 		textColor = GUIUtil.getUITheme().getTextColor();
 
-		// Use an even brighter color for the handle
-		Color baseColor = lineColor;
 		handleColor = new Color(
-				Math.min(255, baseColor.getRed() + 50),
-				Math.min(255, baseColor.getGreen() + 50),
-				Math.min(255, baseColor.getBlue() + 50),
-				baseColor.getAlpha()
+				Math.min(255, lineColor.getRed() + 50),
+				Math.min(255, lineColor.getGreen() + 50),
+				Math.min(255, lineColor.getBlue() + 50),
+				lineColor.getAlpha()
 		);
+
+		double lum = 0.2126 * handleColor.getRed() + 0.7152 * handleColor.getGreen()
+				+ 0.0722 * handleColor.getBlue();
+		handleTextColor = lum >= 128 ? Color.BLACK : Color.WHITE;
+
+		handleBorderColor = lum >= 128
+				? new Color(0, 0, 0, 180)
+				: new Color(255, 255, 255, 180);
 	}
 	
 	/**
@@ -211,14 +216,13 @@ public class HorizontalCaliperLine implements FigureElement {
 			double lineLeft = screenVisible != null ? screenVisible.x : 0.0;
 			double lineRight = screenVisible != null ? (screenVisible.x + screenVisible.width) : 20000;
 			Line2D.Double screenLine = new Line2D.Double(lineLeft, handleY_screen, lineRight, handleY_screen);
-			g2Screen.setStroke(new BasicStroke(isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			
-			// Apply 50% transparency in snap mode
-			Color drawColor = lineColor;
-			if (isSnapMode) {
-				drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);  // 50% alpha
-			}
+			float lineWidth = isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL;
+
+			int alpha = isSnapMode ? 128 : 255;
+			Color drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), alpha);
+
 			g2Screen.setColor(drawColor);
+			g2Screen.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g2Screen.draw(screenLine);
 
 			// Draw marker handle as one continuous path: elongated rectangle on left, triangle to the right
@@ -242,14 +246,10 @@ public class HorizontalCaliperLine implements FigureElement {
 			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 
-			// Draw darker border around the entire marker shape
-			Color borderColor = new Color(
-					Math.max(0, lineColor.getRed() - 100),
-					Math.max(0, lineColor.getGreen() - 100),
-					Math.max(0, lineColor.getBlue() - 100),
-					255
-			);
-			g2Screen.setColor(borderColor);
+			// Draw high-contrast border around the diamond
+			Color border = new Color(handleBorderColor.getRed(), handleBorderColor.getGreen(),
+					handleBorderColor.getBlue(), isSnapMode ? handleBorderColor.getAlpha() / 2 : handleBorderColor.getAlpha());
+			g2Screen.setColor(border);
 			g2Screen.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g2Screen.draw(marker);
 
@@ -263,7 +263,7 @@ public class HorizontalCaliperLine implements FigureElement {
 				// Position text horizontally centered within diamond
 				double textX = diamondCenterX - textWidth / 2.0;
 				double textY = handleY_screen + textHeight / 4.0;
-				g2Screen.setColor(Color.BLACK);
+				g2Screen.setColor(handleTextColor);
 				g2Screen.drawString(handleLabel, (float) textX, (float) textY);
 			}
 			

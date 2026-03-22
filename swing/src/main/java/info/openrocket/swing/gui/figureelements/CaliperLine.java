@@ -56,6 +56,8 @@ public class CaliperLine implements FigureElement {
 
 	private static Color lineColor;
 	private static Color handleColor;
+	private static Color handleTextColor;   // Contrast color for text inside the diamond
+	private static Color handleBorderColor; // High-contrast border around the diamond
 	private static Color textColor;
 
 	static {
@@ -81,14 +83,23 @@ public class CaliperLine implements FigureElement {
 		lineColor = GUIUtil.getUITheme().getCaliperColor();
 		textColor = GUIUtil.getUITheme().getTextColor();
 
-		// Use an even brighter color for the handle
-		Color baseColor = lineColor;
+		// Handle fill: slightly brighter than the line color
 		handleColor = new Color(
-				Math.min(255, baseColor.getRed() + 50),
-				Math.min(255, baseColor.getGreen() + 50),
-				Math.min(255, baseColor.getBlue() + 50),
-				baseColor.getAlpha()
+				Math.min(255, lineColor.getRed() + 50),
+				Math.min(255, lineColor.getGreen() + 50),
+				Math.min(255, lineColor.getBlue() + 50),
+				lineColor.getAlpha()
 		);
+
+		// Handle text: black or white chosen by relative luminance of the fill
+		double lum = 0.2126 * handleColor.getRed() + 0.7152 * handleColor.getGreen()
+				+ 0.0722 * handleColor.getBlue();
+		handleTextColor = lum >= 128 ? Color.BLACK : Color.WHITE;
+
+		// Diamond border: contrasting against the fill (dark on bright fill, light on dark fill)
+		handleBorderColor = lum >= 128
+				? new Color(0, 0, 0, 180)
+				: new Color(255, 255, 255, 180);
 	}
 	
 	/**
@@ -205,14 +216,14 @@ public class CaliperLine implements FigureElement {
 			// We draw in screen coordinates, from Y=0 to a very large number (e.g. 20000)
 			// The clip will ensure it doesn't draw outside the viewport
 			Line2D.Double screenLine = new Line2D.Double(handleX_screen, 0, handleX_screen, 20000);
-			g2Screen.setStroke(new BasicStroke(isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			
+			float lineWidth = isHovered ? LINE_WIDTH_HOVER : LINE_WIDTH_NORMAL;
+
 			// Apply 50% transparency in snap mode
-			Color drawColor = lineColor;
-			if (isSnapMode) {
-				drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), 128);  // 50% alpha
-			}
+			int alpha = isSnapMode ? 128 : 255;
+			Color drawColor = new Color(lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), alpha);
+
 			g2Screen.setColor(drawColor);
+			g2Screen.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g2Screen.draw(screenLine);
 
 			// Draw marker handle as one continuous path: elongated rectangle at top, inverted triangle below
@@ -236,14 +247,10 @@ public class CaliperLine implements FigureElement {
 			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 
-			// Draw darker border around the entire marker shape
-			Color borderColor = new Color(
-					Math.max(0, lineColor.getRed() - 100),
-					Math.max(0, lineColor.getGreen() - 100),
-					Math.max(0, lineColor.getBlue() - 100),
-					255
-			);
-			g2Screen.setColor(borderColor);
+			// Draw high-contrast border around the diamond
+			Color border = new Color(handleBorderColor.getRed(), handleBorderColor.getGreen(),
+					handleBorderColor.getBlue(), isSnapMode ? handleBorderColor.getAlpha() / 2 : handleBorderColor.getAlpha());
+			g2Screen.setColor(border);
 			g2Screen.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 			g2Screen.draw(marker);
 
@@ -257,7 +264,7 @@ public class CaliperLine implements FigureElement {
 				double textX = handleX_screen - textWidth / 2.0;
 				// Position text vertically centered within diamond
 				double textY = diamondCenterY + textHeight / 4.0;
-				g2Screen.setColor(Color.BLACK);
+				g2Screen.setColor(handleTextColor);
 				g2Screen.drawString(handleLabel, (float) textX, (float) textY);
 			}
 			

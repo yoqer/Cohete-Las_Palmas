@@ -466,12 +466,12 @@ public class UITheme {
 
             @Override
             public Color getCaliperColor() {
-                return new Color(255, 100, 255);
+                return new Color(210, 90, 0);
             }
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 140, 0, 220);
+                return new Color(255, 210, 0, 220);
             }
 
             @Override
@@ -852,12 +852,12 @@ public class UITheme {
 
             @Override
             public Color getCaliperColor() {
-                return new Color(255, 120, 255);
+                return new Color(255, 150, 30);
             }
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 255, 0, 200);
+                return new Color(255, 225, 0, 210);
             }
 
             @Override
@@ -1238,12 +1238,12 @@ public class UITheme {
 
             @Override
             public Color getCaliperColor() {
-                return new Color(255, 120, 255);
+                return new Color(255, 175, 50);
             }
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 255, 0, 200);
+                return new Color(255, 235, 0, 225);
             }
 
             @Override
