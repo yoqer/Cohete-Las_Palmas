@@ -35,6 +35,7 @@ import info.openrocket.core.util.ModID;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.core.preferences.DocumentPreferences;
 import info.openrocket.swing.gui.components.ConfigurationComboBox;
+import info.openrocket.swing.gui.components.EditableSpinner;
 import info.openrocket.swing.gui.components.StageSelector;
 import info.openrocket.swing.gui.components.StyledLabel;
 import info.openrocket.swing.gui.configdialog.ComponentConfigDialog;
@@ -2352,7 +2353,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		JPanel content = new JPanel(new MigLayout("ins 6, fill", "[]4[grow]4[]4[]", "[]"));
 		content.add(new JLabel(trans.get("RocketPanel.popup.CaliperPosition")));
 
-		JSpinner spinner = new JSpinner(positionModel.getSpinnerModel());
+		JSpinner spinner = new EditableSpinner(positionModel.getSpinnerModel());
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(6);
 		content.add(spinner, "growx");
 
