@@ -52,6 +52,7 @@ import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
 import info.openrocket.swing.gui.widgets.ThemedToggleButton;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
+import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
 import info.openrocket.core.startup.Application;
@@ -96,6 +97,7 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -2177,6 +2179,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		final Color valueBg = GUIUtil.getUITheme().getCaliperValueBackgroundColor();
 		final Color valueFg = GUIUtil.getUITheme().getCaliperValueForegroundColor();
 		final Color diamondLabelColor = GUIUtil.getUITheme().getCaliperDiamondLabelColor();
+		final Color caliperHoverColor = ColorConversion.brightenColor(caliperColor, 50);
 
 		// Mode radio buttons (vertical / horizontal)
 		ButtonGroup modeGroup = new ButtonGroup();
@@ -2220,18 +2223,24 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		distancePanel.setOpaque(false);
 
 		JButton diamond1Btn = new JButton(createCaliperDiamondIcon("1", caliperColor, diamondLabelColor));
+		diamond1Btn.setRolloverIcon(createCaliperDiamondIcon("1", caliperHoverColor, diamondLabelColor));
+		diamond1Btn.setRolloverEnabled(true);
 		diamond1Btn.setBorderPainted(false);
 		diamond1Btn.setContentAreaFilled(false);
 		diamond1Btn.setFocusPainted(false);
 		diamond1Btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		diamond1Btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		diamond1Btn.setToolTipText(trans.get("RocketPanel.popup.CaliperDiamond1.ttip"));
 		diamond1Btn.addActionListener(e -> showCaliperPositionPopup(1, diamond1Btn));
 
 		JButton diamond2Btn = new JButton(createCaliperDiamondIcon("2", caliperColor, diamondLabelColor));
+		diamond2Btn.setRolloverIcon(createCaliperDiamondIcon("2", caliperHoverColor, diamondLabelColor));
+		diamond2Btn.setRolloverEnabled(true);
 		diamond2Btn.setBorderPainted(false);
 		diamond2Btn.setContentAreaFilled(false);
 		diamond2Btn.setFocusPainted(false);
 		diamond2Btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		diamond2Btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		diamond2Btn.setToolTipText(trans.get("RocketPanel.popup.CaliperDiamond2.ttip"));
 		diamond2Btn.addActionListener(e -> showCaliperPositionPopup(2, diamond2Btn));
 
@@ -2298,8 +2307,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					new javax.swing.border.LineBorder(newCaliperColor, 1, true),
 					new javax.swing.border.EmptyBorder(1, 4, 1, 4)));
 
+			Color newHoverColor = ColorConversion.brightenColor(newCaliperColor, 50);
 			diamond1Btn.setIcon(createCaliperDiamondIcon("1", newCaliperColor, newDiamondLabelColor));
+			diamond1Btn.setRolloverIcon(createCaliperDiamondIcon("1", newHoverColor, newDiamondLabelColor));
 			diamond2Btn.setIcon(createCaliperDiamondIcon("2", newCaliperColor, newDiamondLabelColor));
+			diamond2Btn.setRolloverIcon(createCaliperDiamondIcon("2", newHoverColor, newDiamondLabelColor));
 
 			panel.repaint();
 		});
