@@ -643,47 +643,71 @@ public class CaliperManager {
 		}
 
 		Point screenPoint = new Point(screenX, screenY);
-		Point2D.Double modelPoint = screenToModel.apply(screenPoint);
-		if (modelPoint == null) {
-			return;
-		}
-
-		// Check if mouse is near a caliper line
-		double hoverTolerance = 0.01; // 1 cm tolerance - same as click detection
+		java.awt.geom.AffineTransform transform = getModelToScreenTransform();
+		Rectangle visibleRect = figure.getVisibleRect();
 
 		boolean repaintNeeded = false;
 
 		if (mode == CaliperMode.VERTICAL && caliper1Line != null && caliper2Line != null) {
-			// Check vertical caliper lines (X proximity)
-			boolean nearCal1X = Math.abs(modelPoint.x - caliper1X) < hoverTolerance;
-			boolean nearCal2X = Math.abs(modelPoint.x - caliper2X) < hoverTolerance;
+			boolean nearCal1 = transform != null && (
+					isHandleOrLineHit(caliper1Line, screenPoint, transform, visibleRect));
+			boolean nearCal2 = transform != null && (
+					isHandleOrLineHit(caliper2Line, screenPoint, transform, visibleRect));
 
-			// Update hover state for vertical calipers
-			boolean cal1XWasHovered = caliper1Line.isHovered();
-			boolean cal2XWasHovered = caliper2Line.isHovered();
+			boolean cal1WasHovered = caliper1Line.isHovered();
+			boolean cal2WasHovered = caliper2Line.isHovered();
 
-			caliper1Line.setHovered(nearCal1X);
-			caliper2Line.setHovered(nearCal2X);
+			caliper1Line.setHovered(nearCal1);
+			caliper2Line.setHovered(nearCal2);
 
-			repaintNeeded = (cal1XWasHovered != nearCal1X || cal2XWasHovered != nearCal2X);
+			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2);
 		} else if (mode == CaliperMode.HORIZONTAL && caliper1HorizontalLine != null && caliper2HorizontalLine != null) {
-			// Check horizontal caliper lines (Y proximity)
-			boolean nearCal1Y = Math.abs(modelPoint.y - caliper1Y) < hoverTolerance;
-			boolean nearCal2Y = Math.abs(modelPoint.y - caliper2Y) < hoverTolerance;
+			boolean nearCal1 = transform != null && visibleRect != null && (
+					isHandleOrLineHit(caliper1HorizontalLine, screenPoint, transform, visibleRect));
+			boolean nearCal2 = transform != null && visibleRect != null && (
+					isHandleOrLineHit(caliper2HorizontalLine, screenPoint, transform, visibleRect));
 
-			// Update hover state for horizontal calipers
-			boolean cal1YWasHovered = caliper1HorizontalLine.isHovered();
-			boolean cal2YWasHovered = caliper2HorizontalLine.isHovered();
+			boolean cal1WasHovered = caliper1HorizontalLine.isHovered();
+			boolean cal2WasHovered = caliper2HorizontalLine.isHovered();
 
-			caliper1HorizontalLine.setHovered(nearCal1Y);
-			caliper2HorizontalLine.setHovered(nearCal2Y);
+			caliper1HorizontalLine.setHovered(nearCal1);
+			caliper2HorizontalLine.setHovered(nearCal2);
 
-			repaintNeeded = (cal1YWasHovered != nearCal1Y || cal2YWasHovered != nearCal2Y);
+			repaintNeeded = (cal1WasHovered != nearCal1 || cal2WasHovered != nearCal2);
 		}
 
 		// Repaint if hover state changed
 		if (repaintNeeded) {
 			figureUpdateCallback.run();
+		}
+	}
+
+	private boolean isHandleOrLineHit(CaliperLine line, Point screenPoint,
+									  java.awt.geom.AffineTransform transform, Rectangle visibleRect) {
+		java.awt.geom.Rectangle2D.Double handleBounds = line.getHandleBounds(transform);
+		boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+		boolean hitLine = line.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+		return hitHandle || hitLine;
+	}
+
+	private boolean isHandleOrLineHit(HorizontalCaliperLine line, Point screenPoint,
+									  java.awt.geom.AffineTransform transform, Rectangle visibleRect) {
+		java.awt.geom.Rectangle2D.Double handleBounds = line.getHandleBounds(transform, visibleRect);
+		boolean hitHandle = handleBounds != null && handleBounds.contains(screenPoint.x, screenPoint.y);
+		boolean hitLine = line.isPointNearLine(screenPoint.x, screenPoint.y, transform, visibleRect);
+		return hitHandle || hitLine;
+	}
+
+	/**
+	 * Returns true if any caliper line or handle is currently hovered.
+	 */
+	public boolean isAnyLineHovered() {
+		if (mode == CaliperMode.VERTICAL) {
+			return (caliper1Line != null && caliper1Line.isHovered())
+					|| (caliper2Line != null && caliper2Line.isHovered());
+		} else {
+			return (caliper1HorizontalLine != null && caliper1HorizontalLine.isHovered())
+					|| (caliper2HorizontalLine != null && caliper2HorizontalLine.isHovered());
 		}
 	}
 

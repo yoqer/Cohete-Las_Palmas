@@ -1,5 +1,6 @@
 package info.openrocket.swing.gui.figureelements;
 
+import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
 
@@ -56,6 +57,7 @@ public class HorizontalCaliperLine implements FigureElement {
 
 	private static Color lineColor;
 	private static Color handleColor;
+	private static Color handleHoverColor;
 	private static Color handleTextColor;
 	private static Color handleBorderColor;
 	private static Color textColor;
@@ -89,6 +91,7 @@ public class HorizontalCaliperLine implements FigureElement {
 				Math.min(255, lineColor.getBlue() + 50),
 				lineColor.getAlpha()
 		);
+		handleHoverColor = ColorConversion.brightenColor(handleColor, 50);
 
 		double lum = 0.2126 * handleColor.getRed() + 0.7152 * handleColor.getGreen()
 				+ 0.0722 * handleColor.getBlue();
@@ -239,10 +242,10 @@ public class HorizontalCaliperLine implements FigureElement {
 			marker.closePath();
 
 			// Fill the entire marker shape
-			Color drawHandleColor = handleColor;
-			if (isSnapMode) {
-				drawHandleColor = new Color(handleColor.getRed(), handleColor.getGreen(), handleColor.getBlue(), 128);  // 50% alpha
-			}
+			Color baseHandleColor = isHovered ? handleHoverColor : handleColor;
+			Color drawHandleColor = isSnapMode
+					? new Color(baseHandleColor.getRed(), baseHandleColor.getGreen(), baseHandleColor.getBlue(), 128)
+					: baseHandleColor;
 			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 

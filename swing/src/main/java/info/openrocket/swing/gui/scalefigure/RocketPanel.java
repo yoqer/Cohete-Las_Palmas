@@ -426,6 +426,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					} else {
 						caliperManager.handleMouseMoved(x, y, (p) -> screenToModel(p.x, p.y));
 					}
+
+					Cursor cursor = caliperManager.isAnyLineHovered()
+							? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+							: Cursor.getDefaultCursor();
+					getViewport().setCursor(cursor);
 				}
 			}
 
@@ -434,6 +439,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				// Clear hover state when mouse leaves
 				if (caliperManager != null) {
 					caliperManager.handleMouseExited();
+					getViewport().setCursor(Cursor.getDefaultCursor());
 				}
 			}
 

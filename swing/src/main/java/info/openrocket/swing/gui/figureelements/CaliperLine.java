@@ -1,5 +1,6 @@
 package info.openrocket.swing.gui.figureelements;
 
+import info.openrocket.swing.gui.util.ColorConversion;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.theme.UITheme;
 
@@ -56,6 +57,7 @@ public class CaliperLine implements FigureElement {
 
 	private static Color lineColor;
 	private static Color handleColor;
+	private static Color handleHoverColor;  // Brighter handle color when hovered
 	private static Color handleTextColor;   // Contrast color for text inside the diamond
 	private static Color handleBorderColor; // High-contrast border around the diamond
 	private static Color textColor;
@@ -90,6 +92,7 @@ public class CaliperLine implements FigureElement {
 				Math.min(255, lineColor.getBlue() + 50),
 				lineColor.getAlpha()
 		);
+		handleHoverColor = ColorConversion.brightenColor(handleColor, 50);
 
 		// Handle text: black or white chosen by relative luminance of the fill
 		double lum = 0.2126 * handleColor.getRed() + 0.7152 * handleColor.getGreen()
@@ -240,10 +243,10 @@ public class CaliperLine implements FigureElement {
 			marker.closePath();
 
 			// Fill the entire marker shape
-			Color drawHandleColor = handleColor;
-			if (isSnapMode) {
-				drawHandleColor = new Color(handleColor.getRed(), handleColor.getGreen(), handleColor.getBlue(), 128);  // 50% alpha
-			}
+			Color baseHandleColor = isHovered ? handleHoverColor : handleColor;
+			Color drawHandleColor = isSnapMode
+					? new Color(baseHandleColor.getRed(), baseHandleColor.getGreen(), baseHandleColor.getBlue(), 128)
+					: baseHandleColor;
 			g2Screen.setColor(drawHandleColor);
 			g2Screen.fill(marker);
 
