@@ -810,11 +810,11 @@ public class CaliperManager {
 			caliper2HorizontalLine.setSnapMode(caliper2IsActive);
 			
 			if (mode == CaliperMode.VERTICAL) {
-				figure.addRelativeExtra(caliper1Line);
-				figure.addRelativeExtra(caliper2Line);
+				figure.addRelativeTopExtra(caliper1Line);
+				figure.addRelativeTopExtra(caliper2Line);
 			} else {
-				figure.addRelativeExtra(caliper1HorizontalLine);
-				figure.addRelativeExtra(caliper2HorizontalLine);
+				figure.addRelativeTopExtra(caliper1HorizontalLine);
+				figure.addRelativeTopExtra(caliper2HorizontalLine);
 			}
 		}
 		// Note: We don't clear the extras here - that's handled by the caller

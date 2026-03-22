@@ -106,6 +106,8 @@ public class RocketFigure extends AbstractScaleFigure {
 	
 	private final ArrayList<FigureElement> relativeExtra = new ArrayList<>();
 	private final ArrayList<FigureElement> absoluteExtra = new ArrayList<>();
+	/** Elements painted last, on top of everything (including absoluteExtra), using the rocket transform. */
+	private final ArrayList<FigureElement> relativeTopExtra = new ArrayList<>();
 
 	private static Color motorFillColor;
 	private static Color motorBorderColor;
@@ -231,6 +233,19 @@ public class RocketFigure extends AbstractScaleFigure {
 	public void clearAbsoluteExtra() {
 		absoluteExtra.clear();
 	}
+
+
+	public void addRelativeTopExtra(FigureElement p) {
+		relativeTopExtra.add(p);
+	}
+
+	public void removeRelativeTopExtra(FigureElement p) {
+		relativeTopExtra.remove(p);
+	}
+
+	public void clearRelativeTopExtra() {
+		relativeTopExtra.clear();
+	}
 	
 	
 	/**
@@ -265,7 +280,8 @@ public class RocketFigure extends AbstractScaleFigure {
         updateShapes(figureShapes);
 
 		g2.transform(projection);
-		
+		AffineTransform rocketTransform = g2.getTransform();
+
 		// Set rendering hints appropriately
 		g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
 				RenderingHints.VALUE_STROKE_NORMALIZE);
@@ -345,11 +361,19 @@ public class RocketFigure extends AbstractScaleFigure {
 		// Draw absolute extras
 		g2.setTransform(baseTransform);
 		Rectangle rect = this.getVisibleRect();
-		
+
 		for (FigureElement e : absoluteExtra) {
 			e.paint(g2, 1.0, rect);
 		}
-		
+
+		// Draw relative top extras (on top of everything, using the rocket transform)
+		if (drawCarets && !relativeTopExtra.isEmpty()) {
+			g2.setTransform(rocketTransform);
+			for (FigureElement e : relativeTopExtra) {
+				e.paint(g2, scale, visibleRect);
+			}
+		}
+
 	}
 
 	private void drawMotors(Graphics2D g2) {

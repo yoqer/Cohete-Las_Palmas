@@ -1583,6 +1583,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	void updateCaliperElements() {
 		figure.clearRelativeExtra();
 		figure.clearAbsoluteExtra();
+		figure.clearRelativeTopExtra();
 
 		// Check if we're in snap mode or dragging
 		boolean inSnapMode = caliperManager != null && caliperManager.isSnapModeActive() && !is3d;
