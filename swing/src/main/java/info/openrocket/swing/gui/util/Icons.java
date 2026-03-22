@@ -362,6 +362,13 @@ public class Icons {
 					0xFAC132, "OR.colors.yellow"
 			));
 	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
+	public static final Icon SNAP = loadSvgIcon(
+			"pix/icons/lucide/magnet.svg",
+			"Snap",
+			Map.of(
+					0xE86B55, "OR.icons.magnet.red",
+					0xE1E3E2, "OR.icons.magnet.white"
+			));
 
 	public static final Icon PREFERENCES = loadIcon(
 			"pix/icons/lucide/cog.svg",
