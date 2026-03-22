@@ -589,7 +589,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 * @return the current VIEW_TYPE
 	 */
 	public VIEW_TYPE getCurrentViewType() {
-		return currentView;
+		return currentViewType;
 	}
 
 	/**
