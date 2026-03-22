@@ -2185,12 +2185,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		panel.add(verticalRadio, "cell 0 0");
 		panel.add(horizontalRadio, "cell 1 0");
 
-		// Snap checkbox
-		JCheckBox snapCheckBox = new JCheckBox(trans.get("RocketPanel.checkbox.CaliperSnap"));
-		snapCheckBox.setToolTipText(trans.get("RocketPanel.checkbox.CaliperSnap.ttip"));
-		snapCheckBox.setSelected(caliperManager.isSnapEnabled());
-		snapCheckBox.addActionListener(e -> caliperManager.setSnapEnabled(snapCheckBox.isSelected()));
-		panel.add(snapCheckBox, "cell 2 0");
+		// Snap toggle button
+		JToggleButton snapToggle = new JToggleButton(trans.get("RocketPanel.checkbox.CaliperSnap"), Icons.SNAP);
+		snapToggle.setToolTipText(trans.get("RocketPanel.checkbox.CaliperSnap.ttip"));
+		snapToggle.setSelected(caliperManager.isSnapEnabled());
+		snapToggle.addActionListener(e -> caliperManager.setSnapEnabled(snapToggle.isSelected()));
+		panel.add(snapToggle, "cell 2 0");
 
 		// Units label + selector (label in row 0, selector in row 1)
 		panel.add(new JLabel(trans.get("RocketPanel.lbl.CaliperUnits")), "cell 0 1, split 2, spanx 2");
