@@ -505,6 +505,7 @@ public class CaliperManager {
 			}
 		}
 		updateCaliperElements();
+		refreshInfoMessage();
 		figureUpdateCallback.run();
 	}
 
@@ -533,6 +534,33 @@ public class CaliperManager {
 	 */
 	public void setSnapEnabled(boolean snapEnabled) {
 		this.snapEnabled = snapEnabled;
+		refreshInfoMessage();
+	}
+
+	/**
+	 * Update the footprint info message to reflect the current caliper state.
+	 * Called when caliper is enabled/disabled, snap is toggled, or dragging ends.
+	 */
+	public void refreshInfoMessage() {
+		if (infoMessageUpdater == null) {
+			return;
+		}
+		if (!enabled) {
+			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage");
+		} else if (snapEnabled) {
+			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperSnap");
+		} else {
+			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+		}
+	}
+
+	/**
+	 * Returns the info message key to show while a caliper is being dragged.
+	 */
+	private String getDraggingInfoMessageKey() {
+		return snapEnabled
+				? "RocketPanel.lbl.infoMessage.caliperDraggingSnap"
+				: "RocketPanel.lbl.infoMessage.caliperDragging";
 	}
 
 	/**
@@ -577,7 +605,7 @@ public class CaliperManager {
 					draggingCaliperLine = caliper1Line;
 					// Update info message when dragging starts
 					if (infoMessageUpdater != null) {
-						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+						infoMessageUpdater.updateInfoMessage(getDraggingInfoMessageKey());
 					}
 					return true;
 				}
@@ -594,7 +622,7 @@ public class CaliperManager {
 					draggingCaliperLine = caliper2Line;
 					// Update info message when dragging starts
 					if (infoMessageUpdater != null) {
-						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+						infoMessageUpdater.updateInfoMessage(getDraggingInfoMessageKey());
 					}
 					return true;
 				}
@@ -613,7 +641,7 @@ public class CaliperManager {
 					draggingHorizontalCaliperLine = caliper1HorizontalLine;
 					// Update info message when dragging starts
 					if (infoMessageUpdater != null) {
-						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+						infoMessageUpdater.updateInfoMessage(getDraggingInfoMessageKey());
 					}
 					return true;
 				}
@@ -630,7 +658,7 @@ public class CaliperManager {
 					draggingHorizontalCaliperLine = caliper2HorizontalLine;
 					// Update info message when dragging starts
 					if (infoMessageUpdater != null) {
-						infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.caliperDragging");
+						infoMessageUpdater.updateInfoMessage(getDraggingInfoMessageKey());
 					}
 					return true;
 				}
@@ -686,8 +714,8 @@ public class CaliperManager {
 		if (draggingCaliperLine != null) {
 			double newX = modelPoint.x;
 
-			// If Shift is held and snapping is enabled, try to snap to nearby targets
-			if (shiftDown && snapEnabled) {
+			// Snap when Shift is held OR snap is globally enabled
+			if (shiftDown || snapEnabled) {
 				// Ensure snap targets are up to date (they may not be if not in snap mode)
 				// Temporarily calculate snap targets if needed
 				boolean wasInSnapMode = snapModeActive;
@@ -741,8 +769,8 @@ public class CaliperManager {
 		if (draggingHorizontalCaliperLine != null) {
 			double newY = modelPoint.y;
 
-			// If Shift is held and snapping is enabled, try to snap to nearby targets
-			if (shiftDown && snapEnabled) {
+			// Snap when Shift is held OR snap is globally enabled
+			if (shiftDown || snapEnabled) {
 				// Ensure snap targets are up to date (they may not be if not in snap mode)
 				// Temporarily calculate snap targets if needed
 				boolean wasInSnapMode = snapModeActive;
@@ -813,9 +841,7 @@ public class CaliperManager {
 		}
 		// Update UI if we were dragging
 		if (wasDragging) {
-			if (infoMessageUpdater != null) {
-				infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage");
-			}
+			refreshInfoMessage();
 			figureUpdateCallback.run();
 		}
 	}
@@ -1345,10 +1371,7 @@ public class CaliperManager {
 		}
 		currentSnapTargets.clear();
 		updateSnapButtonStates();
-		// Update info message when exiting snap mode
-		if (infoMessageUpdater != null) {
-			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage");
-		}
+		refreshInfoMessage();
 		figureUpdateCallback.run();
 	}
 
