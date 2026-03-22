@@ -363,7 +363,7 @@ public class Icons {
 			));
 	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
 	public static final Icon SNAP = loadSvgIcon(
-			"pix/icons/lucide/magnet.svg",
+			"pix/icons/lucide/magnet-filled.svg",
 			"Snap",
 			Map.of(
 					0xE86B55, "OR.icons.magnet.red",

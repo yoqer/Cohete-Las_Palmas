@@ -471,7 +471,7 @@ public class UITheme {
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 210, 0, 220);
+                return new Color(255, 41, 98);
             }
 
             @Override
@@ -857,7 +857,7 @@ public class UITheme {
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 225, 0, 210);
+                return new Color(255, 85, 232);
             }
 
             @Override
@@ -1243,7 +1243,7 @@ public class UITheme {
 
             @Override
             public Color getCaliperSnapHighlightColor() {
-                return new Color(255, 235, 0, 225);
+                return new Color(255, 115, 237);
             }
 
             @Override
