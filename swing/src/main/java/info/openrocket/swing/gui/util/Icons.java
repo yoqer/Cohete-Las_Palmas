@@ -359,7 +359,7 @@ public class Icons {
 			"Ruler",
 			Map.of(
 					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
-					0xFAC132, "OR.colors.yellow"
+					0xFAC132, "OR.colors.ruler"
 			));
 	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
 	public static final Icon SNAP = loadSvgIcon(

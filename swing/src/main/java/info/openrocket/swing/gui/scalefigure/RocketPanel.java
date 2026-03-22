@@ -2174,6 +2174,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		panel.setOpaque(false);
 
 		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
+		final Color valueBg = GUIUtil.getUITheme().getCaliperValueBackgroundColor();
+		final Color valueFg = GUIUtil.getUITheme().getCaliperValueForegroundColor();
+		final Color diamondLabelColor = GUIUtil.getUITheme().getCaliperDiamondLabelColor();
 
 		// Mode radio buttons (vertical / horizontal)
 		ButtonGroup modeGroup = new ButtonGroup();
@@ -2204,18 +2207,19 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Distance display
 		JTextField distanceField = new JTextField("–", 6);
 		distanceField.setEditable(false);
-		distanceField.setOpaque(false);
+		distanceField.setOpaque(true);
+		distanceField.setBackground(valueBg);
+		distanceField.setForeground(valueFg);
 		distanceField.setBorder(new javax.swing.border.CompoundBorder(
 				new javax.swing.border.LineBorder(caliperColor, 1, true),
 				new javax.swing.border.EmptyBorder(1, 4, 1, 4)));
-		distanceField.setForeground(caliperColor);
 		distanceField.setFont(distanceField.getFont().deriveFont(Font.BOLD));
 		distanceField.setHorizontalAlignment(JTextField.CENTER);
 
 		JPanel distancePanel = new JPanel(new MigLayout("ins 0", "[]2[]2[]2[]2[]", ""));
 		distancePanel.setOpaque(false);
 
-		JButton diamond1Btn = new JButton(createCaliperDiamondIcon("1", caliperColor));
+		JButton diamond1Btn = new JButton(createCaliperDiamondIcon("1", caliperColor, diamondLabelColor));
 		diamond1Btn.setBorderPainted(false);
 		diamond1Btn.setContentAreaFilled(false);
 		diamond1Btn.setFocusPainted(false);
@@ -2223,7 +2227,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		diamond1Btn.setToolTipText(trans.get("RocketPanel.popup.CaliperDiamond1.ttip"));
 		diamond1Btn.addActionListener(e -> showCaliperPositionPopup(1, diamond1Btn));
 
-		JButton diamond2Btn = new JButton(createCaliperDiamondIcon("2", caliperColor));
+		JButton diamond2Btn = new JButton(createCaliperDiamondIcon("2", caliperColor, diamondLabelColor));
 		diamond2Btn.setBorderPainted(false);
 		diamond2Btn.setContentAreaFilled(false);
 		diamond2Btn.setFocusPainted(false);
@@ -2276,6 +2280,28 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				caliperManager.setMode(CaliperManager.CaliperMode.HORIZONTAL);
 				setupDistanceListener.run();
 			}
+		});
+
+		// Update colors when the UI theme changes
+		UITheme.Theme.addUIThemeChangeListener(() -> {
+			Color newCaliperColor = GUIUtil.getUITheme().getCaliperColor();
+			Color newValueBg = GUIUtil.getUITheme().getCaliperValueBackgroundColor();
+			Color newValueFg = GUIUtil.getUITheme().getCaliperValueForegroundColor();
+			Color newDiamondLabelColor = GUIUtil.getUITheme().getCaliperDiamondLabelColor();
+
+			verticalRadio.setForeground(newCaliperColor);
+			horizontalRadio.setForeground(newCaliperColor);
+
+			distanceField.setBackground(newValueBg);
+			distanceField.setForeground(newValueFg);
+			distanceField.setBorder(new javax.swing.border.CompoundBorder(
+					new javax.swing.border.LineBorder(newCaliperColor, 1, true),
+					new javax.swing.border.EmptyBorder(1, 4, 1, 4)));
+
+			diamond1Btn.setIcon(createCaliperDiamondIcon("1", newCaliperColor, newDiamondLabelColor));
+			diamond2Btn.setIcon(createCaliperDiamondIcon("2", newCaliperColor, newDiamondLabelColor));
+
+			panel.repaint();
 		});
 
 		return panel;
@@ -2333,7 +2359,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 * @param color  the fill color of the diamond
 	 * @return an ImageIcon of the diamond
 	 */
-	private ImageIcon createCaliperDiamondIcon(String number, Color color) {
+	private ImageIcon createCaliperDiamondIcon(String number, Color color, Color labelColor) {
 		int size = 18;
 		BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = image.createGraphics();
@@ -2353,7 +2379,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		FontMetrics fm = g2.getFontMetrics();
 		int tx = (size - fm.stringWidth(number)) / 2;
 		int ty = half + fm.getAscent() / 2 - 1;
-		g2.setColor(Color.BLACK);
+		g2.setColor(labelColor);
 		g2.drawString(number, tx, ty);
 		g2.dispose();
 		return new ImageIcon(image);

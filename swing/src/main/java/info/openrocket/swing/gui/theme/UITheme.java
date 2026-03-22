@@ -167,6 +167,22 @@ public class UITheme {
         Color getCPColor();
         Color getCaliperColor();
         Color getCaliperSnapHighlightColor();
+        Color getCaliperValueBackgroundColor();
+        Color getCaliperValueForegroundColor();
+
+        /**
+         * Label color for the small diamond icons in the ribbon (the "1" / "2" numerals).
+         * Defaults to black or white chosen by the fill's relative luminance, matching the
+         * logic used for the actual caliper handle labels in the figure.
+         */
+        default Color getCaliperDiamondLabelColor() {
+            Color c = getCaliperColor();
+            Color fill = new Color(Math.min(255, c.getRed() + 50),
+                    Math.min(255, c.getGreen() + 50),
+                    Math.min(255, c.getBlue() + 50));
+            double lum = 0.2126 * fill.getRed() + 0.7152 * fill.getGreen() + 0.0722 * fill.getBlue();
+            return lum >= 128 ? Color.BLACK : Color.WHITE;
+        }
 
         Color getURLColor();
 
@@ -466,12 +482,22 @@ public class UITheme {
 
             @Override
             public Color getCaliperColor() {
-                return new Color(210, 90, 0);
+                return new Color(210, 31, 0);
             }
 
             @Override
             public Color getCaliperSnapHighlightColor() {
                 return new Color(255, 41, 98);
+            }
+
+            @Override
+            public Color getCaliperValueBackgroundColor() {
+                return new Color(255, 243, 225);
+            }
+
+            @Override
+            public Color getCaliperValueForegroundColor() {
+                return new Color(160, 20, 0);
             }
 
             @Override
@@ -861,6 +887,16 @@ public class UITheme {
             }
 
             @Override
+            public Color getCaliperValueBackgroundColor() {
+                return new Color(80, 45, 10, 60);
+            }
+
+            @Override
+            public Color getCaliperValueForegroundColor() {
+                return new Color(255, 175, 80);
+            }
+
+            @Override
             public Color getURLColor() {
                 return themedColor("OR.colors.url", new Color(150, 167, 255));
             }
@@ -1244,6 +1280,16 @@ public class UITheme {
             @Override
             public Color getCaliperSnapHighlightColor() {
                 return new Color(255, 115, 237);
+            }
+
+            @Override
+            public Color getCaliperValueBackgroundColor() {
+                return new Color(90, 50, 5, 60);
+            }
+
+            @Override
+            public Color getCaliperValueForegroundColor() {
+                return new Color(255, 195, 100);
             }
 
             @Override
@@ -1649,6 +1695,16 @@ public class UITheme {
             @Override
             public Color getCaliperSnapHighlightColor() {
                 return getCurrentTheme().getCaliperSnapHighlightColor();
+            }
+
+            @Override
+            public Color getCaliperValueBackgroundColor() {
+                return getCurrentTheme().getCaliperValueBackgroundColor();
+            }
+
+            @Override
+            public Color getCaliperValueForegroundColor() {
+                return getCurrentTheme().getCaliperValueForegroundColor();
             }
 
             @Override
