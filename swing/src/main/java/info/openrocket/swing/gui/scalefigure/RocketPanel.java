@@ -46,8 +46,8 @@ import info.openrocket.swing.gui.figureelements.Caret;
 import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
+import info.openrocket.swing.gui.adaptors.DoubleModel;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
-import info.openrocket.swing.gui.scalefigure.caliper.CaliperDialog;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
 import info.openrocket.swing.gui.util.GUIUtil;
 import info.openrocket.swing.gui.util.SwingPreferences;
@@ -61,8 +61,10 @@ import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.ButtonGroup;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -72,7 +74,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
@@ -88,12 +92,15 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.util.EventObject;
 import java.awt.geom.Point2D;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -220,8 +227,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 	/* Caliper tool */
 	private CaliperManager caliperManager = null;
-	private CaliperDialog caliperDialog = null;
-	private JPanel ribbon = null;  // Reference to ribbon for dialog positioning
+	private JPanel ribbon = null;  // Reference to ribbon for panel positioning
 
 	private double cpAOA = Double.NaN;
 	private double cpTheta = Double.NaN;
@@ -666,12 +672,11 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		ribbon.add(zoomFitButton, "cell 3 1");
 
 		// Show CG/CP
-		JCheckBox showCGCP = new JCheckBox();
+		final JCheckBox showCGCP = new JCheckBox();
 		showCGCP.setText(trans.get("RocketPanel.checkbox.ShowCGCP"));
 		showCGCP.setSelected(true);
 		showCGCP.setToolTipText(trans.get("RocketPanel.checkbox.ShowCGCP.ttip"));
-		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Stability")), "cell 4 0, gapleft para");
-		ribbon.add(showCGCP, "cell 4 1, gapleft para");
+		ribbon.add(showCGCP, "cell 4 0, gapleft para");
 
 		showCGCP.addActionListener(new ActionListener() {
 			@Override
@@ -686,17 +691,27 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 			}
 		});
 
-		// Caliper tool - button to open dialog
+		// Calipers checkbox - directly enables/disables the caliper tool
+		final JCheckBox showCalipers = new JCheckBox(trans.get("RocketPanel.checkbox.Calipers"));
+		showCalipers.setToolTipText(trans.get("RocketPanel.checkbox.Calipers.ttip"));
+		showCalipers.setSelected(false);
+		ribbon.add(showCalipers, "cell 4 1, gapleft para");
+
+		// Inline caliper controls (mode, snap, units, distance) — shown only when calipers enabled
 		if (caliperManager != null) {
-		ribbon.add(new JLabel(trans.get("RocketPanel.lbl.Caliper")), "cell 5 0, gapleft para");
-			JButton caliperButton = caliperManager.getCaliperButton();
-			caliperButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-					openCaliperDialog();
+			JPanel caliperRibbonPanel = buildCaliperRibbonPanel();
+			caliperRibbonPanel.setVisible(false);
+			ribbon.add(caliperRibbonPanel, "cell 5 0, spany 2, gapleft para, aligny center");
+
+			showCalipers.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					boolean enabled = showCalipers.isSelected();
+					caliperManager.setEnabled(enabled);
+					caliperRibbonPanel.setVisible(enabled);
+					updateFigures();
 				}
 			});
-			ribbon.add(caliperButton, "cell 5 1, gapleft para");
 		}
 
 		// Vertical separator
@@ -2145,34 +2160,132 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	}
 
 	/**
-	 * Open the caliper dialog, positioned above the ribbon.
-	 * If the dialog is already open, just bring it to front.
+	 * Build the inline caliper controls panel shown in the ribbon when calipers are enabled.
+	 * Contains mode toggle buttons, snap checkbox, unit selector, and live distance display.
 	 */
-	private void openCaliperDialog() {
-		if (caliperManager == null || ribbon == null) {
-			return;
-		}
+	private JPanel buildCaliperRibbonPanel() {
+		JPanel panel = new JPanel(new MigLayout("ins 0, fill", "[][]para[]para[]", "[][]"));
+		panel.setOpaque(false);
 
-		// Create dialog if it doesn't exist
-		if (caliperDialog == null) {
-			Window parentWindow = SwingUtilities.getWindowAncestor(this);
-			caliperDialog = new CaliperDialog(parentWindow, caliperManager);
-			// Enable window position memory
-			GUIUtil.rememberWindowPosition(caliperDialog);
-		}
+		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
 
-		// Center dialog to BasicFrame (only if position is not remembered)
-		Point savedPosition = ((SwingPreferences) Application.getPreferences()).getWindowPosition(caliperDialog.getClass());
-		if (savedPosition == null) {
-			// No saved position, center to BasicFrame
-			caliperDialog.setLocationRelativeTo(basicFrame);
-		}
+		// Mode radio buttons (vertical / horizontal)
+		ButtonGroup modeGroup = new ButtonGroup();
+		JRadioButton verticalRadio = new JRadioButton(trans.get("RocketPanel.radio.CaliperVertical"));
+		JRadioButton horizontalRadio = new JRadioButton(trans.get("RocketPanel.radio.CaliperHorizontal"));
+		verticalRadio.setForeground(caliperColor);
+		horizontalRadio.setForeground(caliperColor);
+		verticalRadio.setToolTipText(trans.get("RocketPanel.radio.CaliperVertical.ttip"));
+		horizontalRadio.setToolTipText(trans.get("RocketPanel.radio.CaliperHorizontal.ttip"));
+		modeGroup.add(verticalRadio);
+		modeGroup.add(horizontalRadio);
+		verticalRadio.setSelected(caliperManager.getMode() == CaliperManager.CaliperMode.VERTICAL);
+		horizontalRadio.setSelected(caliperManager.getMode() == CaliperManager.CaliperMode.HORIZONTAL);
+		panel.add(verticalRadio, "cell 0 0");
+		panel.add(horizontalRadio, "cell 1 0");
 
-		// Restore to normal size when opening
-		caliperDialog.restore();
-		caliperDialog.setVisible(true);
-		caliperDialog.toFront();
-		caliperDialog.requestFocus();
+		// Snap checkbox
+		JCheckBox snapCheckBox = new JCheckBox(trans.get("RocketPanel.checkbox.CaliperSnap"));
+		snapCheckBox.setToolTipText(trans.get("RocketPanel.checkbox.CaliperSnap.ttip"));
+		snapCheckBox.setSelected(caliperManager.isSnapEnabled());
+		snapCheckBox.addActionListener(e -> caliperManager.setSnapEnabled(snapCheckBox.isSelected()));
+		panel.add(snapCheckBox, "cell 2 0");
+
+		// Units label + selector (label in row 0, selector in row 1)
+		panel.add(new JLabel(trans.get("RocketPanel.lbl.CaliperUnits")), "cell 0 1, split 2, spanx 2");
+		panel.add(caliperManager.getUnitSelector());
+
+		// Distance display
+		JTextField distanceField = new JTextField("–", 6);
+		distanceField.setEditable(false);
+		distanceField.setBorder(null);
+		distanceField.setOpaque(false);
+		distanceField.setForeground(caliperColor);
+		distanceField.setHorizontalAlignment(JTextField.CENTER);
+
+		JPanel distancePanel = new JPanel(new MigLayout("ins 0", "[]2[]2[]2[]2[]", ""));
+		distancePanel.setOpaque(false);
+		distancePanel.add(new JLabel(createCaliperDiamondIcon("1", caliperColor)));
+		distancePanel.add(new JLabel("←"));
+		distancePanel.add(distanceField);
+		distancePanel.add(new JLabel("→"));
+		distancePanel.add(new JLabel(createCaliperDiamondIcon("2", caliperColor)));
+		panel.add(distancePanel, "cell 2 1");
+
+		// Live distance update
+		final StateChangeListener[] listenerRef = new StateChangeListener[1];
+		final DoubleModel[] modelRef = new DoubleModel[1];
+
+		Runnable setupDistanceListener = () -> {
+			if (listenerRef[0] != null && modelRef[0] != null) {
+				modelRef[0].removeChangeListener(listenerRef[0]);
+			}
+			modelRef[0] = caliperManager.getCurrentDistanceModel();
+			listenerRef[0] = (EventObject ev) -> SwingUtilities.invokeLater(() -> {
+				DoubleModel m = caliperManager.getCurrentDistanceModel();
+				distanceField.setText(m.getCurrentUnit().toString(m.getValue()));
+			});
+			modelRef[0].addChangeListener(listenerRef[0]);
+			// Initial update
+			distanceField.setText(modelRef[0].getCurrentUnit().toString(modelRef[0].getValue()));
+		};
+		setupDistanceListener.run();
+
+		caliperManager.getUnitSelector().addItemListener(e -> {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+				DoubleModel m = caliperManager.getCurrentDistanceModel();
+				distanceField.setText(m.getCurrentUnit().toString(m.getValue()));
+			}
+		});
+
+		// Mode button listeners
+		verticalRadio.addItemListener(e -> {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+				caliperManager.setMode(CaliperManager.CaliperMode.VERTICAL);
+				setupDistanceListener.run();
+			}
+		});
+		horizontalRadio.addItemListener(e -> {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+				caliperManager.setMode(CaliperManager.CaliperMode.HORIZONTAL);
+				setupDistanceListener.run();
+			}
+		});
+
+		return panel;
+	}
+
+	/**
+	 * Create a small diamond icon with a number label inside, using the given color.
+	 *
+	 * @param number the label to draw inside the diamond ("1" or "2")
+	 * @param color  the fill color of the diamond
+	 * @return an ImageIcon of the diamond
+	 */
+	private ImageIcon createCaliperDiamondIcon(String number, Color color) {
+		int size = 18;
+		BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = image.createGraphics();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		int half = size / 2;
+		int[] xPts = {half, size - 1, half, 0};
+		int[] yPts = {0, half, size - 1, half};
+		g2.setColor(color);
+		g2.fillPolygon(xPts, yPts, 4);
+		Color border = new Color(
+				Math.max(0, color.getRed() - 80),
+				Math.max(0, color.getGreen() - 80),
+				Math.max(0, color.getBlue() - 80));
+		g2.setColor(border);
+		g2.drawPolygon(xPts, yPts, 4);
+		g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+		FontMetrics fm = g2.getFontMetrics();
+		int tx = (size - fm.stringWidth(number)) / 2;
+		int ty = half + fm.getAscent() / 2 - 1;
+		g2.setColor(Color.BLACK);
+		g2.drawString(number, tx, ty);
+		g2.dispose();
+		return new ImageIcon(image);
 	}
 
 }

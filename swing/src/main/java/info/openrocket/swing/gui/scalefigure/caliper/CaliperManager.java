@@ -94,6 +94,7 @@ public class CaliperManager {
 	private boolean enabled = false;
 	private CaliperMode mode = CaliperMode.VERTICAL;
 	private boolean wasEnabledBefore3d = false;
+	private boolean snapEnabled = true;  // Whether shift-drag snapping is enabled
 
 	// Caliper line elements
 	private final CaliperLine caliper1Line;
@@ -517,6 +518,24 @@ public class CaliperManager {
 	}
 
 	/**
+	 * Check whether shift-drag snapping is enabled.
+	 *
+	 * @return true if snap is enabled
+	 */
+	public boolean isSnapEnabled() {
+		return snapEnabled;
+	}
+
+	/**
+	 * Set whether shift-drag snapping is enabled.
+	 *
+	 * @param snapEnabled true to enable snapping
+	 */
+	public void setSnapEnabled(boolean snapEnabled) {
+		this.snapEnabled = snapEnabled;
+	}
+
+	/**
 	 * Handle mouse press events for caliper dragging.
 	 *
 	 * @param screenX the screen X coordinate
@@ -666,9 +685,9 @@ public class CaliperManager {
 		// Dragging a vertical caliper line
 		if (draggingCaliperLine != null) {
 			double newX = modelPoint.x;
-			
-			// If Shift is held, try to snap to nearby targets
-			if (shiftDown) {
+
+			// If Shift is held and snapping is enabled, try to snap to nearby targets
+			if (shiftDown && snapEnabled) {
 				// Ensure snap targets are up to date (they may not be if not in snap mode)
 				// Temporarily calculate snap targets if needed
 				boolean wasInSnapMode = snapModeActive;
@@ -721,9 +740,9 @@ public class CaliperManager {
 		// Dragging a horizontal caliper line
 		if (draggingHorizontalCaliperLine != null) {
 			double newY = modelPoint.y;
-			
-			// If Shift is held, try to snap to nearby targets
-			if (shiftDown) {
+
+			// If Shift is held and snapping is enabled, try to snap to nearby targets
+			if (shiftDown && snapEnabled) {
 				// Ensure snap targets are up to date (they may not be if not in snap mode)
 				// Temporarily calculate snap targets if needed
 				boolean wasInSnapMode = snapModeActive;
