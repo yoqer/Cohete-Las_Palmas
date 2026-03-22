@@ -722,7 +722,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		if (caliperManager != null) {
 			JPanel caliperRibbonPanel = buildCaliperRibbonPanel();
 			caliperRibbonPanel.setVisible(false);
-			ribbon.add(caliperRibbonPanel, "cell 5 0, spany 2, gapleft para, aligny center");
+			ribbon.add(caliperRibbonPanel, "cell 5 0, spany 2, gapleft para, gapright para, aligny center");
 
 			showCalipers.addActionListener(new ActionListener() {
 				@Override
@@ -740,7 +740,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		Dimension d_sep = sep.getPreferredSize();
 		d_sep.height = (int) (0.7 * ribbon.getPreferredSize().height);
 		sep.setPreferredSize(d_sep);
-		ribbon.add(sep, "cell 6 0, spany 2, gapleft para, gapright para");
+		ribbon.add(sep, "cell 6 0, spany 2, gapright para");
 
 		// Stage selector
 		StageSelector stageSelector = new StageSelector( rkt );
@@ -2188,7 +2188,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 	 * Contains mode toggle buttons, snap checkbox, unit selector, and live distance display.
 	 */
 	private JPanel buildCaliperRibbonPanel() {
-		JPanel panel = new JPanel(new MigLayout("ins 0, fill", "[][]para[]para[]", "[][]"));
+		JPanel panel = new JPanel(new MigLayout("ins 0, fill", "[][]para[]", "[][]"));
 		panel.setOpaque(false);
 
 		final Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
