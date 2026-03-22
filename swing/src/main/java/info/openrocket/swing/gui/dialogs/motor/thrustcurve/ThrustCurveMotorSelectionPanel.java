@@ -149,7 +149,11 @@ public class ThrustCurveMotorSelectionPanel extends JPanel implements MotorSelec
 
 				@Override
 				public void onSelectionChanged() {
-					sorter.sort();
+					try {
+						sorter.sort();
+					} catch (IllegalArgumentException e) {
+						log.warn("Motor table sort failed", e);
+					}
 					scrollSelectionVisible();
 				}
 			};
@@ -393,7 +397,11 @@ public class ThrustCurveMotorSelectionPanel extends JPanel implements MotorSelec
 					String text = searchField.getText().trim();
 					String[] split = text.split("\\s+");
 					rowFilter.setSearchTerms(Arrays.asList(split));
-					sorter.sort();
+					try {
+						sorter.sort();
+					} catch (IllegalArgumentException e) {
+						log.warn("Motor table sort failed", e);
+					}
 					scrollSelectionVisible();
 				}
 			});

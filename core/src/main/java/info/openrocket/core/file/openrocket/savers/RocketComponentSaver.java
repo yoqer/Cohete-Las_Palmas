@@ -214,8 +214,17 @@ public class RocketComponentSaver {
 		
 		String baseName = trans.getBaseText("material", mat.getName());
 		
-		return str + " density=\"" + mat.getDensity() + "\" group=\"" + mat.getGroup().getDatabaseString() + "\">" +
+		String result = str + " density=\"" + mat.getDensity() + "\"";
+		
+		// Add shear modulus when defined or explicitly set for a user-defined material.
+		double shearModulus = mat.getInPlaneShearModulus();
+		if (shearModulus != 0.0 || mat.isUserDefined()) {
+			result += " shearModulus=\"" + shearModulus + "\"";
+		}
+		
+		result += " group=\"" + mat.getGroup().getDatabaseString() + "\">" +
 				TextUtil.escapeXML(baseName) + "</" + tag + ">";
+		return result;
 	}
 	
 	

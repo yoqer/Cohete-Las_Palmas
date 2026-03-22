@@ -7,12 +7,10 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -74,6 +72,12 @@ public class SwingPreferences extends ApplicationPreferences {
 	public static final String AUTO_OPEN_PARTS_LIBRARY = "AutoOpenPartsLibrary";
 	public static final String UPDATE_ROCKET_WHILE_DRAGGING_POINT = "UpdateRocketWhileDraggingPoint";
 	
+	// Default design view display colors
+	public static final String DEFAULT_2D_BACKGROUND_COLOR = "DesignView.default2DBackgroundColor";
+	public static final String DEFAULT_3D_BACKGROUND_COLOR = "DesignView.default3DBackgroundColor";
+	public static final String DEFAULT_2D_TEXT_COLOR = "DesignView.default2DTextColor";
+	public static final String DEFAULT_3D_TEXT_COLOR = "DesignView.default3DTextColor";
+	
 	private static final List<Locale> SUPPORTED_LOCALES;
 	static {
 		List<Locale> list = new ArrayList<>();
@@ -84,8 +88,6 @@ public class SwingPreferences extends ApplicationPreferences {
 		list.add(new Locale("uk", "UA"));
 		SUPPORTED_LOCALES = Collections.unmodifiableList(list);
 	}
-
-	private final HashMap<Class<?>, String> DEFAULT_COLORS = new HashMap<>();
 	
 	
 	/**
@@ -123,6 +125,7 @@ public class SwingPreferences extends ApplicationPreferences {
 		}
 		PREFNODE = root.node(NODENAME);
 		fillDefaultComponentColors();
+		UITheme.Theme.addUIThemeChangeListener(this::updateColors);
 	}
 
 	private void fillDefaultComponentColors() {
@@ -512,20 +515,7 @@ public class SwingPreferences extends ApplicationPreferences {
 		putBoolean(UPDATE_ROCKET_WHILE_DRAGGING_POINT, update);
 	}
 
-	public ORColor getDefaultColor(Class<? extends RocketComponent> c) {
-		// Refresh defaults to pick up the current theme each time
-		fillDefaultComponentColors();
-		String color = get("componentColors", c, DEFAULT_COLORS);
-		if (color == null)
-			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
-
-		ORColor clr = parseColor(color);
-		if (clr != null) {
-			return clr;
-		} else {
-			return ORColor.fromAWTColor(UITheme.getColor(UITheme.Keys.TEXT, Color.BLACK));
-		}
-	}
+	// getDefaultColor is in ApplicationPreferences
 
 	public final void setDefaultColor(Class<? extends RocketComponent> c, ORColor color) {
 		if (color == null)
@@ -689,7 +679,7 @@ public class SwingPreferences extends ApplicationPreferences {
 	 * disambiguate
 	 */
 	public Color getColor(String key, Color defaultValue) {
-		ORColor c = super.getColor(key, (ORColor) null);
+		ORColor c = super.getORColor(key, (ORColor) null);
 		if (c == null) {
 			return defaultValue;
 		}
@@ -702,6 +692,88 @@ public class SwingPreferences extends ApplicationPreferences {
 	public void putColor(String key, Color value) {
 		ORColor c = ColorConversion.fromAwtColor(value);
 		super.putColor(key, c);
+	}
+	
+	////  Design View Display Defaults
+	
+	/**
+	 * Get the default 2D view background color.
+	 * @return the default color, or null if not set (will use theme default)
+	 */
+	public Color getDefault2DBackgroundColor() {
+		return getColor(DEFAULT_2D_BACKGROUND_COLOR, null);
+	}
+	
+	/**
+	 * Set the default 2D view background color.
+	 * @param color the default color, or null to remove
+	 */
+	public void setDefault2DBackgroundColor(Color color) {
+		if (color == null) {
+			putString(DEFAULT_2D_BACKGROUND_COLOR, null);
+		} else {
+			putColor(DEFAULT_2D_BACKGROUND_COLOR, color);
+		}
+	}
+	
+	/**
+	 * Get the default 3D view background color.
+	 * @return the default color, or null if not set (will use theme default)
+	 */
+	public Color getDefault3DBackgroundColor() {
+		return getColor(DEFAULT_3D_BACKGROUND_COLOR, null);
+	}
+	
+	/**
+	 * Set the default 3D view background color.
+	 * @param color the default color, or null to remove
+	 */
+	public void setDefault3DBackgroundColor(Color color) {
+		if (color == null) {
+			putString(DEFAULT_3D_BACKGROUND_COLOR, null);
+		} else {
+			putColor(DEFAULT_3D_BACKGROUND_COLOR, color);
+		}
+	}
+	
+	/**
+	 * Get the default 2D view text color.
+	 * @return the default color, or null if not set (will use theme default)
+	 */
+	public Color getDefault2DTextColor() {
+		return getColor(DEFAULT_2D_TEXT_COLOR, null);
+	}
+	
+	/**
+	 * Set the default 2D view text color.
+	 * @param color the default color, or null to remove
+	 */
+	public void setDefault2DTextColor(Color color) {
+		if (color == null) {
+			putString(DEFAULT_2D_TEXT_COLOR, null);
+		} else {
+			putColor(DEFAULT_2D_TEXT_COLOR, color);
+		}
+	}
+	
+	/**
+	 * Get the default 3D view text color.
+	 * @return the default color, or null if not set (will use theme default)
+	 */
+	public Color getDefault3DTextColor() {
+		return getColor(DEFAULT_3D_TEXT_COLOR, null);
+	}
+	
+	/**
+	 * Set the default 3D view text color.
+	 * @param color the default color, or null to remove
+	 */
+	public void setDefault3DTextColor(Color color) {
+		if (color == null) {
+			putString(DEFAULT_3D_TEXT_COLOR, null);
+		} else {
+			putColor(DEFAULT_3D_TEXT_COLOR, color);
+		}
 	}
 	
 	////  Printing

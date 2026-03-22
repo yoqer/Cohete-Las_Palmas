@@ -362,7 +362,7 @@ public class Icons {
 					0xFAC132, "OR.colors.yellow"
 			));
 	public static final Icon SNAP_CLICK = loadImageIcon("pix/icons/snap-click.png", "Snap");
-	
+
 	public static final Icon PREFERENCES = loadIcon(
 			"pix/icons/lucide/cog.svg",
 			"pix/icons/preferences.png",
@@ -398,6 +398,9 @@ public class Icons {
 			"pix/icons/lucide/refresh-ccw.svg",
 			"pix/icons/refresh.png",
 			"Refresh");
+	public static final Icon RESET = loadSvgIcon(
+			"pix/icons/lucide/rotate-cw.svg",
+			"Reset");
 
 	public static final Icon NOT_FAVORITE = loadIcon(
 			"pix/icons/lucide/star-off.svg",
@@ -409,17 +412,17 @@ public class Icons {
 			"Favorite");
 
 	public static final Icon WARNING_LOW = loadIcon(
-			"pix/icons/lucide/info.svg",
+			"pix/icons/lucide/info-filled.svg",
 			"pix/icons/warning_low.png",
 			"Informational",
 			"OR.icons.warning.low");
 	public static final Icon WARNING_NORMAL = loadIcon(
-			"pix/icons/lucide/triangle-alert.svg",
+			"pix/icons/lucide/triangle-alert-filled.svg",
 			"pix/icons/warning_normal.png",
 			"Warning",
 			"OR.icons.warning.normal");
 	public static final Icon WARNING_HIGH = loadIcon(
-			"pix/icons/lucide/circle-alert.svg",
+			"pix/icons/lucide/circle-alert-filled.svg",
 			"pix/icons/warning_high.png",
 			"Critical",
 			"OR.icons.warning.high");
@@ -483,6 +486,19 @@ public class Icons {
 			"pix/icons/lucide/lock-open.svg",
 			"pix/icons/unlocked.png",
 			"Unlocked");
+	public static final Icon SCREENSHOT = loadSvgIcon(
+			"pix/icons/lucide/camera.svg",
+			"Screenshot",
+			Map.of(
+					SVG_THEME_COLOR_RGB, "OR.icons.camera"
+			));
+	public static final Icon CONFIGURE_DISPLAY = loadSvgIcon(
+			"pix/icons/lucide/monitor-cog.svg",
+			"Configure Display",
+			Map.of(
+					SVG_THEME_COLOR_RGB, SVG_DEFAULT_COLOR_KEY,
+					0x2D2DBD, "OR.icons.tintColor"
+			));
 
 	// MANUFACTURERS ICONS
 	public static final Icon RASAERO = loadImageIcon("pix/icons/RASAero_16.png", "RASAero Icon");
