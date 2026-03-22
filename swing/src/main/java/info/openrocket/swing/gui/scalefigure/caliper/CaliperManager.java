@@ -6,7 +6,6 @@ import info.openrocket.core.rocketcomponent.ComponentChangeListener;
 import info.openrocket.core.rocketcomponent.FlightConfiguration;
 import info.openrocket.core.rocketcomponent.Rocket;
 import info.openrocket.core.rocketcomponent.RocketComponent;
-import info.openrocket.core.unit.Unit;
 import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.core.util.BoundingBox;
 import info.openrocket.core.util.Coordinate;
@@ -14,7 +13,6 @@ import info.openrocket.core.util.MathUtil;
 import info.openrocket.core.util.StateChangeListener;
 import info.openrocket.core.util.Transformation;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
-import info.openrocket.swing.gui.components.EditableSpinner;
 import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.figureelements.CaliperLine;
 import info.openrocket.swing.gui.figureelements.HorizontalCaliperLine;
@@ -22,30 +20,11 @@ import info.openrocket.swing.gui.scalefigure.RocketFigure;
 import info.openrocket.swing.gui.scalefigure.RocketPanel;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapRegistry;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
-import info.openrocket.swing.gui.util.GUIUtil;
-import info.openrocket.swing.gui.util.Icons;
 import info.openrocket.core.startup.Application;
 import info.openrocket.core.l10n.Translator;
-import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.JToggleButton;
-import javax.swing.SpinnerModel;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.EventObject;
@@ -113,22 +92,11 @@ public class CaliperManager {
 	private HorizontalCaliperLine draggingHorizontalCaliperLine = null;
 
 	// UI components
-	private JButton caliperButton;
-	private JButton modeButton;
-	private JPanel displayPanel;
-	private JSpinner distanceSpinner;
 	private UnitSelector unitSelector;
-	private JSpinner caliper1PositionSpinner;
-	private JSpinner caliper2PositionSpinner;
-	private JToggleButton caliper1SnapButton;
-	private JToggleButton caliper2SnapButton;
 
 	// Models
 	private final DoubleModel distanceModel;
 	private final DoubleModel horizontalDistanceModel;
-	private final DoubleModel caliper1PositionModel;
-	private final DoubleModel caliper2PositionModel;
-	private boolean updatingCaliperPositionModels = false;
 
 	// State per view type
 	private final CaliperState sideViewCaliperState = new CaliperState();
@@ -224,41 +192,6 @@ public class CaliperManager {
 		caliper2HorizontalLine = new HorizontalCaliperLine(0.0);
 		caliper2HorizontalLine.setHandleLabel("2");
 
-		// Initialize position models
-		caliper1PositionModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
-		caliper2PositionModel = new DoubleModel(0.0, UnitGroup.UNITS_LENGTH);
-		caliper1PositionModel.setCurrentUnit(distanceModel.getCurrentUnit());
-		caliper2PositionModel.setCurrentUnit(distanceModel.getCurrentUnit());
-
-		// Set up position model listeners
-		caliper1PositionModel.addChangeListener(new StateChangeListener() {
-			@Override
-			public void stateChanged(EventObject e) {
-				if (updatingCaliperPositionModels) {
-					return;
-				}
-				if (mode == CaliperMode.VERTICAL) {
-					setCaliperLinePosition(true, caliper1PositionModel.getValue());
-				} else {
-					setHorizontalCaliperLinePosition(true, caliper1PositionModel.getValue());
-				}
-			}
-		});
-
-		caliper2PositionModel.addChangeListener(new StateChangeListener() {
-			@Override
-			public void stateChanged(EventObject e) {
-				if (updatingCaliperPositionModels) {
-					return;
-				}
-				if (mode == CaliperMode.VERTICAL) {
-					setCaliperLinePosition(false, caliper2PositionModel.getValue());
-				} else {
-					setHorizontalCaliperLinePosition(false, caliper2PositionModel.getValue());
-				}
-			}
-		});
-
 		// Create UI components
 		createUIComponents();
 	}
@@ -267,119 +200,7 @@ public class CaliperManager {
 	 * Create the UI components for the caliper tool.
 	 */
 	private void createUIComponents() {
-		// Caliper tool button (regular button to open dialog)
-		caliperButton = new JButton();
-		caliperButton.setIcon(Icons.RULER);
-		caliperButton.setText(trans.get("CaliperManager.btn.Caliper"));
-		caliperButton.setToolTipText(trans.get("CaliperManager.btn.Caliper"));
-
-		// Caliper display panel
-		Color caliperColor = GUIUtil.getUITheme().getCaliperColor();
-		displayPanel = new JPanel(new MigLayout("ins 0"));
-		displayPanel.setOpaque(false);
-		Border caliperBorder = new LineBorder(caliperColor, 1);
-		displayPanel.setBorder(new CompoundBorder(caliperBorder, new EmptyBorder(5, 5, 5, 5)));
-		displayPanel.setVisible(false);
-
-		// Caliper distance spinner (non-editable)
-		distanceSpinner = new JSpinner(distanceModel.getSpinnerModel());
-		distanceSpinner.setEnabled(false);
-		JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) distanceSpinner.getEditor();
-		JTextField textField = editor.getTextField();
-		textField.setEditable(false);
-		textField.setEnabled(true);
-		textField.setForeground(caliperColor);
-		displayPanel.add(distanceSpinner, "split 2, aligny center");
-
-		// Caliper unit selector
 		unitSelector = new UnitSelector(distanceModel);
-		displayPanel.add(unitSelector, "gapright unrel");
-
-		// Keep position models in sync with unit selector
-		unitSelector.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					Unit selected = unitSelector.getSelectedUnit();
-					if (caliper1PositionModel != null && caliper2PositionModel != null) {
-						caliper1PositionModel.setCurrentUnit(selected);
-						caliper2PositionModel.setCurrentUnit(selected);
-						updateCaliperPositionModelsFromState();
-					}
-				}
-			}
-		});
-
-		// Position spinners for each caliper handle
-		SpinnerModel caliper1SpinnerModel = caliper1PositionModel.getSpinnerModel();
-		SpinnerModel caliper2SpinnerModel = caliper2PositionModel.getSpinnerModel();
-		caliper1PositionSpinner = new EditableSpinner(caliper1SpinnerModel);
-		caliper2PositionSpinner = new EditableSpinner(caliper2SpinnerModel);
-		caliper1PositionSpinner.setEnabled(false);
-		caliper2PositionSpinner.setEnabled(false);
-		JSpinner.DefaultEditor caliper1Editor = (JSpinner.DefaultEditor) caliper1PositionSpinner.getEditor();
-		caliper1Editor.getTextField().setColumns(4);
-		JSpinner.DefaultEditor caliper2Editor = (JSpinner.DefaultEditor) caliper2PositionSpinner.getEditor();
-		caliper2Editor.getTextField().setColumns(4);
-
-		displayPanel.add(new JLabel("1:"));
-		displayPanel.add(caliper1PositionSpinner);
-		
-		// Snap mode button for caliper 1
-		caliper1SnapButton = new JToggleButton();
-		caliper1SnapButton.setIcon(Icons.SNAP_CLICK);
-		caliper1SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 1));
-		caliper1SnapButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 1) {
-					exitSnapMode();
-				} else {
-					enterSnapMode(1);
-				}
-			}
-		});
-		displayPanel.add(caliper1SnapButton, "gapleft rel");
-		
-		displayPanel.add(new JLabel("2:"), "gapleft rel");
-		displayPanel.add(caliper2PositionSpinner);
-		
-		// Snap mode button for caliper 2
-		caliper2SnapButton = new JToggleButton();
-		caliper2SnapButton.setIcon(Icons.SNAP_CLICK);
-		caliper2SnapButton.setToolTipText(String.format(trans.get("CaliperManager.btn.CaliperSnap"), 2));
-		caliper2SnapButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 2) {
-					exitSnapMode();
-				} else {
-					enterSnapMode(2);
-				}
-			}
-		});
-		displayPanel.add(caliper2SnapButton, "gapleft rel");
-		
-		// Display panel should be visible when caliper is enabled
-		displayPanel.setVisible(enabled);
-	}
-
-	/**
-	 * Get the button for opening the caliper dialog.
-	 *
-	 * @return the caliper button
-	 */
-	public JButton getCaliperButton() {
-		return caliperButton;
-	}
-
-	/**
-	 * Get the distance spinner.
-	 *
-	 * @return the distance spinner
-	 */
-	public JSpinner getDistanceSpinner() {
-		return distanceSpinner;
 	}
 
 	/**
@@ -398,42 +219,6 @@ public class CaliperManager {
 	 */
 	public DoubleModel getCurrentDistanceModel() {
 		return (mode == CaliperMode.HORIZONTAL) ? horizontalDistanceModel : distanceModel;
-	}
-
-	/**
-	 * Get the caliper 1 position spinner.
-	 *
-	 * @return the caliper 1 position spinner
-	 */
-	public JSpinner getCaliper1PositionSpinner() {
-		return caliper1PositionSpinner;
-	}
-
-	/**
-	 * Get the caliper 2 position spinner.
-	 *
-	 * @return the caliper 2 position spinner
-	 */
-	public JSpinner getCaliper2PositionSpinner() {
-		return caliper2PositionSpinner;
-	}
-
-	/**
-	 * Get the caliper 1 snap button.
-	 *
-	 * @return the caliper 1 snap button
-	 */
-	public JToggleButton getCaliper1SnapButton() {
-		return caliper1SnapButton;
-	}
-
-	/**
-	 * Get the caliper 2 snap button.
-	 *
-	 * @return the caliper 2 snap button
-	 */
-	public JToggleButton getCaliper2SnapButton() {
-		return caliper2SnapButton;
 	}
 
 	/**
@@ -457,18 +242,15 @@ public class CaliperManager {
 			if (snapModeActive) {
 				exitSnapMode();
 			}
-			// Update distance model based on mode
-			if (horizontalDistanceModel != null && distanceSpinner != null && unitSelector != null) {
+			// Update unit selector model based on mode
+			if (unitSelector != null) {
 				if (mode == CaliperMode.HORIZONTAL) {
-					distanceSpinner.setModel(horizontalDistanceModel.getSpinnerModel());
 					unitSelector.setModel(horizontalDistanceModel);
 				} else {
-					distanceSpinner.setModel(distanceModel.getSpinnerModel());
 					unitSelector.setModel(distanceModel);
 				}
 			}
 			updateCaliperElements();
-			updateCaliperPositionModelsFromState();
 			figureUpdateCallback.run();
 		}
 	}
@@ -480,28 +262,11 @@ public class CaliperManager {
 	 */
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
-		if (modeButton != null) {
-			modeButton.setEnabled(enabled);
-		}
-		if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
-			caliper1PositionSpinner.setEnabled(enabled);
-			caliper2PositionSpinner.setEnabled(enabled);
-		}
 		if (enabled) {
 			// Initialize positions if not already set
 			if ((mode == CaliperMode.VERTICAL && (Double.isNaN(caliper1X) || Double.isNaN(caliper2X))) ||
 					(mode == CaliperMode.HORIZONTAL && (Double.isNaN(caliper1Y) || Double.isNaN(caliper2Y)))) {
 				initializeCaliperPositions();
-			}
-			// Show panel
-			if (displayPanel != null) {
-				displayPanel.setVisible(true);
-				updateCaliperPositionModelsFromState();
-			}
-		} else {
-			// Hide panel
-			if (displayPanel != null) {
-				displayPanel.setVisible(false);
 			}
 		}
 		updateCaliperElements();
@@ -1019,7 +784,7 @@ public class CaliperManager {
 		if (caliper2HorizontalLine != null) {
 			caliper2HorizontalLine.setY(caliper2Y);
 		}
-		updateCaliperPositionModelsFromState();
+
 		updateCaliperDistance();
 		updateCaliperHorizontalDistance();
 	}
@@ -1033,36 +798,14 @@ public class CaliperManager {
 		if (enabled) {
 			setEnabled(false);
 		}
-		if (caliperButton != null) {
-			caliperButton.setEnabled(false);
-		}
-		if (displayPanel != null) {
-			displayPanel.setVisible(false);
-		}
-		if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
-			caliper1PositionSpinner.setEnabled(false);
-			caliper2PositionSpinner.setEnabled(false);
-		}
 	}
 
 	/**
 	 * Called when switching to 2D view - restores caliper state if it was enabled.
 	 */
 	public void onSwitchTo2D() {
-		if (caliperButton != null) {
-			caliperButton.setEnabled(true);
-		}
 		if (wasEnabledBefore3d) {
 			setEnabled(true);
-			if (displayPanel != null) {
-				displayPanel.setVisible(true);
-				displayPanel.setPreferredSize(null);
-			}
-			if (caliper1PositionSpinner != null && caliper2PositionSpinner != null) {
-				caliper1PositionSpinner.setEnabled(true);
-				caliper2PositionSpinner.setEnabled(true);
-			}
-			updateCaliperPositionModelsFromState();
 		}
 		wasEnabledBefore3d = false;
 	}
@@ -1098,7 +841,7 @@ public class CaliperManager {
 			}
 		}
 		updateCaliperDistance();
-		updateCaliperPositionModelsFromState();
+
 		saveCurrentCaliperState();
 		figureUpdateCallback.run();
 	}
@@ -1122,7 +865,7 @@ public class CaliperManager {
 			}
 		}
 		updateCaliperHorizontalDistance();
-		updateCaliperPositionModelsFromState();
+
 		saveCurrentCaliperState();
 		figureUpdateCallback.run();
 	}
@@ -1204,35 +947,6 @@ public class CaliperManager {
 	
 	public HorizontalCaliperLine getCaliper2HorizontalLine() {
 		return caliper2HorizontalLine;
-	}
-
-	/**
-	 * Update the caliper distance models from the current state.
-	 */
-	private void updateCaliperPositionModelsFromState() {
-		if (caliper1PositionModel == null || caliper2PositionModel == null) {
-			return;
-		}
-		updatingCaliperPositionModels = true;
-		try {
-			if (mode == CaliperMode.VERTICAL) {
-				if (!Double.isNaN(caliper1X)) {
-					caliper1PositionModel.setValue(caliper1X);
-				}
-				if (!Double.isNaN(caliper2X)) {
-					caliper2PositionModel.setValue(caliper2X);
-				}
-			} else {
-				if (!Double.isNaN(caliper1Y)) {
-					caliper1PositionModel.setValue(caliper1Y);
-				}
-				if (!Double.isNaN(caliper2Y)) {
-					caliper2PositionModel.setValue(caliper2Y);
-				}
-			}
-		} finally {
-			updatingCaliperPositionModels = false;
-		}
 	}
 
 	/**
@@ -1329,7 +1043,7 @@ public class CaliperManager {
 
 		updateCaliperDistance();
 		updateCaliperHorizontalDistance();
-		updateCaliperPositionModelsFromState();
+
 		saveCurrentCaliperState();
 	}
 
@@ -1346,7 +1060,6 @@ public class CaliperManager {
 		activeSnapCaliper = caliperNumber;
 		hoveredSnapTarget = null;
 		updateSnapTargets();
-		updateSnapButtonStates();
 		// Update info message when entering snap mode
 		if (infoMessageUpdater != null) {
 			infoMessageUpdater.updateInfoMessage("RocketPanel.lbl.infoMessage.snapMode");
@@ -1370,7 +1083,6 @@ public class CaliperManager {
 			figureUpdateCallback.run();  // Update to clear highlight
 		}
 		currentSnapTargets.clear();
-		updateSnapButtonStates();
 		refreshInfoMessage();
 		figureUpdateCallback.run();
 	}
@@ -1439,20 +1151,6 @@ public class CaliperManager {
 	 */
 	public boolean isAlwaysShowSnapTargets() {
 		return alwaysShowSnapTargets;
-	}
-
-	/**
-	 * Update snap button visual states.
-	 */
-	private void updateSnapButtonStates() {
-		if (caliper1SnapButton != null) {
-			boolean selected = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 1;
-			caliper1SnapButton.setSelected(selected);
-		}
-		if (caliper2SnapButton != null) {
-			boolean selected = snapModeActive && activeSnapCaliper != null && activeSnapCaliper == 2;
-			caliper2SnapButton.setSelected(selected);
-		}
 	}
 
 	/**
