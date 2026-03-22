@@ -24,9 +24,8 @@ import java.awt.geom.Rectangle2D;
 public class CaliperLine implements FigureElement {
 
 	// Base sizes at 96 DPI - will be scaled based on actual DPI
-	private static final float BASE_HANDLE_RECT_WIDTH = 22.0f;  // Narrow width for elongated look
-	private static final float BASE_HANDLE_RECT_HEIGHT = 36.0f;  // Tall rectangle
-	private static final float BASE_HANDLE_TRIANGLE_HEIGHT = 26.0f;  // Inverted triangle below
+	private static final float BASE_DIAMOND_HALF_WIDTH = 18.0f;   // Half-width of the diamond handle
+	private static final float BASE_DIAMOND_HALF_HEIGHT = 28.0f;  // Half-height of the diamond handle
 	private static final float BASE_LINE_WIDTH_NORMAL = 2.0f;  // Normal line thickness
 	private static final float BASE_LINE_WIDTH_HOVER = 4.0f;  // Thicker line when hovering
 	private static final float BASE_HANDLE_LABEL_FONT_SIZE = 20.0f;  // Base font size (reduced from 30)
@@ -40,9 +39,8 @@ public class CaliperLine implements FigureElement {
 	private static final double BASE_DPI = 96.0;  // Base DPI for scaling
 	
 	// DPI-scaled values (calculated once)
-	private static float HANDLE_RECT_WIDTH;
-	private static float HANDLE_RECT_HEIGHT;
-	private static float HANDLE_TRIANGLE_HEIGHT;
+	private static float DIAMOND_HALF_WIDTH;
+	private static float DIAMOND_HALF_HEIGHT;
 	private static float LINE_WIDTH_NORMAL;
 	private static float LINE_WIDTH_HOVER;
 	private static Font HANDLE_LABEL_FONT;
@@ -100,9 +98,8 @@ public class CaliperLine implements FigureElement {
 		double dpi = GUIUtil.getDPI();
 		double scale = dpi / BASE_DPI;
 		
-		HANDLE_RECT_WIDTH = (float) (BASE_HANDLE_RECT_WIDTH * scale);
-		HANDLE_RECT_HEIGHT = (float) (BASE_HANDLE_RECT_HEIGHT * scale);
-		HANDLE_TRIANGLE_HEIGHT = (float) (BASE_HANDLE_TRIANGLE_HEIGHT * scale);
+		DIAMOND_HALF_WIDTH = (float) (BASE_DIAMOND_HALF_WIDTH * scale);
+		DIAMOND_HALF_HEIGHT = (float) (BASE_DIAMOND_HALF_HEIGHT * scale);
 		LINE_WIDTH_NORMAL = (float) (BASE_LINE_WIDTH_NORMAL * scale);
 		LINE_WIDTH_HOVER = (float) (BASE_LINE_WIDTH_HOVER * scale);
 		ARROW_SIZE = (float) (BASE_ARROW_SIZE * scale);
@@ -222,18 +219,13 @@ public class CaliperLine implements FigureElement {
 			// Create a single manifold path for the entire marker shape
 			Path2D.Double marker = new Path2D.Double();
 
-			double rectLeft = handleX_screen - HANDLE_RECT_WIDTH / 2;
-			double rectRight = handleX_screen + HANDLE_RECT_WIDTH / 2;
-			double rectTop = handleY_screen;
-			double rectBottom = handleY_screen + HANDLE_RECT_HEIGHT;
-			double triangleBaseY = rectBottom + HANDLE_TRIANGLE_HEIGHT;
+			double diamondCenterY = handleY_screen + DIAMOND_HALF_HEIGHT;
 
-			// Marker shape path
-			marker.moveTo(rectLeft, rectTop);		// Top-left of rectangle
-			marker.lineTo(rectRight, rectTop);		// Top-right of rectangle
-			marker.lineTo(rectRight, rectBottom);	// Bottom-right of rectangle
-			marker.lineTo(handleX_screen, triangleBaseY);	// Point of triangle
-			marker.lineTo(rectLeft, rectBottom);	// Bottom-left of rectangle
+			// Diamond shape: top tip at y=0, bottom tip pointing down toward the line
+			marker.moveTo(handleX_screen, handleY_screen);                             // Top tip
+			marker.lineTo(handleX_screen + DIAMOND_HALF_WIDTH, diamondCenterY);       // Right point
+			marker.lineTo(handleX_screen, handleY_screen + DIAMOND_HALF_HEIGHT * 2);  // Bottom tip
+			marker.lineTo(handleX_screen - DIAMOND_HALF_WIDTH, diamondCenterY);       // Left point
 			marker.closePath();
 
 			// Fill the entire marker shape
@@ -263,8 +255,8 @@ public class CaliperLine implements FigureElement {
 				double textWidth = textBounds.getWidth();
 				double textHeight = textBounds.getHeight();
 				double textX = handleX_screen - textWidth / 2.0;
-				// Position text vertically centered within rectangle
-				double textY = rectTop + (HANDLE_RECT_HEIGHT / 2.0) + textHeight / 4.0;
+				// Position text vertically centered within diamond
+				double textY = diamondCenterY + textHeight / 4.0;
 				g2Screen.setColor(Color.BLACK);
 				g2Screen.drawString(handleLabel, (float) textX, (float) textY);
 			}
@@ -316,22 +308,15 @@ public class CaliperLine implements FigureElement {
 		
 		double handleX_screen = screenPoint.x;
 		double handleY_screen = 0.0;  // Start at the very top
-		
-		// Calculate handle bounds: rectangle + triangle
-		double rectLeft = handleX_screen - HANDLE_RECT_WIDTH / 2;
-		double rectRight = handleX_screen + HANDLE_RECT_WIDTH / 2;
-		double rectTop = handleY_screen;
-		double rectBottom = handleY_screen + HANDLE_RECT_HEIGHT;
-		double triangleBaseY = rectBottom + HANDLE_TRIANGLE_HEIGHT;
-		
-		// Return bounds that encompass the entire handle (rectangle + triangle)
-		double minX = rectLeft;
-		double maxX = rectRight;
-		double minY = rectTop;
-		double maxY = triangleBaseY;
-		
+
+		// Return bounds that encompass the diamond handle
+		double minX = handleX_screen - DIAMOND_HALF_WIDTH;
+		double maxX = handleX_screen + DIAMOND_HALF_WIDTH;
+		double minY = handleY_screen;
+		double maxY = handleY_screen + DIAMOND_HALF_HEIGHT * 2;
+
 		// Add some padding for easier clicking
-		double padding = HANDLE_RECT_WIDTH * 0.3;
+		double padding = DIAMOND_HALF_WIDTH * 0.3;
 		return new Rectangle2D.Double(
 			minX - padding,
 			minY - padding,
