@@ -46,7 +46,9 @@ import info.openrocket.swing.gui.figureelements.Caret;
 import info.openrocket.swing.gui.figureelements.RocketInfo;
 import info.openrocket.swing.gui.main.BasicFrame;
 import info.openrocket.swing.gui.main.componenttree.ComponentTreeModel;
+import info.openrocket.core.unit.UnitGroup;
 import info.openrocket.swing.gui.adaptors.DoubleModel;
+import info.openrocket.swing.gui.components.UnitSelector;
 import info.openrocket.swing.gui.scalefigure.caliper.CaliperManager;
 import info.openrocket.swing.gui.widgets.ThemedToggleButton;
 import info.openrocket.swing.gui.scalefigure.caliper.snap.CaliperSnapTarget;
@@ -77,7 +79,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
+import javax.swing.JPopupMenu;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
@@ -2206,11 +2211,28 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		JPanel distancePanel = new JPanel(new MigLayout("ins 0", "[]2[]2[]2[]2[]", ""));
 		distancePanel.setOpaque(false);
-		distancePanel.add(new JLabel(createCaliperDiamondIcon("1", caliperColor)));
+
+		JButton diamond1Btn = new JButton(createCaliperDiamondIcon("1", caliperColor));
+		diamond1Btn.setBorderPainted(false);
+		diamond1Btn.setContentAreaFilled(false);
+		diamond1Btn.setFocusPainted(false);
+		diamond1Btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		diamond1Btn.setToolTipText(trans.get("RocketPanel.popup.CaliperDiamond1.ttip"));
+		diamond1Btn.addActionListener(e -> showCaliperPositionPopup(1, diamond1Btn));
+
+		JButton diamond2Btn = new JButton(createCaliperDiamondIcon("2", caliperColor));
+		diamond2Btn.setBorderPainted(false);
+		diamond2Btn.setContentAreaFilled(false);
+		diamond2Btn.setFocusPainted(false);
+		diamond2Btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		diamond2Btn.setToolTipText(trans.get("RocketPanel.popup.CaliperDiamond2.ttip"));
+		diamond2Btn.addActionListener(e -> showCaliperPositionPopup(2, diamond2Btn));
+
+		distancePanel.add(diamond1Btn);
 		distancePanel.add(new JLabel("←"));
 		distancePanel.add(distanceField);
 		distancePanel.add(new JLabel("→"));
-		distancePanel.add(new JLabel(createCaliperDiamondIcon("2", caliperColor)));
+		distancePanel.add(diamond2Btn);
 		panel.add(distancePanel, "cell 2 1");
 
 		// Live distance update
@@ -2254,6 +2276,51 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		});
 
 		return panel;
+	}
+
+	/**
+	 * Shows a small popup below the given ribbon component, allowing position editing and snap entry
+	 * for the specified caliper.
+	 *
+	 * @param caliperNumber which caliper (1 or 2)
+	 * @param source        the ribbon component to anchor the popup below
+	 */
+	private void showCaliperPositionPopup(int caliperNumber, Component source) {
+		double currentPos = caliperManager.getCaliperPosition(caliperNumber);
+		if (Double.isNaN(currentPos)) return;
+
+		DoubleModel positionModel = new DoubleModel(currentPos, UnitGroup.UNITS_LENGTH);
+		positionModel.setCurrentUnit(caliperManager.getUnitSelector().getSelectedUnit());
+		positionModel.addChangeListener((EventObject e) ->
+				caliperManager.setCaliperPosition(caliperNumber, positionModel.getValue()));
+
+		JPanel content = new JPanel(new MigLayout("ins 6, fill", "[]4[grow]4[]4[]", "[]"));
+		content.add(new JLabel(trans.get("RocketPanel.popup.CaliperPosition")));
+
+		JSpinner spinner = new JSpinner(positionModel.getSpinnerModel());
+		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(6);
+		content.add(spinner, "growx");
+
+		content.add(new UnitSelector(positionModel));
+
+		JToggleButton snapBtn = new JToggleButton(Icons.SNAP_CLICK);
+		snapBtn.setToolTipText(trans.get("RocketPanel.popup.CaliperSnapClick.ttip"));
+		snapBtn.setSelected(caliperManager.isSnapModeActive()
+				&& Integer.valueOf(caliperNumber).equals(caliperManager.getActiveSnapCaliper()));
+
+		JPopupMenu popup = new JPopupMenu();
+		snapBtn.addActionListener(e -> {
+			if (snapBtn.isSelected()) {
+				caliperManager.enterSnapMode(caliperNumber);
+			} else {
+				caliperManager.exitSnapMode();
+			}
+			popup.setVisible(false);
+		});
+		content.add(snapBtn);
+
+		popup.add(content);
+		popup.show(source, 0, source.getHeight());
 	}
 
 	/**

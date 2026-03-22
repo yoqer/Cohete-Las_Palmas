@@ -950,6 +950,71 @@ public class CaliperManager {
 	}
 
 	/**
+	 * Returns the caliper number (1 or 2) whose diamond handle was clicked at the given screen
+	 * coordinates, or 0 if no handle was clicked.
+	 *
+	 * @param screenX absolute screen X coordinate (viewport-relative + scroll offset)
+	 * @param screenY absolute screen Y coordinate (viewport-relative + scroll offset)
+	 * @return 1, 2, or 0
+	 */
+	public int getHandleClickedAt(int screenX, int screenY) {
+		if (!enabled) return 0;
+		java.awt.geom.AffineTransform transform = getModelToScreenTransform();
+		if (transform == null) return 0;
+		Rectangle visibleRect = figure.getVisibleRect();
+		if (mode == CaliperMode.VERTICAL) {
+			if (caliper1Line != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper1Line.getHandleBounds(transform);
+				if (b != null && b.contains(screenX, screenY)) return 1;
+			}
+			if (caliper2Line != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper2Line.getHandleBounds(transform);
+				if (b != null && b.contains(screenX, screenY)) return 2;
+			}
+		} else {
+			if (caliper1HorizontalLine != null && visibleRect != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper1HorizontalLine.getHandleBounds(transform, visibleRect);
+				if (b != null && b.contains(screenX, screenY)) return 1;
+			}
+			if (caliper2HorizontalLine != null && visibleRect != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper2HorizontalLine.getHandleBounds(transform, visibleRect);
+				if (b != null && b.contains(screenX, screenY)) return 2;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Get the current position of a caliper in model coordinates.
+	 * Returns X for vertical mode, Y for horizontal mode.
+	 *
+	 * @param caliperNumber 1 or 2
+	 * @return position in metres
+	 */
+	public double getCaliperPosition(int caliperNumber) {
+		if (mode == CaliperMode.VERTICAL) {
+			return caliperNumber == 1 ? caliper1X : caliper2X;
+		} else {
+			return caliperNumber == 1 ? caliper1Y : caliper2Y;
+		}
+	}
+
+	/**
+	 * Set the position of a caliper in model coordinates.
+	 * Sets X for vertical mode, Y for horizontal mode.
+	 *
+	 * @param caliperNumber 1 or 2
+	 * @param value position in metres
+	 */
+	public void setCaliperPosition(int caliperNumber, double value) {
+		if (mode == CaliperMode.VERTICAL) {
+			setCaliperLinePosition(caliperNumber == 1, value);
+		} else {
+			setHorizontalCaliperLinePosition(caliperNumber == 1, value);
+		}
+	}
+
+	/**
 	 * Calculate and update the vertical caliper distance.
 	 */
 	private void updateCaliperDistance() {
