@@ -2204,9 +2204,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		// Distance display
 		JTextField distanceField = new JTextField("–", 6);
 		distanceField.setEditable(false);
-		distanceField.setBorder(null);
-		distanceField.setOpaque(false);
+		distanceField.setOpaque(true);
+		distanceField.setBackground(new Color(
+				caliperColor.getRed(), caliperColor.getGreen(), caliperColor.getBlue(), 25));
+		distanceField.setBorder(new javax.swing.border.CompoundBorder(
+				new javax.swing.border.LineBorder(caliperColor, 1, true),
+				new javax.swing.border.EmptyBorder(1, 4, 1, 4)));
 		distanceField.setForeground(caliperColor);
+		distanceField.setFont(distanceField.getFont().deriveFont(Font.BOLD));
 		distanceField.setHorizontalAlignment(JTextField.CENTER);
 
 		JPanel distancePanel = new JPanel(new MigLayout("ins 0", "[]2[]2[]2[]2[]", ""));
