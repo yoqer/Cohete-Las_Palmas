@@ -721,6 +721,39 @@ public class CaliperManager {
 	}
 
 	/**
+	 * Returns true if the given screen point hits an out-of-view caliper indicator.
+	 */
+	public boolean isPressingIndicator(int screenX, int screenY) {
+		if (!enabled) return false;
+		java.awt.geom.AffineTransform transform = getModelToScreenTransform();
+		if (transform == null) return false;
+		Rectangle visibleRect = figure.getVisibleRect();
+		if (visibleRect == null) return false;
+		Point p = new Point(screenX, screenY);
+
+		if (mode == CaliperMode.VERTICAL) {
+			if (caliper1Line != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper1Line.getIndicatorBounds(caliper1Line.getScreenX(transform), visibleRect);
+				if (isIndicatorHit(b, p)) return true;
+			}
+			if (caliper2Line != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper2Line.getIndicatorBounds(caliper2Line.getScreenX(transform), visibleRect);
+				if (isIndicatorHit(b, p)) return true;
+			}
+		} else {
+			if (caliper1HorizontalLine != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper1HorizontalLine.getIndicatorBounds(caliper1HorizontalLine.getScreenY(transform), visibleRect);
+				if (isIndicatorHit(b, p)) return true;
+			}
+			if (caliper2HorizontalLine != null) {
+				java.awt.geom.Rectangle2D.Double b = caliper2HorizontalLine.getIndicatorBounds(caliper2HorizontalLine.getScreenY(transform), visibleRect);
+				if (isIndicatorHit(b, p)) return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Returns true if any caliper line, handle, or out-of-view indicator is currently hovered.
 	 */
 	public boolean isAnyLineHovered() {

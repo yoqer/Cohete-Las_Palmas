@@ -342,7 +342,7 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 				mousePressedLoc = dragRotating ? e.getPoint() : null;
 				originalFigureRotation = dragRotating ? figure.getRotation() : 0;
 
-				// Check if clicking on a caliper handle
+				// Check if clicking on a caliper handle or out-of-view indicator
 				if (caliperManager != null && e.getButton() == MouseEvent.BUTTON1) {
 					Point p0 = e.getPoint();
 					Point p1 = getViewport().getViewPosition();
@@ -350,6 +350,12 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 					int y = p0.y + p1.y;
 
 					if (caliperManager.handleMousePressed(x, y, (p) -> screenToModel(p.x, p.y))) {
+						return;
+					}
+					// Block panning if the press is on an out-of-view indicator so the
+					// subsequent mouseClicked can handle it without interference.
+					if (caliperManager.isPressingIndicator(x, y)) {
+						dragPanning = false;
 						return;
 					}
 				}
@@ -966,7 +972,9 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 
 		// Check if click is on a caliper indicator (before checking components)
 		if (caliperManager != null && caliperManager.isEnabled() && !is3d) {
-			Point clickPoint = event.getPoint();
+			Point vp = scrollPane.getViewport().getViewPosition();
+			Point raw = event.getPoint();
+			Point clickPoint = new Point(raw.x + vp.x, raw.y + vp.y);
 			Rectangle visibleRect = figure.getVisibleRect();
 			if (visibleRect != null) {
 				// Get the transform from the figure
