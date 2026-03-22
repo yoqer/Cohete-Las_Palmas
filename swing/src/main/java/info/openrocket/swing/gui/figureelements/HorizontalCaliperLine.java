@@ -24,11 +24,11 @@ import java.awt.geom.Rectangle2D;
 public class HorizontalCaliperLine implements FigureElement {
 
 	// Base sizes at 96 DPI - will be scaled based on actual DPI
-	private static final float BASE_DIAMOND_HALF_WIDTH = 28.0f;   // Half-width of the diamond handle (horizontal)
-	private static final float BASE_DIAMOND_HALF_HEIGHT = 18.0f;  // Half-height of the diamond handle (vertical)
+	private static final float BASE_DIAMOND_HALF_WIDTH = 22.0f;   // Half-width of the diamond handle (horizontal)
+	private static final float BASE_DIAMOND_HALF_HEIGHT = 14.0f;  // Half-height of the diamond handle (vertical)
 	private static final float BASE_LINE_WIDTH_NORMAL = 2.0f;  // Normal line thickness
 	private static final float BASE_LINE_WIDTH_HOVER = 4.0f;  // Thicker line when hovering
-	private static final float BASE_HANDLE_LABEL_FONT_SIZE = 20.0f;  // Base font size (reduced from 30)
+	private static final float BASE_HANDLE_LABEL_FONT_SIZE = 16.0f;  // Base font size
 	private static final float BASE_INDICATOR_LABEL_FONT_SIZE = 16.0f;  // Base font size for indicator (reduced from 24)
 	
 	// Out-of-view indicator
