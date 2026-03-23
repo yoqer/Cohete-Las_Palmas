@@ -16,7 +16,8 @@ __________________________________
   # Aprendizaje de Sistemas para  Auto-AeroVuelos.
 
   
-  Aprendizaje por Refuerzo:   
+   
+   **Aprendizaje por Refuerzo:**   
 
   •Despegues
 
