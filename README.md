@@ -16,7 +16,9 @@ __________________________________
   # Aprendizaje de Sistemas para  Auto-AeroVuelos.
 
   
-Aprendizaje por Refuerzo Amerizajes.
+  Aprendizaje por Refuerzo:   
+  
+  •Amerizajes.
 
 __________________________________
 
