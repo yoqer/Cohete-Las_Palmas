@@ -234,6 +234,25 @@ jacocoTestCoverageVerification {
     }
 }
 
+// Get the short git commit hash to append to SNAPSHOT versions
+def gitCommitHash = 'unknown'
+try {
+    gitCommitHash = 'git rev-parse --short HEAD'.execute([], rootDir).text.trim()
+} catch (ignored) {}
+
+processResources {
+    inputs.property('gitCommitHash', gitCommitHash)
+    filesMatching('build.properties') {
+        filter { line ->
+            if (line.startsWith('build.version=') && line.contains('SNAPSHOT')) {
+                "${line}-${gitCommitHash}"
+            } else {
+                line
+            }
+        }
+    }
+}
+
 clean.dependsOn([externalComponentsDelete])
 //compileJava.dependsOn([externalComponentsCopy])
 processResources.dependsOn([externalComponentsCopy])
