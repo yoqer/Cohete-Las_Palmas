@@ -12,12 +12,14 @@ __________________________________
 
   # Panel de Mando y Comunicación 
 
+ - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su descentralizada ubicacion. 
 
 
-  **Radar**
+
+  - **Radar**:
   El Sistema de Radar de Posicionamiento para transmitir a unas distancias tan extremas requiere el uso grandes telescopios galacticos. 
   - Nuestro sistema de triangulacion precisa y adaptacion combina el ML, con la localizacion y autoadaptacion de tringulacion de señales.
-  - Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere un avanzado sistema de calibración y coordinacion para definir la posicion en el espacio exterior, para ello nuestro sistema de doble triangulacion en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicacion de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptar periodicamente en una y otra dirección de telecomunicación de señales.
+  - Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere un avanzado sistema de calibración y coordinacion para definir la posicion en el espacio exterior, para ello nuestro sistema de doble triangulacion en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicacion de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptacion periodica en una y otra dirección de telecomunicación de señales.
 
     [![Screenshot_20260323_092245](https://github.com/user-attachments/assets/3a9f4c5c-1987-417a-b098-851a8a5660cf)](http://github.com/yoqer/WarNet-Space-Radar) 
 
