@@ -17,6 +17,14 @@ __________________________________
 
   
   Aprendizaje por Refuerzo:   
+
+  •Despegues
+
+  •Vuelo Terrestre
+
+  •Vuelo Aeroespacial
+
+  •Despliegues
   
   •Amerizajes.
 
