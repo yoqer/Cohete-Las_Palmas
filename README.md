@@ -1,4 +1,4 @@
-   ## Las Palmas
+   # Las Palmas
 
 Las Palmas, es el Centro de Lanzamiento y pruebas del Cohete para alcanzar la maxima potencia y orbita buscada de los satalites circundantes en el hemisferio norte a la mayor velocidad posible de alcanzar, y donde se realiza la base de comunicaciónes de seguridad. 
 
@@ -10,6 +10,12 @@ __________________________________
 
 
   # Panel de Mando y Comunicación 
+
+
+
+  # Aprendizaje de Sistemas de Vuelo Autonomos.
+
+  
 
 
 __________________________________
