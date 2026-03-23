@@ -13,10 +13,10 @@ __________________________________
 
 
 
-  # Aprendizaje de Sistemas con  Auto-AeroVuelos.
+  # Aprendizaje de Sistemas para  Auto-AeroVuelos.
 
   
-
+Aprendizaje por Refuerzo Amerizajes.
 
 __________________________________
 
