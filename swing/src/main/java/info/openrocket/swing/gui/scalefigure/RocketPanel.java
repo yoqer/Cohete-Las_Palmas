@@ -413,9 +413,14 @@ public class RocketPanel extends JPanel implements TreeSelectionListener, Change
 		rotationControl.setEnabled(true);
 		scaleSelector.setEnabled(true);
 		
-		// Update text colors for 2D view
+		// Re-apply the current L&F to the scroll pane (rulers, etc.) which missed
+		// FlatLaf.updateUI() while detached from the component hierarchy in 3D mode.
+		SwingUtilities.updateComponentTreeUI(scrollPane);
+
+		// Update background and text colors for 2D view
+		updateBackgroundColors();
 		updateTextColors();
-		
+
 		scrollPane.revalidate();
 		scrollPane.repaint();
 		revalidate();
