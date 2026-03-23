@@ -13,7 +13,7 @@ __________________________________
   # Panel de Mando y Comunicación 
 
  - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su tan descentralizada ubicacion. Su facil localizacion visual hacen su gracia.
-   (Al mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: Amalia Gamma y su coordinación.)
+   (AI mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: AmalIA Gamma y su ML de coordinación.)
 
 
 
