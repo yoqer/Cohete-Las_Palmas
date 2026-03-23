@@ -19,8 +19,8 @@ __________________________________
 
   - **Radar**:
   El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas requiere de telescopios. 
-  - Nuestro sistema de triangulacion precisa y adaptacion combina el ML, con la localizacion y auto-adaptacion con la tringulacion de señales.
-  - Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere de un avanzado sistema de calibración y coordinación para definir las posiciones en el espacio exterior, para ello nuestro sistema de las dobles triangulaciones en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicación de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptación periódica de seguimiento en las ambas direcciones telecomunicativas de señales.
+   Nuestro sistema de triangulacion precisa y adaptación combina el ML, con la localización y auto-adaptación con la tringulacion de señales.
+   Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere de un avanzado sistema de calibración y coordinación para definir las posiciones en el espacio exterior, para ello nuestro sistema de las dobles triangulaciones en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicación de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptación periódica de seguimiento en las ambas direcciones telecomunicativas de señales.
 
     [![Screenshot_20260323_092245](https://github.com/user-attachments/assets/3a9f4c5c-1987-417a-b098-851a8a5660cf)](http://github.com/yoqer/WarNet-Space-Radar) 
 
