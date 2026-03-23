@@ -12,12 +12,13 @@ __________________________________
 
   # Panel de Mando y Comunicación 
 
- - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su descentralizada ubicacion. 
+ - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su tan descentralizada ubicacion. Si facil localizacion visual hacen su gracia.
+   (Al mando un sistema de respaldo de Seguridad puede tomar el mando, de la mano de la Flamenca: Amalia Gamma y su proceso de coordinacion.)
 
 
 
   - **Radar**:
-  El Sistema de Radar de Posicionamiento para situar la transmision a unas distancias tan extremas requiere el uso de grandes telescopios. 
+  El Sistema de Radar de Posicionamiento para situar transmision a unas distancias tan extremas requiere el uso de grandes telescopios. 
   - Nuestro sistema de triangulacion precisa y adaptacion combina el ML, con la localizacion y autoadaptacion de tringulacion de señales.
   - Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere un avanzado sistema de calibración y coordinacion para definir la posicion en el espacio exterior, para ello nuestro sistema de doble triangulacion en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicacion de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptacion periodica en una y otra dirección de telecomunicación de señales.
 
