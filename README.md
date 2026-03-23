@@ -1,3 +1,13 @@
+### Las Palmas
+
+Las Palmas, es el Centro de Lanzamiento y pruebas del Cohete para alcanzar la maxima potencia y orbita buscada de los satalites circundantes en el hemisferio norte a la mayor velocidad posible de alcanzar, donde se realiza la base de comunicaciónes de respaldo y seguridad. 
+
+La base de Comunicaciones de: Las Palmas; es lo que Houstom y Cabo Calaveral.
+
+
+
+
+
 # OpenRocket 🚀
 
 OpenRocket is a free, fully featured model rocket simulator that allows you to design and simulate your rockets before actually building and flying them.
