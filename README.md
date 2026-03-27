@@ -13,14 +13,14 @@ __________________________________
   # Panel de Mando y Comunicación 
 
  - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su tan descentralizada ubicacion. Su facil localizacion visual hacen su gracia.
-   (AI mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: AmalIA Gamma y su ML de coordinación.)
+   (AI mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: "AmalIA Gamma"          y su ML de coordinación.)
 
 
 
-  - **Radar**:
+  - **Radar**:  🔭
   El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas requiere de telescopios. 
 
-     Nuestro sistema de triangulacion precisa y adaptación combina el ML, con la localización y auto-adaptación con la tringulacion de señales.
+     Nuestro sistema de triangulacion precisa y adaptación combina el ML, con localización y auto-adaptación con la tringulacion de señales.
 
     Aunque las comunicaciones mas precisas puedan dirigirse desde la Nave a los puntos fijos, esto requiere de un avanzado sistema de calibración y coordinación para definir las posiciones en el espacio exterior, para ello nuestro sistema de las dobles triangulaciones en posiciones rectas, de planos orbitales, en horizontal y verticrulizado, junto con la duplicación de puntos cercanos, nos hacen situar las comunicaciones con la mayor precisión posible independientemente del momento en que se desee transmitir, para adaptación periódica de seguimiento en las ambas direcciones telecomunicativas de señales.
 
