@@ -1,4 +1,4 @@
-   # Las Palmas
+   # Las Palmas. 👏
 
 Las Palmas, es el Centro de Lanzamiento y pruebas del Cohete para alcanzar la maxima potencia y orbita buscada para enviar satelites circundantes en el hemisferio norte a la mayor velocidad posible de alcanzar, y donde se realiza la base de comunicaciónes de seguridad. 
 
@@ -13,13 +13,14 @@ __________________________________
   # Panel de Mando y Comunicación 
 
  - **Control**: El Puesto de Mando de: Las Palmas; cuenta con el Control de Seguridad y la comunicación mas precisa de seguimiento al ser el punto de lanzamiento, y tener unas pocas interferencias por su tan descentralizada ubicacion. Su facil localizacion visual hacen su gracia.
-   (AI mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: "AmalIA Gamma"
+   (AI mando: Un sistema de respaldo de Seguridad para tomar el control, de la mano de la Flamenca: "AmalIA Gamma" 💃
    con su ML de coordinación.)
 
 
 
-  - **Radar**:  🔭
-    El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas requiere de telescopios.   🔭
+  - **Radar**:  📡
+    El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas  🪐
+    requiere de telescopios.   🔭
 
      Nuestro sistema de triangulacion precisa y adaptación combina el ML, con localización y auto-adaptación con la tringulacion de señales.
 
