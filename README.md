@@ -19,8 +19,7 @@ __________________________________
 
 
   - **Radar**:  🔭
-    
-  El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas requiere de telescopios.   🔭
+    El Sistema de Radar de Posicionamiento, para la recepción transmisión a unas distancias tan extremas requiere de telescopios.   🔭
 
      Nuestro sistema de triangulacion precisa y adaptación combina el ML, con localización y auto-adaptación con la tringulacion de señales.
 
@@ -29,7 +28,8 @@ __________________________________
     [![Screenshot_20260323_092245](https://github.com/user-attachments/assets/3a9f4c5c-1987-417a-b098-851a8a5660cf)](http://github.com/yoqer/WarNet-Space-Radar) 
 
 
-_________________________________________________________________________
+____________________________________________________________________
+
 
 
   
@@ -51,10 +51,20 @@ _________________________________________________________________________
 
 __________________________________
 
+         -
+
+
 
    # Simulaciones Previas
 
 
+
+
+
+
+
+         - 
+         
 
 
 
